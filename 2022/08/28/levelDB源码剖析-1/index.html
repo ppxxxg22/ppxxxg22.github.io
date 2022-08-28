@@ -149,7 +149,7 @@
             
             <span class="tag">
                 
-                <a href="/tags/C/" style="color: #00bcd4">
+                <a href="/tags/C/" style="color: #ff7d73">
                     C++
                 </a>
             </span>
@@ -160,6 +160,61 @@
     <div class="content" v-pre>
         <p>levelDB源码剖析，剖析源码，掌握技术。</p>
 <span id="more"></span>
+
+<h2 id="概述levelDB项目"><a href="#概述levelDB项目" class="headerlink" title="概述levelDB项目"></a>概述levelDB项目</h2><hr>
+<p><em><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/203578801">参考1</a></em></p>
+<p><em><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/436037845">参考2</a></em></p>
+<p><em><a target="_blank" rel="noopener" href="https://github.com/google/leveldb">项目地址</a></em></p>
+<hr>
+<h4 id="levelDB项目概述"><a href="#levelDB项目概述" class="headerlink" title="levelDB项目概述"></a>levelDB项目概述</h4><p>levelDB 是一个持久化<code>kv</code>存储数据库，<code>kv</code>均为任意的字节数组。</p>
+<p>其随机写、顺序写&#x2F;读的性能很高，但是随机读的性能一般。</p>
+<blockquote>
+<h5 id="LSM-Tree"><a href="#LSM-Tree" class="headerlink" title="LSM Tree"></a>LSM Tree</h5><p>其实现原理为<code>LSM Tree</code>，简单来说就是讲磁盘的随机写转换成顺序写.</p>
+<p>由于磁盘的寻址非常耗时，因此顺序写的速度远远超过随机写.</p>
+<p><code>LSM Tree</code>由两部分组成分别是<code>Log structed</code>和<code>Merge Tree</code>.</p>
+<p>其中<code>Log structed</code>是日志结构，而日志本身是不会修改的，只需要追加写.</p>
+<p><code>Merge Tree</code>是合并树，即将多个树合并成一个更大的树.</p>
+<p><em>所以，<code>LSM Tree</code>是数据以追加写的方式写入文件，成为一颗小树，然后合并成更大的树.</em></p>
+<p>在<code>LSM Tree</code>中，<strong>更新一个数据不需要修改过去的旧数据</strong>，但是此时，<br>其写的性能很强大，但是需要支付额外的存储空间来作为代价。为了同步提升其读的性能，levelDB也同样支付了一些存储空间作为读性能提升的代价。</p>
+<p>具体而言，将索引树结构拆分成多个大小逐渐变大的结构$C_0、C_1…C_n$，其均为有序的。</p>
+<p>最小的$C_0$位于内存，是所有操作数据的落脚点，保存了最近写入的kv，其也可以随时原地更新，支持随时查询。</p>
+<img src="/2022/08/28/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-1/pic1.jpg" class="" title="_">
+
+<p>其余的$C_1…C_n$均位于磁盘中，但是每棵树也是有序的。</p>
+<p><em><strong>当执行写操作时</strong></em>：首先将数据加入到$C_0$层索引树中，当$C_0$层数据大小达到一定程度时，会执行$C_0与C_1$层的合并。由于两者均为有序的，所以这个过程类似一个归并，而归并这个操作只需要用到有序写，合并出来的新的$C_1会取代掉旧的C_1$，当$C_1到达指定大小后，也会同样向后合并$。</p>
+<img src="/2022/08/28/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-1/pic2.jpg" class="" title="_">
+
+<p><em><strong>当执行读操作时</strong></em>：在$C_0、C_1…C_n中逐层查找，直到找到为止$，因此，即使数据没有更新到较高的层中，也不影响数据的正确性。</p>
+</blockquote>
+<p>当然，levelDB具体的实现还是存在一些细节的。</p>
+<hr>
+<blockquote>
+<h5 id="一些头文件及其作用"><a href="#一些头文件及其作用" class="headerlink" title="一些头文件及其作用"></a>一些头文件及其作用</h5><p>include: 函数库的头文件</p>
+<p>port: 可移植性相关的功能</p>
+<p>util: 项目用到的一些功能函数</p>
+<p>table: SSTable的实现</p>
+<p>helpers&#x2F;memenv：简单完全内存的文件系统，提供操作目录文件接口</p>
+<p>benchmarks：性能测试相关代码</p>
+<p>db: 数据库实现，版本管理，Compaction，WAL和MemTable实现</p>
+</blockquote>
+<blockquote>
+<h5 id="接口文件的对应功能"><a href="#接口文件的对应功能" class="headerlink" title="接口文件的对应功能"></a>接口文件的对应功能</h5><p>cache.h: 缓存接口，提供了默认的LRU缓存，也可以自己实现缓存</p>
+<p>comparator.h: 定以数据库比较器的接口，用来比较键，可以使用默认的基于字节的比较，可以定义自己的比较器</p>
+<p>dumpfile.h: 以可读文本形式导出一个文件，调试使用</p>
+<p>export.h: 可移植性相关         </p>
+<p>iterator.h: 迭代器接口</p>
+<p>slice.h: 实现一个字符串，存储指针和长度，指向字符串</p>
+<p>table_builder.h: 构造一个SSTable</p>
+<p>write_batch.h: 实现批量写入的接口</p>
+<p>c.h: 实现C语言相关的接口</p>
+<p>db.h: 操作数据库的主要接口</p>
+<p>env.h: 定义操作系统相关的功能，如读写文件之类的</p>
+<p>filter_policy.h: 定义布隆过滤器接口</p>
+<p>options.h: 配置选项</p>
+<p>status.h: 定义数据库操作的返回状态</p>
+<p>table.h: SSTable相关的接口</p>
+</blockquote>
+
     </div>
     
 </div>
