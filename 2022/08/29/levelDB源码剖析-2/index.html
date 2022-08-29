@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
-        <title>Archives | PPXXXG22</title>
+        <title>levelDB源码剖析(2) | PPXXXG22</title>
         <meta name="author" content="PPXXXG22">
         <meta name="description" content="">
         <meta name="keywords" content="">
@@ -232,117 +232,89 @@ mjx-container[display="true"] + br {
                     </div>
                     <div id="main">
                         
-<div id="archives">
-    
-    <div class="timeline">
-        <div class="timeline-tail"></div>
-        <div class="timeline-content">
-            <div class="item-time">2022/8/29</div>
-            <a href="/2022/08/29/levelDB源码剖析-2/">
-                <h3>levelDB源码剖析(2)</h3>
-            </a>
-            <div class="info">
-                
-                <span class="category">
-                    <a href="/categories/源码剖析/">
-                        <span class="icon">
-                            <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                        </span>
-                        源码剖析
-                    </a>
-                </span>
-                
-                
-                <span class="tags">
-                    <span class="icon">
-                        <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
-                    </span>
-                    
-                    <span class="tag">
-                        
-                        <a href="/tags/C/" style="color: #03a9f4">
-                            C++
-                        </a>
-                    </span>
-                    
-                </span>
-                
-            </div>
-        </div>
+<div class="article">
+    <div>
+        <h1>levelDB源码剖析(2) </h1>
     </div>
-    
-    <div class="timeline">
-        <div class="timeline-tail"></div>
-        <div class="timeline-content">
-            <div class="item-time">2022/8/28</div>
-            <a href="/2022/08/28/TODO/">
-                <h3>TODO</h3>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
+            </span>
+            2022/8/29
+        </span>
+        
+        <span class="category">
+            <a href="/categories/源码剖析/">
+                <span class="icon">
+                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
+                </span>
+                源码剖析
             </a>
-            <div class="info">
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
+            </span>
+            
+            <span class="tag">
                 
-                <span class="category">
-                    <a href="/categories/其他/">
-                        <span class="icon">
-                            <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                        </span>
-                        其他
-                    </a>
-                </span>
-                
-                
-                <span class="tags">
-                    <span class="icon">
-                        <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
-                    </span>
-                    
-                    <span class="tag">
-                        
-                        <a href="/tags/others/" style="color: #ff7d73">
-                            others
-                        </a>
-                    </span>
-                    
-                </span>
-                
-            </div>
-        </div>
+                <a href="/tags/C/" style="color: #ffa2c4">
+                    C++
+                </a>
+            </span>
+            
+        </span>
+        
     </div>
-    
-    <div class="timeline">
-        <div class="timeline-tail"></div>
-        <div class="timeline-content">
-            <div class="item-time">2022/8/28</div>
-            <a href="/2022/08/28/levelDB源码剖析-1/">
-                <h3>levelDB源码剖析(1)</h3>
-            </a>
-            <div class="info">
-                
-                <span class="category">
-                    <a href="/categories/源码剖析/">
-                        <span class="icon">
-                            <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                        </span>
-                        源码剖析
-                    </a>
-                </span>
-                
-                
-                <span class="tags">
-                    <span class="icon">
-                        <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
-                    </span>
-                    
-                    <span class="tag">
-                        
-                        <a href="/tags/C/" style="color: #00a596">
-                            C++
-                        </a>
-                    </span>
-                    
-                </span>
-                
-            </div>
-        </div>
+    <div class="content" v-pre>
+        <p>levelDB源码剖析，剖析源码，掌握技术。<br>
+<span id="more"></span></p>
+<hr>
+<h2 id="分析leveldb的架构">分析levelDB的架构</h2>
+<hr>
+<h4 id="leveldb的组件">levelDB的组件</h4>
+<blockquote>
+<p>levelDB由以下几个组件组成：<code>MemTable</code>，<code>Immutable MemTable</code>，<code>WAL</code>，<code>SSTable</code>，<code>Manifest</code>，<code>Current</code>，<code>Compaction</code></p>
+<img src="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-2/pic1.jpg" class="" title="_">
+<blockquote>
+<p><strong><em>MemTable</em></strong>：这个组件是操作的入口，是常驻内存的<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.375ex;" xmlns="http://www.w3.org/2000/svg" width="2.605ex" height="1.97ex" role="img" focusable="false" viewBox="0 -705 1151.6 870.6"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="msub"><g data-mml-node="mi"><path data-c="1D436" d="M50 252Q50 367 117 473T286 641T490 704Q580 704 633 653Q642 643 648 636T656 626L657 623Q660 623 684 649Q691 655 699 663T715 679T725 690L740 705H746Q760 705 760 698Q760 694 728 561Q692 422 692 421Q690 416 687 415T669 413H653Q647 419 647 422Q647 423 648 429T650 449T651 481Q651 552 619 605T510 659Q484 659 454 652T382 628T299 572T226 479Q194 422 175 346T156 222Q156 108 232 58Q280 24 350 24Q441 24 512 92T606 240Q610 253 612 255T628 257Q648 257 648 248Q648 243 647 239Q618 132 523 55T319 -22Q206 -22 128 53T50 252Z"></path></g><g data-mml-node="mn" transform="translate(748,-150) scale(0.707)"><path data-c="30" d="M96 585Q152 666 249 666Q297 666 345 640T423 548Q460 465 460 320Q460 165 417 83Q397 41 362 16T301 -15T250 -22Q224 -22 198 -16T137 16T82 83Q39 165 39 320Q39 494 96 585ZM321 597Q291 629 250 629Q208 629 178 597Q153 571 145 525T137 333Q137 175 145 125T181 46Q209 16 250 16Q290 16 318 46Q347 76 354 130T362 333Q362 478 354 524T321 597Z"></path></g></g></g></g></svg></mjx-container></span>树，所有的写入操作都将被直接写入到此树中。另外这棵树是有序的，可以对其进行快速查找和遍历，也支持数据库的操作。</p>
+<p>它本身就可以看成是一个数据库，相当于levelDB内置的redis。</p>
+<p>当其占用空间到达一个阈值时，就转换成一个<code>Immutable MemTable</code>供后续合并，同时生成一个新的<code>MemTable</code>来继续执行下去。</p>
+</blockquote>
+<blockquote>
+<p><strong><em>Immutable
+MemTable</em></strong>：这个组件是内存与磁盘的交互组件。它与<code>MemTable</code>完全一样，仅仅在于其是只读结构。</p>
+<p>当生成<code>Immutable MemTable</code>后，后台线程会将其创建出一个<code>SSTable</code>，并归并到磁盘中。</p>
+</blockquote>
+<blockquote>
+<p><strong><em>WAL</em></strong>：即write ahead
+log，在写入到数据库之前，先写入到日志文件。</p>
+<p>这样做的目的是为了不丢失数据，由于<code>MemTable</code>位于内存中，写入一些数据后，其不能立刻同步到磁盘中，如果突然掉电，这样写入的数据就丢失了。而<code>WAL</code>位于磁盘中，不过由于日志结构是顺序写，因此其写入效率也是很高的。</p>
+<p>每次数据库重启时都需要读取日志并进行恢复，如果日志结构太大，启动数据库的速度就会很慢。</p>
+</blockquote>
+<blockquote>
+<p><strong><em>SSTable</em></strong>：即Sorted String
+Table。这是比较重要的结构，虽然数据库的读写是基于<code>MemTable</code>的，但是其位于内存中，内存不是无限大的，需要被持久化到磁盘中。当创建出<code>Immutable MemTable</code>后，就会对其创建出一个<code>SSTable</code>来保存数据到磁盘上。</p>
+<p>其有序体现在键是有序的，同时各级的<code>SSTable</code>文件之间也是有序的，即键不重叠。这样做的目的是为了保持良好的读速度。由于levelDB不需要更新磁盘数据结构，因此不需要使用B+树。当数据存储在磁盘上键有序，这样就可以使用高效的二分查找；而键不重叠则避免二分查找读多个磁盘块。</p>
+<p>同时，将<code>MemTable</code>写入到磁盘上的<code>SSTable</code>后就可以释放掉这部分的日志空间，减少下次启动时的恢复速度。</p>
+<p>但是当<code>SSTable</code>数目变多时，可能会导致键的范围出现重叠，这时候可以进行合并，将多个小的<code>SSTable</code>合并成一个大的，由于<code>SSTable</code>是有序的，其合并速度也是十分的快。</p>
+</blockquote>
+<blockquote>
+<p><strong><em>Manifest</em></strong>：LevelDB中有版本Version的概念，一个版本Version主要记录了每一层Level中所有文件的元数据。随着Compaction的进行，元数据会改变，所以每次还需要将改变的元数据写到MANIFEST中。</p>
+</blockquote>
+<blockquote>
+<p><strong><em>Current</em></strong>：本文件指向当前的<code>Manifest</code>文件，由于可能存在多个<code>Manifest</code>文件，<code>Current</code>文件指向我们当前需要用到的<code>Manifest</code>文件。</p>
+</blockquote>
+<blockquote>
+<p><strong><em>Compaction</em></strong>：作用是将多个小的<code>SSTable</code>合并成一个大的<code>SSTable</code>。这样可以解决查找的效率问题。</p>
+<p>每个大的<code>SSTable</code>是键有序的，可以将其再次分成多个小的键不重叠的<code>SSTable</code>，这样每次合并时只需要合并小的<code>SSTable</code>即可，而不需要去读取一个很大的<code>SSTable</code>。</p>
+<p>另外，由于<code>level-0</code>是直接由内存写入的，其多个<code>SSTable</code>可能存在键重叠现象，但是更高层的<code>level</code>是不存在键重叠现象的。</p>
+</blockquote>
+</blockquote>
+
     </div>
     
 </div>
