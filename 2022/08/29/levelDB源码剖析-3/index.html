@@ -261,7 +261,7 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/C/" style="color: #00bcd4">
+                <a href="/tags/C/" style="color: #00a596">
                     C++
                 </a>
             </span>
@@ -281,7 +281,6 @@ mjx-container[display="true"] + br {
 <p>对于数据库而言，内存管理策略是十分重要的，因为其正是需要为存入的数据分配内存，倘若直接使用new/delete这样每次插入数据都单独去分配内存，效率是很低的，同时由于每条插入的数据的大小并不一致，导致会出现许多的内存碎片。</p>
 <p>对于levelDB这样一个billion级别的数据库，显然其不能采取这样的策略。</p>
 <p>在levelDB中，由于只有<code>MemTable</code>位于内存且需要频繁的插入，所以它最需要内存管理，levelDB中用于内存管理的类为<code>Arena</code>，每个<code>MemTable</code>都绑定一个<code>Arena</code>。而其余的部分则直接使用new/delete，因为这些部分要么是不频繁，要么是块本身就很大。</p>
-<blockquote>
 <h5 id="arena类">Arena类</h5>
 <blockquote>
 <p><strong>基本思想</strong>：先分配出一大块内存，然后当需要用到内存时，就在这一大块内存中移动指针，这样就能解决小块内存频繁调用new和内存碎片的问题，不过缺点是有一部分内存被浪费掉。</p>
@@ -292,34 +291,227 @@ mjx-container[display="true"] + br {
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Arena</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>   Arena<span class="op">();</span>                                  <span class="co">//默认构造函数</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>   Arena<span class="op">(</span><span class="at">const</span> Arena <span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span>            <span class="co">//关闭复制构造函数</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>   Arena <span class="op">&amp;</span><span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Arena <span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span> <span class="co">//关闭使用=的拷贝构造函数</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>   <span class="op">~</span>Arena<span class="op">();</span>                                 <span class="co">//析构函数</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    Arena<span class="op">();</span>                                  <span class="co">//默认构造函数</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    Arena<span class="op">(</span><span class="at">const</span> Arena <span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span>            <span class="co">//关闭复制构造函数</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    Arena <span class="op">&amp;</span><span class="kw">operator</span><span class="op">=(</span><span class="at">const</span> Arena <span class="op">&amp;)</span> <span class="op">=</span> <span class="kw">delete</span><span class="op">;</span> <span class="co">//关闭使用=的拷贝构造函数</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">~</span>Arena<span class="op">();</span>                                 <span class="co">//析构函数</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>   <span class="co">//返回一个指针指向新分配的内存区域，即内部的分配内存的方法</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>   <span class="dt">char</span> <span class="op">*</span>Allocate<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">);</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">//返回一个指针指向新分配的内存区域，即内部的分配内存的方法</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>Allocate<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">);</span></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>   <span class="co">//同Allocate，但是提供了内存对齐策略</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>   <span class="dt">char</span> <span class="op">*</span>AllocateAligned<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">);</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">//同Allocate，但是提供了内存对齐策略</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>AllocateAligned<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">);</span></span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>   <span class="co">//返回已分配内存已经被使用的大小，由于memory_usage_是原子操作</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>   <span class="co">//此处的memory_order_relaxed表示宽松内存序，即任何一个线程可以任意更新</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>   <span class="co">//不用同步到其他线程中，下一个访问该元素的线程获取到更新之后的值</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>   <span class="dt">size_t</span> MemoryUsage<span class="op">()</span> <span class="at">const</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>   <span class="op">{</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>       <span class="cf">return</span> <span class="va">memory_usage_</span><span class="op">.</span>load<span class="op">(</span><span class="bu">std::</span>memory_order_relaxed<span class="op">);</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>   <span class="op">}</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">//返回目前从内存中申请的内存大小，由于memory_usage_是原子操作</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">//此处的memory_order_relaxed表示宽松内存序，即任何一个线程可以任意更新</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">//不用同步到其他线程中，下一个访问该元素的线程获取到更新之后的值</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> MemoryUsage<span class="op">()</span> <span class="at">const</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">memory_usage_</span><span class="op">.</span>load<span class="op">(</span><span class="bu">std::</span>memory_order_relaxed<span class="op">);</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span><span class="op">:</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>   <span class="dt">char</span> <span class="op">*</span>AllocateFallback<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">);</span>       <span class="co">//获取新分配的内存，被AllocateAligned和Allocate调用</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>   <span class="dt">char</span> <span class="op">*</span>AllocateNewBlock<span class="op">(</span><span class="dt">size_t</span> block_bytes<span class="op">);</span> <span class="co">//new函数的包装，被AllocateFallback调用</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>AllocateFallback<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">);</span>       <span class="co">//获取新分配的内存，被AllocateAligned和Allocate调用</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>AllocateNewBlock<span class="op">(</span><span class="dt">size_t</span> block_bytes<span class="op">);</span> <span class="co">//new函数的包装，被AllocateFallback调用</span></span>
 <span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>   <span class="dt">char</span> <span class="op">*</span><span class="va">alloc_ptr_</span><span class="op">;</span>                  <span class="co">//当前内存块未使用内存的首地址</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>   <span class="dt">size_t</span> <span class="va">alloc_bytes_remaining_</span><span class="op">;</span>     <span class="co">//当前内存块中未使用空间的大小</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>   <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">char</span> <span class="op">*&gt;</span> <span class="va">blocks_</span><span class="op">;</span>       <span class="co">//存储每一次向系统请求分配的内存块的指针</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>   <span class="bu">std::</span>atomic<span class="op">&lt;</span><span class="dt">size_t</span><span class="op">&gt;</span> <span class="va">memory_usage_</span><span class="op">;</span> <span class="co">//记录已申请全部内存使用的数目，注意此操作是原子的</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span><span class="va">alloc_ptr_</span><span class="op">;</span>                  <span class="co">//当前内存块未使用内存的首地址</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> <span class="va">alloc_bytes_remaining_</span><span class="op">;</span>     <span class="co">//当前内存块中未使用空间的大小</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector<span class="op">&lt;</span><span class="dt">char</span> <span class="op">*&gt;</span> <span class="va">blocks_</span><span class="op">;</span>       <span class="co">//存储每一次向系统请求分配的内存块的指针</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>atomic<span class="op">&lt;</span><span class="dt">size_t</span><span class="op">&gt;</span> <span class="va">memory_usage_</span><span class="op">;</span> <span class="co">//记录已申请全部内存使用的数目，注意此操作是原子的</span></span>
 <span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>头文件定义了Arena这个类，在类中只有3个公有方法，分别用于返回小内存、对齐的小内存、当前类占用的空间。</p>
+<p>分析完了头文件，我们接下来看一下它的cpp实现。</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">static</span> <span class="at">const</span> <span class="dt">int</span> kBlockSize <span class="op">=</span> <span class="dv">4096</span><span class="op">;</span> <span class="co">//一个内存块的大小</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// 构造函数，默认的构造函数直接对内部的几个元素进行初始化</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>Arena<span class="op">::</span>Arena<span class="op">()</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">:</span> <span class="va">alloc_ptr_</span><span class="op">(</span><span class="kw">nullptr</span><span class="op">),</span> <span class="va">alloc_bytes_remaining_</span><span class="op">(</span><span class="dv">0</span><span class="op">),</span> <span class="va">memory_usage_</span><span class="op">(</span><span class="dv">0</span><span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// 析构函数，注意，由于类中存在一个vector数组存储了每次分配的内存的块的指针</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// 所以析构的时候遍历这个数组然后逐个delete</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>Arena<span class="op">::~</span>Arena<span class="op">()</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">size_t</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="va">blocks_</span><span class="op">.</span>size<span class="op">();</span> i<span class="op">++)</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">delete</span><span class="op">[]</span> <span class="va">blocks_</span><span class="op">[</span>i<span class="op">];</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">// 分配小内存的函数，这个函数是此类对外的接口，被写成内联函数效率更高</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">char</span> <span class="op">*</span>Arena<span class="op">::</span>Allocate<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">)</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 首先，断言申请的内存数目是否合法</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">(</span>bytes <span class="op">&gt;</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当从内存申请的整块中仍然存在空间时，就直接从这个块中分配</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>bytes <span class="op">&lt;=</span> <span class="va">alloc_bytes_remaining_</span><span class="op">)</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>        <span class="dt">char</span> <span class="op">*</span>result <span class="op">=</span> <span class="va">alloc_ptr_</span><span class="op">;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        <span class="va">alloc_ptr_</span> <span class="op">+=</span> bytes<span class="op">;</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>        <span class="va">alloc_bytes_remaining_</span> <span class="op">-=</span> bytes<span class="op">;</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 否则调用AllocateFallback进行分配（从内存中申请空间去分配）</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> AllocateFallback<span class="op">(</span>bytes<span class="op">);</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">// 采用对齐的方式去分配内存，只比Allocate多出计算需要分配内存的步骤</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>Arena<span class="op">::</span>AllocateAligned<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">)</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 首先设置对齐的字节数，(sizeof(void *)可以计算出当前机器的每个指针的字节数</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 最多8字节对齐，当当前机器指针的字节数不足8字节时，会使用当前机器的字节数</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">int</span> align <span class="op">=</span> <span class="op">(</span><span class="kw">sizeof</span><span class="op">(</span><span class="dt">void</span> <span class="op">*)</span> <span class="op">&gt;</span> <span class="dv">8</span><span class="op">)</span> <span class="op">?</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">void</span> <span class="op">*)</span> <span class="op">:</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 静态断言，在编译时执行断言</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>    <span class="co">// a&amp;(a-1)的功能是去掉右边的1(二进制)，所以当不是2的幂次方时，去掉1后就非0</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    <span class="kw">static_assert</span><span class="op">((</span>align <span class="op">&amp;</span> <span class="op">(</span>align <span class="op">-</span> <span class="dv">1</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"Pointer size should be a power of 2"</span><span class="op">);</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 下面这里的位运算等价于求余运算</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 因为上面这个断言已经确保了align是2个幂次方，因此align-1是一个右侧均为1的掩模</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 两者相与的结果就可以快速求出alloc_ptr_%align</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 但注意，此时两者能够等价的重要原因是align是2的幂次方</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 此处还有强制类型转换，也就是把取模结果转换成uintptr_t</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> current_mod <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uintptr_t</span><span class="op">&gt;(</span><span class="va">alloc_ptr_</span><span class="op">)</span> <span class="op">&amp;</span> <span class="op">(</span>align <span class="op">-</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当取模结果不是0就表示需要分配的内存是2的整数幂，所以需要额外分配一些内存</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> slop <span class="op">=</span> <span class="op">(</span>current_mod <span class="op">==</span> <span class="dv">0</span> <span class="op">?</span> <span class="dv">0</span> <span class="op">:</span> align <span class="op">-</span> current_mod<span class="op">);</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 计算出总的需要的内存</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> needed <span class="op">=</span> bytes <span class="op">+</span> slop<span class="op">;</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>    <span class="co">/*-------- 至此，计算出需要对齐时分配的内存后，就与Allocate无异 --------*/</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>result<span class="op">;</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当从内存申请的整块中仍然存在空间时，就直接从这个块中分配</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>needed <span class="op">&lt;=</span> <span class="va">alloc_bytes_remaining_</span><span class="op">)</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> <span class="va">alloc_ptr_</span> <span class="op">+</span> slop<span class="op">;</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>        <span class="va">alloc_ptr_</span> <span class="op">+=</span> needed<span class="op">;</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>        <span class="va">alloc_bytes_remaining_</span> <span class="op">-=</span> needed<span class="op">;</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 此处存在一点点区别，AllocateFallback申请的参数时bytes而不是对齐后的need</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 这是因为AllocateFallback调用的是new/delete，总是内存对齐的</span></span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a>        result <span class="op">=</span> AllocateFallback<span class="op">(</span>bytes<span class="op">);</span></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这里再做一下断言，保证对齐</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a>    <span class="ot">assert</span><span class="op">((</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uintptr_t</span><span class="op">&gt;(</span>result<span class="op">)</span> <span class="op">&amp;</span> <span class="op">(</span>align <span class="op">-</span> <span class="dv">1</span><span class="op">))</span> <span class="op">==</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a><span class="co">// 私有方法：回调函数，用于当当前块内内存不足时申请内存的策略</span></span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>Arena<span class="op">::</span>AllocateFallback<span class="op">(</span><span class="dt">size_t</span> bytes<span class="op">)</span></span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当需要的内存超过kBlockSize的1/4，（默认1kb时），申请和bytes相同大小的内存</span></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这样做是因为当需要用到的内存已经超过块大小的1/4了，那么之前剩余的块可能还有不少</span></span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 如果新分配一个块那么就可能会浪费比较多的内存</span></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>bytes <span class="op">&gt;</span> kBlockSize <span class="op">/</span> <span class="dv">4</span><span class="op">)</span></span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>        <span class="dt">char</span> <span class="op">*</span>result <span class="op">=</span> AllocateNewBlock<span class="op">(</span>bytes<span class="op">);</span></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当需要的内存不足kBlockSize的1/4，（默认1kb时），就申请一个整个的块（默认4kb）</span></span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 然后从这里面分配内存</span></span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 但注意，进入到此函数里只说明原来的块不足以分配现在需要的内存，但其可能仍然剩余内存</span></span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 此处的策略是直接把原来的内存块中可能剩余的内存给浪费掉</span></span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 毕竟此时需要分配的内存不到1/4个块，说明原来的块也剩下不了多少内存了</span></span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>    <span class="va">alloc_ptr_</span> <span class="op">=</span> AllocateNewBlock<span class="op">(</span>kBlockSize<span class="op">);</span></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 下面这几部就是分配了一个块后做块内的内存分配</span></span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a>    <span class="va">alloc_bytes_remaining_</span> <span class="op">=</span> kBlockSize<span class="op">;</span></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>result <span class="op">=</span> <span class="va">alloc_ptr_</span><span class="op">;</span></span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>    <span class="va">alloc_ptr_</span> <span class="op">+=</span> bytes<span class="op">;</span></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>    <span class="va">alloc_bytes_remaining_</span> <span class="op">-=</span> bytes<span class="op">;</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a><span class="co">// 私有方法：向系统申请内存</span></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>Arena<span class="op">::</span>AllocateNewBlock<span class="op">(</span><span class="dt">size_t</span> block_bytes<span class="op">)</span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 就是对new的一层包装，同时更新一下类内的参数</span></span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>result <span class="op">=</span> <span class="kw">new</span> <span class="dt">char</span><span class="op">[</span>block_bytes<span class="op">];</span></span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a>    <span class="va">blocks_</span><span class="op">.</span>push_back<span class="op">(</span>result<span class="op">);</span></span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>    <span class="va">memory_usage_</span><span class="op">.</span>fetch_add<span class="op">(</span>block_bytes <span class="op">+</span> <span class="kw">sizeof</span><span class="op">(</span><span class="dt">char</span> <span class="op">*),</span></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>                            <span class="bu">std::</span>memory_order_relaxed<span class="op">);</span></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<img src="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-3/pic1.jpg" class="" title="_">
+<p>实际上总体来说思路如下:</p>
+<p>1、当调用<code>AllocateAligned</code>或<code>Allocate</code>时，先判断当前分配内存块中剩余的内存是否有足够的内存去分配新的内存（以及计算内存对齐）；如果足以容纳，则直接从当前内存块中提取内存作为所需内存使用。若是不足以容纳则调用<code>AllocateFallback</code>去申请内存并分配。</p>
+<p>2、在<code>AllocateFallback</code>中，先判断需要申请的内存是否大于1K，若是大于1K，直接<code>AllocateNewBlock</code>向系统申请足够的内存以供使用。若是小于1K，则调用<code>AllocateNewBlock</code>分配一个块，并在这个块中分配需要的内存。</p>
+<p>3、<code>AllocateNewBlock</code>使用系统new操作符向系统申请内存，并更新类内参数。当所分配的内存为4kb时，会将这个申请的内存作为新的内存块(此时旧的内存块中即使还有内存未使用，也不会再拿来使用，因为alloc_ptr_会指向新申请的内存块)。然后再向新申请的内存块提取内存以供使用。</p>
+<p>这里Level对于小于1K的内存申请才向内存池提取内存，主要是连续多次申请小的内存会容易导致内存碎片，影响系统的性能。并且多次的new和delete比较耗时(不断的构造和析构)，会付出额外的空间和时间。</p>
+<hr>
+<h2 id="总结部分">总结部分</h2>
+<table>
+<colgroup>
+<col style="width: 38%">
+<col style="width: 61%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">方法/变量</th>
+<th style="text-align: center;">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Arena()</td>
+<td style="text-align: center;">构造函数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">~Arena()</td>
+<td style="text-align: center;">析构函数</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">char* Allocate(size_t bytes)</td>
+<td style="text-align: center;">提供bytes大小的内存</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">char* AllocateAligned(size_t bytes)</td>
+<td style="text-align: center;">提供内存对齐的bytes大小的内存</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">size_t MemoryUsage() const</td>
+<td style="text-align: center;">返回当前申请的内存大小</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">char* AllocateFallback(size_t
+bytes)</td>
+<td style="text-align: center;">当块中内存不够时向系统申请内存接口，由Allocate或AllocateAligned调用</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">char* AllocateNewBlock(size_t
+block_bytes)</td>
+<td style="text-align: center;">系统new的包装函数，由AllocateFallback调用</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">alloc_ptr_</td>
+<td style="text-align: center;">当前内存块中未使用空间的首地址</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">alloc_bytes_remaining_</td>
+<td style="text-align: center;">当前内存块中剩余的空间</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">blocks_</td>
+<td style="text-align: center;">new出来的内存的首地址组成的vector数组</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">memory_usage_</td>
+<td style="text-align: center;">向系统已申请的内存大小</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<h4 id="编程小技巧">编程小技巧</h4>
+<p><code>a &amp; (a - 1)</code>：去掉a在二进制表示中右边的1</p>
+<p><code>A &amp; (B - 1) = A % B</code>：此公式仅在B是2的幂次方时成立</p>
 </blockquote>
 
     </div>

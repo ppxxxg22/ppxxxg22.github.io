@@ -261,7 +261,7 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/C/" style="color: #ff7d73">
+                <a href="/tags/C/" style="color: #00a596">
                     C++
                 </a>
             </span>
@@ -274,8 +274,7 @@ mjx-container[display="true"] + br {
 <h2 id="分析leveldb的架构">分析levelDB的架构</h2>
 <span id="more"></span>
 <hr>
-<h4 id="leveldb的组件">levelDB的组件</h4>
-<blockquote>
+<h3 id="leveldb的组件">levelDB的组件</h3>
 <p>levelDB由以下几个组件组成：<code>MemTable</code>，<code>Immutable MemTable</code>，<code>WAL</code>，<code>SSTable</code>，<code>Manifest</code>，<code>Current</code>，<code>Compaction</code></p>
 <img src="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-2/pic1.jpg" class="" title="_">
 <blockquote>
@@ -311,7 +310,6 @@ Table。这是比较重要的结构，虽然数据库的读写是基于<code>Mem
 <p><strong><em>Compaction</em></strong>：作用是将多个小的<code>SSTable</code>合并成一个大的<code>SSTable</code>。这样可以解决查找的效率问题。</p>
 <p>每个大的<code>SSTable</code>是键有序的，可以将其再次分成多个小的键不重叠的<code>SSTable</code>，这样每次合并时只需要合并小的<code>SSTable</code>即可，而不需要去读取一个很大的<code>SSTable</code>。</p>
 <p>另外，由于<code>level-0</code>是直接由内存写入的，其多个<code>SSTable</code>可能存在键重叠现象，但是更高层的<code>level</code>是不存在键重叠现象的。</p>
-</blockquote>
 </blockquote>
 
     </div>
