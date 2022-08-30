@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
-        <title>Categories: 其他 | PPXXXG22</title>
+        <title>Python奇技淫巧(2) | PPXXXG22</title>
         <meta name="author" content="PPXXXG22">
         <meta name="description" content="">
         <meta name="keywords" content="">
@@ -231,34 +231,21 @@ mjx-container[display="true"] + br {
 </nav>
                     </div>
                     <div id="main">
-                         
-<div class="categories-tags">
-    
-    <div class="all-s">
-        
-        
-        <span>
-            <a href="/categories/其他/" style="background: linear-gradient(120deg, #9abbf7 0%, #ffbbf4 100%)">
-                <span class="icon">
-                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                </span>
-                其他
-            </a>
+                        
+<div class="article">
+    <div>
+        <h1>Python奇技淫巧(2) </h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
+            </span>
+            2022/8/30
         </span>
         
-        
-        <span>
-            <a href="/categories/levelDB源码剖析/" style="background: #00bcd4">
-                <span class="icon">
-                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                </span>
-                levelDB源码剖析
-            </a>
-        </span>
-        
-        
-        <span>
-            <a href="/categories/python技巧/" style="background: #00bcd4">
+        <span class="category">
+            <a href="/categories/python技巧/">
                 <span class="icon">
                     <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
                 </span>
@@ -266,47 +253,83 @@ mjx-container[display="true"] + br {
             </a>
         </span>
         
-    </div>
-    <div id="archives">
         
-        <div class="timeline">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2022/8/28</div>
-                <a href="/2022/08/28/TODO/">
-                    <h3>TODO</h3>
+        <span class="tags">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/Python/" style="color: #ff7d73">
+                    Python
                 </a>
-                <div class="info">
-                    
-                    <span class="category">
-                        <a href="/categories/其他/">
-                            <span class="icon">
-                                <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                            </span>
-                            其他
-                        </a>
-                    </span>
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
-                        </span>
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/others/" style="color: #03a9f4">
-                                others
-                            </a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/PythonCookbook/" style="color: #00bcd4">
+                    PythonCookbook
+                </a>
+            </span>
+            
+        </span>
         
     </div>
+    <div class="content" v-pre>
+        <p>Python的奇技淫巧，让代码更Pythonic</p>
+<h2 id="字符串与文本----来源于cookbook第二章">字符串与文本----来源于cookbook第二章</h2>
+<span id="more"></span>
+<p><font color="#a0dda0">记录第二章中比较有意思的部分</font></p>
+<hr>
+<blockquote>
+<p>其实这一章讲的方法挺多挺杂的，但是日常使用基本就正则和python自带的字符串方法，其他的感觉用不到的样子。</p>
+<p>正则的话平时写多了自然就会了，这里就不记录了</p>
+</blockquote>
+<h3 id="字符串开头结尾文本匹配">字符串开头结尾文本匹配</h3>
+<blockquote>
+<p>使用<code>str.startswith()</code>和<code>str.endwith()</code>即可。在写文件批处理脚本的时候用得到。</p>
+</blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>files <span class="op">=</span> [<span class="st">'a.h'</span>,<span class="st">'a.c'</span>,<span class="st">'a.exe'</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>selected <span class="op">=</span> [<span class="bu">file</span> <span class="cf">for</span> <span class="bu">file</span> <span class="kw">in</span> files <span class="cf">if</span> <span class="bu">file</span>.endswith((<span class="st">".h"</span>,<span class="st">".c"</span>))]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(selected) <span class="co"># ['a.h', 'a.c']</span></span></code></pre></div>
+<h3 id="字符串去除首尾不需要的字符">字符串去除首尾不需要的字符</h3>
+<blockquote>
+<p>使用<code>str.lstrip()</code>和<code>str.rstrip()</code>即可</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> <span class="st">'-=-=hellp-=-world-=-=-='</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> s.lstrip(<span class="st">"-="</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(s) <span class="co"># 'hellp-=-world-=-=-='</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> s.rstrip(<span class="st">"-="</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(s) <span class="co"># 'hellp-=-world'</span></span></code></pre></div>
+<h3 id="字符串拼接">字符串拼接</h3>
+<blockquote>
+<p><code>+</code>：效率最低，但是简单</p>
+<p><code>join</code>：效率高，支持列表等</p>
+<p><code>print(*args,sep=",")</code>：容易被遗忘的一种方法</p>
+</blockquote>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> <span class="dv">3</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">','</span>.join(<span class="bu">str</span>(i) <span class="cf">for</span> i <span class="kw">in</span> [a,b,c])) <span class="co"># 1,2,3</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(a,b,c,sep<span class="op">=</span><span class="st">","</span>) <span class="co"># 1,2,3</span></span></code></pre></div>
+<h3 id="给字符串中变量名做插值">给字符串中变量名做插值</h3>
+<blockquote>
+<p>作者在书中提到python没法直接处理字符串插值，并实现了一些复杂的方法，<br>
+幸运的是，新版本的python已经直接支持插值了，不需手动去实现了</p>
+</blockquote>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>name <span class="op">=</span> <span class="st">'book'</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>price <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">' price is </span><span class="sc">{</span>price<span class="sc">}</span><span class="ss">"</span>) <span class="co"># book' price is 10</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span></code></pre></div>
+
+    </div>
+    
 </div>
                          
 <footer id="footer">
