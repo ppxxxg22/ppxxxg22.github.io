@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
-        <title>Categories | PPXXXG22</title>
+        <title>Python奇技淫巧(3) | PPXXXG22</title>
         <meta name="author" content="PPXXXG22">
         <meta name="description" content="">
         <meta name="keywords" content="">
@@ -231,34 +231,21 @@ mjx-container[display="true"] + br {
 </nav>
                     </div>
                     <div id="main">
-                         
-<div class="categories-tags">
-    
-    <div class="all-s">
-        
-        
-        <span>
-            <a href="/categories/其他/" style="background: #ff7d73">
-                <span class="icon">
-                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                </span>
-                其他
-            </a>
+                        
+<div class="article">
+    <div>
+        <h1>Python奇技淫巧(3) </h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
+            </span>
+            2022/8/30
         </span>
         
-        
-        <span>
-            <a href="/categories/levelDB源码剖析/" style="background: #00a596">
-                <span class="icon">
-                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                </span>
-                levelDB源码剖析
-            </a>
-        </span>
-        
-        
-        <span>
-            <a href="/categories/python技巧/" style="background: #03a9f4">
+        <span class="category">
+            <a href="/categories/python技巧/">
                 <span class="icon">
                     <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
                 </span>
@@ -266,10 +253,75 @@ mjx-container[display="true"] + br {
             </a>
         </span>
         
-    </div>
-    <div id="archives">
+        
+        <span class="tags">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/Python/" style="color: #ff7d73">
+                    Python
+                </a>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/PythonCookbook/" style="color: #03a9f4">
+                    PythonCookbook
+                </a>
+            </span>
+            
+        </span>
         
     </div>
+    <div class="content" v-pre>
+        <p>Python的奇技淫巧，让代码更Pythonic</p>
+<h2 id="处理数字时间和日期----来源于cookbook第三章">处理数字、时间和日期----来源于cookbook第三章</h2>
+<span id="more"></span>
+<p><font color="#a0a0dd">记录第三章中比较有意思的部分</font></p>
+<hr>
+<h3 id="精确的小数计算">精确的小数计算</h3>
+<blockquote>
+<p>使用<code>decimal</code>中的<code>Decimal</code>类就可以实现精确小数计算，而避免引入浮点数误差。</p>
+</blockquote>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> decimal <span class="im">import</span> Decimal</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 传统浮点数会引入误差</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> <span class="fl">4.2</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> <span class="fl">2.1</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(a <span class="op">+</span> b) <span class="co"># 6.300000000000001</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(a <span class="op">+</span> b <span class="op">==</span> <span class="fl">6.3</span>) <span class="co"># False</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 使用Decimal</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> Decimal(<span class="st">'4.2'</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> Decimal(<span class="st">'2.1'</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(a <span class="op">+</span> b) <span class="co"># 6.3</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(a <span class="op">+</span> b <span class="op">==</span> Decimal(<span class="st">'6.3'</span>)) <span class="co"># True</span></span></code></pre></div>
+<h3 id="精确的分数计算">精确的分数计算</h3>
+<blockquote>
+<p>使用<code>fractions</code>中的<code>Fraction</code>可以精确的计算分数</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fractions <span class="im">import</span> Fraction</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> Fraction(<span class="dv">5</span>,<span class="dv">4</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> Fraction(<span class="dv">7</span>,<span class="dv">16</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(a <span class="op">+</span> b) <span class="co"># 27/16</span></span></code></pre></div>
+<h3 id="numpy的matrix与array在处理矩阵上的微妙区别">numpy的matrix与array在处理矩阵上的微妙区别</h3>
+<blockquote>
+<p><code>matrix</code>是矩阵，而<code>array</code>主要是数组，两者在运算上存在一些区别</p>
+<ul>
+<li><p>首先array的<code>*</code>，<code>**</code>都是点乘，其矩阵乘法需要使用<code>np.dot()</code></p></li>
+<li><p>而matrix的<code>*</code>，<code>**</code>都是矩阵乘法，其点乘需要用到<code>np.multiply()</code></p></li>
+<li><p>matrix求逆可以直接<code>.I</code>，而array求逆需要使用<code>np.linalg.inv()</code></p></li>
+</ul>
+</blockquote>
+
+    </div>
+    
 </div>
                          
 <footer id="footer">
