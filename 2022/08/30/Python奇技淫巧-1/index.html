@@ -261,14 +261,14 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/Python/" style="color: #00a596">
+                <a href="/tags/Python/" style="color: #03a9f4">
                     Python
                 </a>
             </span>
             
             <span class="tag">
                 
-                <a href="/tags/PythonCookbook/" style="color: #ffa2c4">
+                <a href="/tags/PythonCookbook/" style="color: #00bcd4">
                     PythonCookbook
                 </a>
             </span>
@@ -352,6 +352,12 @@ mjx-container[display="true"] + br {
 
     </div>
     
+    <link rel="stylesheet" href="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.css">
+    <div id="comment">
+        <div id="gitalk-container">
+        </div>
+    </div>
+    
 </div>
                          
 <footer id="footer">
@@ -385,6 +391,26 @@ mjx-container[display="true"] + br {
 ></canvas>
 <script src="/js/background.js"></script>
         
+<script src="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.js"></script>
+<script>
+    var clientID = "30496f83a04b05db3181# Default ClientID", clientSecret = "e21b9b3c50f83272e8434200629f5a48bd035a62# Default ClientSecret";
+    
+    const gitalk = new Gitalk({
+        clientID: clientID,
+        clientSecret: clientSecret,
+        repo: "gitalk-comments# The name of repository of store comments",
+        owner: "ppxxxg22# GitHub repo owner",
+        admin: ["['ppxxxg22']"],
+        language: "zh-CN",
+        id: location.pathname,
+        distractionFreeMode: false,
+        
+        proxy: "https://ppxxxg22.herokuapp.com/# CORS proxy"
+        
+    })
+    gitalk.render("gitalk-container")
+</script>
+
 
     </body>
 </html>
