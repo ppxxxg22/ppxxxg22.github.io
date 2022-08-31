@@ -261,14 +261,14 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/C/" style="color: #ff7d73">
+                <a href="/tags/C/" style="color: #00a596">
                     C++
                 </a>
             </span>
             
             <span class="tag">
                 
-                <a href="/tags/levelDB/" style="color: #00bcd4">
+                <a href="/tags/levelDB/" style="color: #ff7d73">
                     levelDB
                 </a>
             </span>
@@ -283,13 +283,63 @@ mjx-container[display="true"] + br {
 <hr>
 <h3 id="存储方式">存储方式</h3>
 <p>当数据库获取到内存后，其需要将数据插入到内存中，并在适当的时候读取出来，如何高效地利用申请到的内存就是一个比较重要的问题。</p>
+<blockquote>
+<p>在levelDB中，数据是按照下列方法存储的：</p>
+</blockquote>
+<blockquote>
+<ul>
+<li><p>整数分为32位和64位定长整数</p></li>
+<li><p>整数还使用变长整数存储</p></li>
+<li><p>整数均为小端法存储</p></li>
+<li><p>字符串采用长度前缀编码</p></li>
+</ul>
+</blockquote>
+<h4 id="变长整数与定长整数">变长整数与定长整数</h4>
+<p>所谓定长整数就是我们平时在C语言中定义的数据类型，其长度是始终不变的。</p>
+<p>而变长整数则顾名思义，其编码的原理是只使用一个字节的低7位去存储数据，而最高位的用于做标识：当最高位为1时表示需要继续读取下一个字节。</p>
+<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic1.jpg" class="" title="_">
+<p>如上图所示，这样变长整数就可以使用1-5字节去表示int32的所有整数，表面上看，虽然表示非常大的整数的时候变长整数编码会占用更多的空间，但是由于大整数出现的频率一般是比较小的，所以就普遍而言，使用变长整数会节省更多的内存。</p>
+<h4 id="字符串">字符串</h4>
+<p>字符串使用长度前缀编码，即在把字符串的长度放在字符串的前面，然后组合起来编码。</p>
+<p>而同时，字符串长度使用变长整数进行编码，所以一个字符串的存储格式是<code>32位变长整数编码字符串长度 + 字符串本身</code></p>
+<p>使用长度前缀编码的方式，字符串能够编码任意字符(比如C语言不能在字符串中包含'\0')，同时，字符串的长度可以预先知道，所以有利于读写操作。另外，对于大部分字符串的长度都比较短的时候，并不会造成大量内存损失。</p>
+<h3 id="源码解析部分">源码解析部分</h3>
+<blockquote>
+<p>源码位置： <code>utils/coding.cc</code>
+<code>utils/coding.h</code></p>
+</blockquote>
+<p>首先，我们先来看一下编码解码和插入数据的头文件，这部分内容很简单，就是处理编码格式的一些方法。</p>
+<p>其中要注意用到了一个类<code>Slice</code>，这个类是对字符串的封装，比<code>std::string</code>封装更加低级，所以效率会更高，后面的文章会细🔒它。</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span>                 <span class="co">// 插入定长32位整数</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span>                 <span class="co">//插入定长64位整数</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span>                <span class="co">//插入变长32位整数</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span>                <span class="co">//插入变长64位整数</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutLengthPrefixedSlice<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="at">const</span> Slice <span class="op">&amp;</span>value<span class="op">);</span> <span class="co">//插入字符串</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint32<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">);</span>          <span class="co">// 获取变长32位整数</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint64<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>value<span class="op">);</span>          <span class="co">// 获取变长64位整数</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetLengthPrefixedSlice<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> Slice <span class="op">*</span>result<span class="op">);</span> <span class="co">// 获取字符串</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// 用于解码32/64位变长整数的函数，其中p是指向变长整数，limit是变长整数最大长度</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">// 而v存放的是解码后的值，如果不能解码则返回null</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>v<span class="op">);</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint64Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>v<span class="op">);</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">// 这是上面那俩函数的内部回调函数，是实际处理变长整数的东西</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32PtrFallback<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">);</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> VarintLength<span class="op">(</span><span class="dt">uint64_t</span> v<span class="op">);</span> <span class="co">// 返回变长整数(32/64)的'长度'</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span> <span class="co">// 编码变长32位整数</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span> <span class="co">// 编码变长64位整数</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span></code></pre></div>
+<h2 id="总结部分">总结部分</h2>
+<blockquote>
+<h3 id="编程小技巧">编程小技巧</h3>
+</blockquote>
 
-    </div>
-    
-    <link rel="stylesheet" href="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.css">
-    <div id="comment">
-        <div id="gitalk-container">
-        </div>
     </div>
     
 </div>
@@ -325,26 +375,6 @@ mjx-container[display="true"] + br {
 ></canvas>
 <script src="/js/background.js"></script>
         
-<script src="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.js"></script>
-<script>
-    var clientID = "30496f83a04b05db3181# Default ClientID", clientSecret = "e21b9b3c50f83272e8434200629f5a48bd035a62# Default ClientSecret";
-    
-    const gitalk = new Gitalk({
-        clientID: clientID,
-        clientSecret: clientSecret,
-        repo: "gitalk-comments# The name of repository of store comments",
-        owner: "ppxxxg22# GitHub repo owner",
-        admin: ["['ppxxxg22']"],
-        language: "zh-CN",
-        id: location.pathname,
-        distractionFreeMode: false,
-        
-        proxy: "https://ppxxxg22.herokuapp.com/# CORS proxy"
-        
-    })
-    gitalk.render("gitalk-container")
-</script>
-
 
     </body>
 </html>

@@ -261,14 +261,14 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/C/" style="color: #ffa2c4">
+                <a href="/tags/C/" style="color: #00bcd4">
                     C++
                 </a>
             </span>
             
             <span class="tag">
                 
-                <a href="/tags/levelDB/" style="color: #00a596">
+                <a href="/tags/levelDB/" style="color: #03a9f4">
                     levelDB
                 </a>
             </span>
@@ -281,14 +281,14 @@ mjx-container[display="true"] + br {
 <h2 id="leveldb的内存管理策略">levelDB的内存管理策略</h2>
 <span id="more"></span>
 <hr>
-<h4 id="leveldb的内存管理类arena">levelDB的内存管理类Arena</h4>
+<h3 id="leveldb的内存管理类arena">levelDB的内存管理类Arena</h3>
 <blockquote>
 <p>源代码位置：utils/arena.cc utils/arena.h</p>
 </blockquote>
 <p>对于数据库而言，内存管理策略是十分重要的，因为其正是需要为存入的数据分配内存，倘若直接使用new/delete这样每次插入数据都单独去分配内存，效率是很低的，同时由于每条插入的数据的大小并不一致，导致会出现许多的内存碎片。</p>
 <p>对于levelDB这样一个billion级别的数据库，显然其不能采取这样的策略。</p>
 <p>在levelDB中，由于只有<code>MemTable</code>位于内存且需要频繁的插入，所以它最需要内存管理，levelDB中用于内存管理的类为<code>Arena</code>，每个<code>MemTable</code>都绑定一个<code>Arena</code>。而其余的部分则直接使用new/delete，因为这些部分要么是不频繁，要么是块本身就很大。</p>
-<h5 id="arena类">Arena类</h5>
+<h4 id="arena类">Arena类</h4>
 <blockquote>
 <p><strong>基本思想</strong>：先分配出一大块内存，然后当需要用到内存时，就在这一大块内存中移动指针，这样就能解决小块内存频繁调用new和内存碎片的问题，不过缺点是有一部分内存被浪费掉。</p>
 </blockquote>
@@ -516,17 +516,11 @@ block_bytes)</td>
 </tbody>
 </table>
 <blockquote>
-<h4 id="编程小技巧">编程小技巧</h4>
+<h3 id="编程小技巧">编程小技巧</h3>
 <p><code>a &amp; (a - 1)</code>：去掉a在二进制表示中最右边的1</p>
 <p><code>A &amp; (B - 1) = A % B</code>：此公式仅在B是2的幂次方时成立</p>
 </blockquote>
 
-    </div>
-    
-    <link rel="stylesheet" href="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.css">
-    <div id="comment">
-        <div id="gitalk-container">
-        </div>
     </div>
     
 </div>
@@ -562,26 +556,6 @@ block_bytes)</td>
 ></canvas>
 <script src="/js/background.js"></script>
         
-<script src="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.js"></script>
-<script>
-    var clientID = "30496f83a04b05db3181# Default ClientID", clientSecret = "e21b9b3c50f83272e8434200629f5a48bd035a62# Default ClientSecret";
-    
-    const gitalk = new Gitalk({
-        clientID: clientID,
-        clientSecret: clientSecret,
-        repo: "gitalk-comments# The name of repository of store comments",
-        owner: "ppxxxg22# GitHub repo owner",
-        admin: ["['ppxxxg22']"],
-        language: "zh-CN",
-        id: location.pathname,
-        distractionFreeMode: false,
-        
-        proxy: "https://ppxxxg22.herokuapp.com/# CORS proxy"
-        
-    })
-    gitalk.render("gitalk-container")
-</script>
-
 
     </body>
 </html>

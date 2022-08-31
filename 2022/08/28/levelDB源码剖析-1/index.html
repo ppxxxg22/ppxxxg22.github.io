@@ -268,7 +268,7 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/levelDB/" style="color: #03a9f4">
+                <a href="/tags/levelDB/" style="color: #00bcd4">
                     levelDB
                 </a>
             </span>
@@ -289,7 +289,7 @@ mjx-container[display="true"] + br {
 <p>levelDB
 是一个持久化<code>kv</code>存储数据库，<code>kv</code>均为任意的字节数组。</p>
 <p>其随机写、顺序写/读的性能很高，但是随机读的性能一般。</p>
-<h5 id="lsm-tree">LSM Tree</h5>
+<h4 id="lsm-tree">LSM Tree</h4>
 <p>其实现原理为<code>LSM Tree</code>，简单来说就是讲磁盘的随机写转换成顺序写.</p>
 <p>由于磁盘的寻址非常耗时，因此顺序写的速度远远超过随机写.</p>
 <p><code>LSM Tree</code>由两部分组成分别是<code>Log structed</code>和<code>Merge Tree</code>.</p>
@@ -308,7 +308,7 @@ mjx-container[display="true"] + br {
 <p>当然，levelDB具体的实现还是存在一些细节的。</p>
 <hr>
 <h3 id="leveldb的项目结构">levelDB的项目结构</h3>
-<h5 id="一些头文件及其作用">一些头文件及其作用</h5>
+<h4 id="一些头文件及其作用">一些头文件及其作用</h4>
 <p><code>include</code>: 函数库的头文件</p>
 <p><code>port</code>: 可移植性相关的功能</p>
 <p><code>util</code>: 项目用到的一些功能函数</p>
@@ -317,7 +317,7 @@ mjx-container[display="true"] + br {
 <p><code>benchmarks</code>：性能测试相关代码</p>
 <p><code>db</code>:
 数据库实现，版本管理，Compaction，WAL和MemTable实现</p>
-<h5 id="接口文件的对应功能">接口文件的对应功能</h5>
+<h4 id="接口文件的对应功能">接口文件的对应功能</h4>
 <p><code>cache.h</code>:
 缓存接口，提供了默认的LRU缓存，也可以自己实现缓存</p>
 <p><code>comparator.h</code>:
@@ -336,12 +336,6 @@ mjx-container[display="true"] + br {
 <p><code>status.h</code>: 定义数据库操作的返回状态</p>
 <p><code>table.h</code>: SSTable相关的接口</p>
 
-    </div>
-    
-    <link rel="stylesheet" href="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.css">
-    <div id="comment">
-        <div id="gitalk-container">
-        </div>
     </div>
     
 </div>
@@ -377,26 +371,6 @@ mjx-container[display="true"] + br {
 ></canvas>
 <script src="/js/background.js"></script>
         
-<script src="https://cdn.staticfile.org/gitalk/1.7.2/gitalk.min.js"></script>
-<script>
-    var clientID = "30496f83a04b05db3181# Default ClientID", clientSecret = "e21b9b3c50f83272e8434200629f5a48bd035a62# Default ClientSecret";
-    
-    const gitalk = new Gitalk({
-        clientID: clientID,
-        clientSecret: clientSecret,
-        repo: "gitalk-comments# The name of repository of store comments",
-        owner: "ppxxxg22# GitHub repo owner",
-        admin: ["['ppxxxg22']"],
-        language: "zh-CN",
-        id: location.pathname,
-        distractionFreeMode: false,
-        
-        proxy: "https://ppxxxg22.herokuapp.com/# CORS proxy"
-        
-    })
-    gitalk.render("gitalk-container")
-</script>
-
 
     </body>
 </html>
