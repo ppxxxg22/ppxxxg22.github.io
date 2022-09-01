@@ -16,25 +16,25 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="基本数据结构与算法----来源于cookbook第一章">
+    <meta name="description" content="Webbench源码剖析">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Python奇技淫巧(1)">
-<meta property="og:url" content="http://example.com/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-1/index.html">
+<meta property="og:title" content="Webbench源码剖析">
+<meta property="og:url" content="http://example.com/2022/09/01/Webbench%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="基本数据结构与算法----来源于cookbook第一章">
+<meta property="og:description" content="Webbench源码剖析">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/pycook1.jpg">
-<meta property="article:published_time" content="2022-08-30T12:05:23.000Z">
-<meta property="article:modified_time" content="2022-09-01T12:12:53.638Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/webbench.jpg">
+<meta property="article:published_time" content="2022-09-01T12:02:36.000Z">
+<meta property="article:modified_time" content="2022-09-01T13:05:15.953Z">
 <meta property="article:author" content="PPXXXG22">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="PythonCookbook">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="小型C语言项目源码剖析">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/pycook1.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/webbench.jpg">
   
   
   
-  <title>Python奇技淫巧(1) - PPXXXG22</title>
+  <title>Webbench源码剖析 - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -305,13 +305,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/pycook1.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/webbench.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Python的奇技淫巧，让代码更Pythonic"></span>
+            <span id="subtitle" data-typed-text="剖析Webbench源码，从经典中汲取营养。"></span>
           
         </div>
 
@@ -322,8 +322,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-08-30 20:05" pubdate>
-          August 30, 2022 pm
+        <time datetime="2022-09-01 20:02" pubdate>
+          September 1, 2022 pm
         </time>
       </span>
     
@@ -334,7 +334,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.2k words
+          241 words
         
       </span>
     
@@ -345,7 +345,7 @@ mjx-container[display="true"] + br {
         
         
         
-          11 mins
+          3 mins
         
       </span>
     
@@ -383,35 +383,19 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Python的奇技淫巧，让代码更Pythonic</h1>
+            <h1 style="display: none">剖析Webbench源码，从经典中汲取营养。</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="基本数据结构与算法----来源于cookbook第一章">基本数据结构与算法----来源于cookbook第一章</h2>
+                <h2 id="webbench源码剖析">Webbench源码剖析</h2>
 <span id="more"></span>
-<p><font color="#dda0a0">记录第一章中比较有意思的部分</font></p>
-<hr>
-<h3 id="元素分解">元素分解</h3>
+<p><a target="_blank" rel="noopener" href="https://github.com/EZLippi/WebBench">项目地址</a></p>
 <div class="note note-primary">
-            <p>通过<code>*表达式</code>来解包裹实现分解</p>
+            <h3 id="webbench介绍">Webbench介绍</h3><p>Webbench是一个在linux下使用的非常简单的网站压测工具。它使用fork()模拟多个客户端同时访问我们设定的URL，测试网站在压力下工作的性能，最多可以模拟3万个并发连接去测试网站的负载能力。</p><p>而其源码也相当的短，只有500行，读起来非常容易。</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">l = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>,<span class="hljs-number">4</span>,(<span class="hljs-number">5</span>,<span class="hljs-number">6</span>,<span class="hljs-number">7</span>)]<br><br>first, *_, (*__, last) = l<br><br><span class="hljs-built_in">print</span>(first,last) <span class="hljs-comment"># 1 7</span><br><br></code></pre></td></tr></table></figure>
-<h3 id="将字典的键映射到多个值上">将字典的键映射到多个值上</h3>
-<div class="note note-primary">
-            <ul><li><p>通过使用<code>collections</code>中的<code>defaultdict</code>来实现一键多值字典</p></li><li><p>通过<code>dict</code>类的<code>setdefault</code>方法来实现</p></li></ul>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 方法一</span><br><br><span class="hljs-keyword">from</span> collections <span class="hljs-keyword">import</span> defaultdict<br><br>d = defaultdict(<span class="hljs-built_in">list</span>) <span class="hljs-comment"># 或defaultdict(set)</span><br>d[<span class="hljs-string">'a'</span>].append(<span class="hljs-number">1</span>)<br>d[<span class="hljs-string">'a'</span>].append(<span class="hljs-number">2</span>)<br>d[<span class="hljs-string">'b'</span>].append(<span class="hljs-number">3</span>)<br><span class="hljs-built_in">print</span>(d) <span class="hljs-comment"># {'a': [1, 2], 'b': [3]}</span><br><br><br><span class="hljs-comment"># 方法二</span><br><br>d = {}<br>d.setdefault(<span class="hljs-string">'a'</span>,[]).append(<span class="hljs-number">1</span>)<br>d.setdefault(<span class="hljs-string">'a'</span>,[]).append(<span class="hljs-number">2</span>)<br>d.setdefault(<span class="hljs-string">'b'</span>,[]).append(<span class="hljs-number">1</span>)<br><span class="hljs-built_in">print</span>(d) <span class="hljs-comment"># {'a': [1, 2], 'b': [3]}</span><br><br></code></pre></td></tr></table></figure>
-<h3 id="两个字典的集合运算">两个字典的集合运算</h3>
-<div class="note note-primary">
-            <p>字典支持集合运算符，可以对其求交集、并集等</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>a = {<br>    <span class="hljs-string">'x'</span> : <span class="hljs-number">1</span>,<br>    <span class="hljs-string">'y'</span> : <span class="hljs-number">2</span>,<br>    <span class="hljs-string">'z'</span> : <span class="hljs-number">3</span><br>}<br><br>b={<br>    <span class="hljs-string">'x'</span> : <span class="hljs-number">10</span>,<br>    <span class="hljs-string">'w'</span> : <span class="hljs-number">11</span>,<br>    <span class="hljs-string">'z'</span> : <span class="hljs-number">3</span><br>}<br><br><span class="hljs-built_in">print</span>(a.keys() &amp; b.keys()) <span class="hljs-comment"># {'z', 'x'}</span><br><span class="hljs-built_in">print</span>(a.keys() - b.keys()) <span class="hljs-comment"># {'y'}</span><br><span class="hljs-built_in">print</span>(a.items() &amp; b.items()) <span class="hljs-comment"># {('z', 3)}</span><br><br></code></pre></td></tr></table></figure>
-<h3 id="字典推导式">字典推导式</h3>
-<div class="note note-primary">
-            <p>感觉字典推导式不如生成器推导式和列表推导式用的多</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>prices = {<br>    <span class="hljs-string">'a'</span> : <span class="hljs-number">45</span>,<br>    <span class="hljs-string">'b'</span> : <span class="hljs-number">32</span>,<br>    <span class="hljs-string">'c'</span> : <span class="hljs-number">10</span><br>}<br><br>p1 = {key:value <span class="hljs-keyword">for</span> key,value <span class="hljs-keyword">in</span> prices.items() <span class="hljs-keyword">if</span> value &gt;<span class="hljs-number">20</span>}<br><span class="hljs-built_in">print</span>(p1) <span class="hljs-comment"># {'a': 45, 'b': 32}</span><br><br></code></pre></td></tr></table></figure>
+<p>不过虽然代码量很小，但是最好熟悉unix网络编程，以及linux下C语言多线程的实现(fork()函数)，否则可能看起来会比较吃力。</p>
+<p>我们将代码拉下来后，可以发现，其只包含两个文件，</p>
 
                 
               </div>
@@ -430,7 +414,7 @@ mjx-container[display="true"] + br {
     
       <span class="category-chain">
         
-  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
+  <a href="/categories/%E5%B0%8F%E5%9E%8BC%E8%AF%AD%E8%A8%80%E9%A1%B9%E7%9B%AE%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">小型C语言项目源码剖析</a>
   
   
 
@@ -445,9 +429,9 @@ mjx-container[display="true"] + br {
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Python/">#Python</a>
+        <a href="/tags/C/">#C</a>
       
-        <a href="/tags/PythonCookbook/">#PythonCookbook</a>
+        <a href="/tags/%E5%B0%8F%E5%9E%8BC%E8%AF%AD%E8%A8%80%E9%A1%B9%E7%9B%AE%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">#小型C语言项目源码剖析</a>
       
     </div>
   
@@ -461,18 +445,12 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-2/" title="Python奇技淫巧(2)">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Python奇技淫巧(2)</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/" title="levelDB源码剖析(4)">
-                        <span class="hidden-mobile">levelDB源码剖析(4)</span>
+                      <a href="/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-4/" title="Python奇技淫巧(4)">
+                        <span class="hidden-mobile">Python奇技淫巧(4)</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
