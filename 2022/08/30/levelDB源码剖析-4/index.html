@@ -1,22 +1,91 @@
 
+
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
-        <title>levelDB源码剖析(4) | PPXXXG22</title>
-        <meta name="author" content="PPXXXG22">
-        <meta name="description" content="">
-        <meta name="keywords" content="">
-        <link rel="icon" href="head_img.png">
-        <script src="https://cdn.staticfile.org/instant.page/5.1.0/instantpage.min.js" type="module"></script>
-        <script src="https://cdn.staticfile.org/font-awesome/6.1.1/js/all.min.js"></script>
-        
-        <link rel="stylesheet" href="/css/fonts.min.css">
-        <link rel="stylesheet" href="/css/particlex.css">
-        
-        <script src="https://cdn.staticfile.org/vue/3.2.33/vue.global.prod.min.js"></script>
-    <meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="levelDB源码剖析，剖析源码，掌握技术。 levelDB的编码格式">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(4)">
+<meta property="og:url" content="http://example.com/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="levelDB源码剖析，剖析源码，掌握技术。 levelDB的编码格式">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs%5Cpost_index_img%5Cleveldb4.jpg">
+<meta property="article:published_time" content="2022-08-30T07:02:15.000Z">
+<meta property="article:modified_time" content="2022-09-01T08:02:11.225Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs%5Cpost_index_img%5Cleveldb4.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(4) - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
   direction: ltr;
 }
 
@@ -129,601 +198,241 @@ mjx-container[display="true"] + br {
   display: none;
 }
 </style></head>
-    <body>
-        <div id="loading" style="height:100vh;width:100vw;position:fixed;display:flex;z-index:200;justify-content:space-between;background:#fff;transition:opacity 0.3s ease-out"><div style="position:fixed;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center"><div id="loadcontent" style="width:50vmin;height:50vmin;padding:50px;border-radius:50%;display:flex;justify-content:center;align-items:center;border:solid 10px #a3ddfb;text-align:center"><div><h2>LOADING...</h2><p style="word-break:keep-all">加载过慢请开启缓存(浏览器默认开启)</p><div><img alt="loading" src="/loading.gif"></div></div></div></div></div>
-        <div id="layout">
-            <i data-fa-symbol="calendar-solid" class="fa-solid fa-calendar fa-fw"></i>
-            <i data-fa-symbol="bookmark-solid" class="fa-solid fa-bookmark fa-fw"></i>
-            <i data-fa-symbol="tags-solid" class="fa-solid fa-tags fa-fw"></i>
-            <transition name="into">
-                <div v-show="show_page" style="display: -not-none">
-                    <div id="menu_show">
-                         
-<nav id="menu">
-    <div class="desktop-menu">
-        <a href="/">
-            <span class="title">PPXXXG22</span>
-        </a>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
         
-        <a href="/">
-            <i class="fa-solid fa-house fa-fw"></i>
-            <span>&ensp;home</span>
-        </a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
         
-        <a href="/about">
-            <i class="fa-solid fa-id-card fa-fw"></i>
-            <span>&ensp;about</span>
-        </a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
         
-        <a href="/archives">
-            <i class="fa-solid fa-box-archive fa-fw"></i>
-            <span>&ensp;archives</span>
-        </a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
         
-        <a href="/categories">
-            <i class="fa-solid fa-bookmark fa-fw"></i>
-            <span>&ensp;categories</span>
-        </a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
         
-        <a href="/tags">
-            <i class="fa-solid fa-tags fa-fw"></i>
-            <span>&ensp;tags</span>
-        </a>
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
         
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
     </div>
-    <div :class="'phone-menu ' + menu_show" id="phone-menu">
-        <div class="curtain" @click="menu_show = !menu_show" v-show="menu_show"></div>
-        <div :class="'title'" @click="menu_show = !menu_show">
-            <i class="fa-solid fa-bars fa-fw"></i>
-            <span>&emsp;PPXXXG22</span>
-        </div>
-        <transition name="slide">
-        <div class="items" v-show="menu_show">
-            
-            <a href="/">
-                <div class="item">
-                    <div style="min-width: 20px; max-width: 50px; width: 10%">
-                        <i class="fa-solid fa-house fa-fw"></i>
-                    </div>
-                    <div style="min-width: 100px; max-width: 150%; width: 20%">home</div>
-                </div>
-            </a>
-            
-            <a href="/about">
-                <div class="item">
-                    <div style="min-width: 20px; max-width: 50px; width: 10%">
-                        <i class="fa-solid fa-id-card fa-fw"></i>
-                    </div>
-                    <div style="min-width: 100px; max-width: 150%; width: 20%">about</div>
-                </div>
-            </a>
-            
-            <a href="/archives">
-                <div class="item">
-                    <div style="min-width: 20px; max-width: 50px; width: 10%">
-                        <i class="fa-solid fa-box-archive fa-fw"></i>
-                    </div>
-                    <div style="min-width: 100px; max-width: 150%; width: 20%">archives</div>
-                </div>
-            </a>
-            
-            <a href="/categories">
-                <div class="item">
-                    <div style="min-width: 20px; max-width: 50px; width: 10%">
-                        <i class="fa-solid fa-bookmark fa-fw"></i>
-                    </div>
-                    <div style="min-width: 100px; max-width: 150%; width: 20%">categories</div>
-                </div>
-            </a>
-            
-            <a href="/tags">
-                <div class="item">
-                    <div style="min-width: 20px; max-width: 50px; width: 10%">
-                        <i class="fa-solid fa-tags fa-fw"></i>
-                    </div>
-                    <div style="min-width: 100px; max-width: 150%; width: 20%">tags</div>
-                </div>
-            </a>
-            
-        </div>
-        </transition>
-    </div>
+  </div>
 </nav>
-                    </div>
-                    <div id="main">
-                        
-<div class="article">
-    <div>
-        <h1>levelDB源码剖析(4) </h1>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs%5Cpost_index_img%5Cleveldb4.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析(4)"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-08-30 15:02" pubdate>
+          August 30, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          12k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          105 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
     </div>
-    <div class="info">
-        <span class="date">
-            <span class="icon">
-                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
-            </span>
-            2022/8/30
-        </span>
-        
-        <span class="category">
-            <a href="/categories/levelDB源码剖析/">
-                <span class="icon">
-                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
-                </span>
-                levelDB源码剖析
-            </a>
-        </span>
-        
-        
-        <span class="tags">
-            <span class="icon">
-                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
-            </span>
-            
-            <span class="tag">
-                
-                <a href="/tags/C/" style="color: #03a9f4">
-                    C++
-                </a>
-            </span>
-            
-            <span class="tag">
-                
-                <a href="/tags/levelDB/" style="color: #00a596">
-                    levelDB
-                </a>
-            </span>
-            
-        </span>
-        
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
     </div>
-    <div class="content" v-pre>
-        <p>levelDB源码剖析，剖析源码，掌握技术。</p>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析(4)</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>levelDB源码剖析，剖析源码，掌握技术。</p>
 <h2 id="leveldb的编码格式">levelDB的编码格式</h2>
 <span id="more"></span>
 <hr>
 <h3 id="存储方式">存储方式</h3>
 <p>当数据库获取到内存后，其需要将数据插入到内存中，并在适当的时候读取出来，如何高效地利用申请到的内存就是一个比较重要的问题。</p>
-<blockquote>
-<p>在levelDB中，数据是按照下列方法存储的：</p>
-</blockquote>
-<blockquote>
-<ul>
-<li><p>整数分为32位和64位定长整数</p></li>
-<li><p>整数还使用变长整数存储</p></li>
-<li><p>整数均为小端法存储</p></li>
-<li><p>字符串采用长度前缀编码</p></li>
-</ul>
-</blockquote>
+<div class="note note-info">
+            <p>在levelDB中，数据是按照下列方法存储的：</p><ul><li><p>整数分为32位和64位定长整数</p></li><li><p>整数还使用变长整数存储</p></li><li><p>整数均为小端法存储</p></li><li><p>字符串采用长度前缀编码</p></li></ul>
+          </div>
 <h4 id="变长整数与定长整数">变长整数与定长整数</h4>
 <p>所谓定长整数就是我们平时在C语言中定义的数据类型，其长度是始终不变的。</p>
 <p>而变长整数则顾名思义，其编码的原理是只使用一个字节的低7位去存储数据，而最高位的用于做标识：当最高位为1时表示需要继续读取下一个字节。</p>
-<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic1.jpg" class="" title="_">
+<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic1.jpg" srcset="/img/loading.gif" lazyload class="" title="_">
 <p>如上图所示，这样变长整数就可以使用1-5字节去表示int32的所有整数，表面上看，虽然表示非常大的整数的时候变长整数编码会占用更多的空间，但是由于大整数出现的频率一般是比较小的，所以就普遍而言，使用变长整数会节省更多的内存。</p>
 <h4 id="字符串">字符串</h4>
 <p>字符串使用长度前缀编码，即在把字符串的长度放在字符串的前面，然后组合起来编码。</p>
 <p>而同时，字符串长度使用变长整数进行编码，所以一个字符串的存储格式是<code>32位变长整数编码字符串长度 + 字符串本身</code></p>
 <p>使用长度前缀编码的方式，字符串能够编码任意字符(比如C语言不能在字符串中包含'\0')，同时，字符串的长度可以预先知道，所以有利于读写操作。另外，对于大部分字符串的长度都比较短的时候，并不会造成大量内存损失。</p>
 <h3 id="源码解析部分">源码解析部分</h3>
-<blockquote>
-<p>源码位置： <code>utils/coding.cc</code>
-<code>utils/coding.h</code></p>
-</blockquote>
+<div class="note note-primary">
+            <p>源码位置： <code>utils/coding.cc</code><code>utils/coding.h</code></p>
+          </div>
+<h4 id="头文件">头文件</h4>
 <p>首先，我们先来看一下编码解码和插入数据的头文件，这部分内容很简单，就是处理编码格式的一些方法。</p>
 <p>其中要注意用到了一个类<code>Slice</code>，这个类是对字符串的封装，比<code>std::string</code>封装更加低级，所以效率会更高，后面的文章会细🔒它。</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span>                 <span class="co">// 插入定长32位整数</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span>                 <span class="co">//插入定长64位整数</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span>                <span class="co">//插入变长32位整数</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span>                <span class="co">//插入变长64位整数</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutLengthPrefixedSlice<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="at">const</span> Slice <span class="op">&amp;</span>value<span class="op">);</span> <span class="co">//插入字符串</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint32<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">);</span>          <span class="co">// 获取变长32位整数</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint64<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>value<span class="op">);</span>          <span class="co">// 获取变长64位整数</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetLengthPrefixedSlice<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> Slice <span class="op">*</span>result<span class="op">);</span> <span class="co">// 获取字符串</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">// 用于解码32/64位变长整数的函数，其中p是指向变长整数，limit是变长整数最大长度</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">// 而v存放的是解码后的值，如果不能解码则返回null</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>v<span class="op">);</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint64Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>v<span class="op">);</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">// 这是上面GetVarint32Ptr函数的内部回调函数，是实际处理变长整数的东西</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32PtrFallback<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">);</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> VarintLength<span class="op">(</span><span class="dt">uint64_t</span> v<span class="op">);</span> <span class="co">// 返回变长整数(32/64)的'长度'</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span> <span class="co">// 编码变长32位整数</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span> <span class="co">// 编码变长64位整数</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span> <span class="co">// 编码定长32位整数</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span> <span class="co">// 编码定长64位整数</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint32_t</span> DecodeFixed32<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">);</span>       <span class="co">// 解码32位定长整数</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint64_t</span> DecodeFixed64<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">);</span>       <span class="co">// 解码64位定长整数</span></span></code></pre></div>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutFixed32</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint32_t</span> value)</span></span>;                 <span class="hljs-comment">// 插入定长32位整数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutFixed64</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint64_t</span> value)</span></span>;                 <span class="hljs-comment">//插入定长64位整数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutVarint32</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint32_t</span> value)</span></span>;                <span class="hljs-comment">//插入变长32位整数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutVarint64</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint64_t</span> value)</span></span>;                <span class="hljs-comment">//插入变长64位整数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutLengthPrefixedSlice</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">const</span> Slice &amp;value)</span></span>; <span class="hljs-comment">//插入字符串</span><br><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetVarint32</span><span class="hljs-params">(Slice *input, <span class="hljs-type">uint32_t</span> *value)</span></span>;          <span class="hljs-comment">// 获取变长32位整数</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetVarint64</span><span class="hljs-params">(Slice *input, <span class="hljs-type">uint64_t</span> *value)</span></span>;          <span class="hljs-comment">// 获取变长64位整数</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetLengthPrefixedSlice</span><span class="hljs-params">(Slice *input, Slice *result)</span></span>; <span class="hljs-comment">// 获取字符串</span><br><br><span class="hljs-comment">// 用于解码32/64位变长整数的函数，其中p是指向变长整数，limit是变长整数最大长度</span><br><span class="hljs-comment">// 而v存放的是解码后的值，如果不能解码则返回null</span><br><span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">GetVarint32Ptr</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit, <span class="hljs-type">uint32_t</span> *v)</span></span>;<br><span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">GetVarint64Ptr</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit, <span class="hljs-type">uint64_t</span> *v)</span></span>;<br><br><span class="hljs-comment">// 这是上面GetVarint32Ptr函数的内部回调函数，是实际处理变长整数的东西</span><br><span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">GetVarint32PtrFallback</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit,</span></span><br><span class="hljs-params"><span class="hljs-function">                                   <span class="hljs-type">uint32_t</span> *value)</span></span>;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">VarintLength</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> v)</span></span>; <span class="hljs-comment">// 返回变长整数(32/64)的'长度'</span><br><br><span class="hljs-function"><span class="hljs-type">char</span> *<span class="hljs-title">EncodeVarint32</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint32_t</span> value)</span></span>; <span class="hljs-comment">// 编码变长32位整数</span><br><span class="hljs-function"><span class="hljs-type">char</span> *<span class="hljs-title">EncodeVarint64</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint64_t</span> value)</span></span>; <span class="hljs-comment">// 编码变长64位整数</span><br><br><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">void</span> <span class="hljs-title">EncodeFixed32</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint32_t</span> value)</span></span>; <span class="hljs-comment">// 编码定长32位整数</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">void</span> <span class="hljs-title">EncodeFixed64</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint64_t</span> value)</span></span>; <span class="hljs-comment">// 编码定长64位整数</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">uint32_t</span> <span class="hljs-title">DecodeFixed32</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr)</span></span>;       <span class="hljs-comment">// 解码32位定长整数</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">uint64_t</span> <span class="hljs-title">DecodeFixed64</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr)</span></span>;       <span class="hljs-comment">// 解码64位定长整数</span><br><br></code></pre></td></tr></table></figure>
 <p>头文件只是给出了函数接口，下面我们就来进一步去分析各个函数。</p>
+<h4 id="实现文件">实现文件</h4>
 <p>为了方便分析，我们将其分成：编码解码定长整数、编码解码变长整数、Put和Get方法。</p>
 <p>这部分代码全部围绕编码解码来实现的，其中定长的编解码很简单，就不在此赘述了。关于变长整数的编解码，其关于编码和解码的相关函数都预留了类似迭代器一样的超尾元素(指针)，这种形式的接口可以很方便的确定所处理数据的区间(变长整数的Put和Get相关函数都使用到了预留的超尾元素)。</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// 内联函数本来是在头文件中的，但是此处将其当成一个函数来进行分析</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">/*=============编码解码定长整数=============*/</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码定长32位整数，实现思路就是类似结构体那样去分割uint32即可</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// 但注意保证让dst有足够的空间去存储，否则会溢出或段错误</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">)</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// reinterpret_cast允许指针(引用)之间转换</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 整型与指针类型间的转换以及指针与足够大的整型之间的转换</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value<span class="op">);</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">8</span><span class="op">);</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">16</span><span class="op">);</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">3</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">24</span><span class="op">);</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码定长64位整数，思路与编码定长32位整数一致</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">)</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value<span class="op">);</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">8</span><span class="op">);</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">16</span><span class="op">);</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">3</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">24</span><span class="op">);</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">4</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">32</span><span class="op">);</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">5</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">40</span><span class="op">);</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">6</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">48</span><span class="op">);</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">7</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">56</span><span class="op">);</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码32位定长整数并返回，这同样不做边界检查</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint32_t</span> DecodeFixed32<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">)</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 注意是小端存储结构</span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">|</span></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">8</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">16</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">3</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">24</span><span class="op">);</span></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码64位定长整数并返回，与上类似</span></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint64_t</span> DecodeFixed64<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">)</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">|</span></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">8</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">16</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">3</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">24</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">4</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">32</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">5</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">40</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">6</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">48</span><span class="op">)</span> <span class="op">|</span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">7</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">56</span><span class="op">);</span></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="co">/*=============编码解码变长整数=============*/</span></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码32位变长整数</span></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> v<span class="op">)</span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这一部分的编码就是完全按照定义来的，用了5个if</span></span>
-<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 分别对应了1-5个字节范围内的长度</span></span>
-<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span>ptr <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
-<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="at">const</span> <span class="dt">int</span> B <span class="op">=</span> <span class="dv">128</span><span class="op">;</span></span>
-<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* 仿照EncodeVarint64的循环写法来重写这一部分</span></span>
-<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a><span class="co">    while(v&gt;=B)</span></span>
-<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="co">    {</span></span>
-<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a><span class="co">        *(ptr++) = v|B;</span></span>
-<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="co">        v &gt;&gt;= 7;</span></span>
-<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a><span class="co">    }</span></span>
-<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="co">    *(ptr++) = static_cast&lt;uint8_t&gt;(v);</span></span>
-<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a><span class="co">    return reinterpret_cast&lt;char *&gt;(ptr);</span></span>
-<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="co">    */</span></span>
-<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">7</span><span class="op">))</span></span>
-<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v<span class="op">;</span></span>
-<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">14</span><span class="op">))</span></span>
-<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">;</span></span>
-<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">21</span><span class="op">))</span></span>
-<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">14</span><span class="op">;</span></span>
-<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">28</span><span class="op">))</span></span>
-<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">14</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">21</span><span class="op">;</span></span>
-<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">14</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">21</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">28</span><span class="op">;</span></span>
-<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">char</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
-<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码64位变长整数，此处没有使用循环，同样的，上面32位的也可以这样写</span></span>
-<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> v<span class="op">)</span></span>
-<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 将函数内的常数设置为局部静态变量，减少每次调用函数时的分配与开销</span></span>
-<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="at">const</span> <span class="dt">int</span> B <span class="op">=</span> <span class="dv">128</span><span class="op">;</span></span>
-<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span>ptr <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
-<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>    <span class="co">// B被设置成1&lt;&lt;7，当v&gt;=b时表示7位存不下</span></span>
-<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>v <span class="op">&gt;=</span> B<span class="op">)</span></span>
-<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
-<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>        v <span class="op">&gt;&gt;=</span> <span class="dv">7</span><span class="op">;</span></span>
-<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>    <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>v<span class="op">);</span></span>
-<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">char</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
-<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码32位变长整数，这个函数只处理小于128的单字节变长整数</span></span>
-<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a><span class="co">// 大于127的部分则调用GetVarint32PtrFallback处理</span></span>
-<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a><span class="co">// 此函数将解码后的值放在value中</span></span>
-<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a><span class="co">// limit总是为p+5，因为变长整数最多5个字节</span></span>
-<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="co">// p是一个指向包含值得字符串</span></span>
-<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a><span class="co">// 返回的是对变长整数解码后的一个字节，设置成这样的目的是用于get方法</span></span>
-<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
-<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a>                                  <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
-<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>p <span class="op">&lt;</span> limit<span class="op">)</span></span>
-<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint32_t</span> result <span class="op">=</span> <span class="op">*(</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>p<span class="op">));</span></span>
-<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 内部只解码不超过127的整数，剩下的更长的交给GetVarint32PtrFallback处理</span></span>
-<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">((</span>result <span class="op">&amp;</span> <span class="dv">128</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
-<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>value <span class="op">=</span> result<span class="op">;</span></span>
-<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> p <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> GetVarint32PtrFallback<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span></span>
-<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码32位变长整数中大于127的数字，即存储超过1个字节的变长32位整数</span></span>
-<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a><span class="co">// 被GetVarint32Ptr调用</span></span>
-<span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32PtrFallback<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
-<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
-<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> result <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb2-158"><a href="#cb2-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 由于32位变长整数只能由28位存储数字，所以偏移的上限就是28位</span></span>
-<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 每个字节只能存储7位有效字符，所以每处理一字节就偏移7位</span></span>
-<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a>    <span class="co">// shift同时也是每个字节中有效数字的权</span></span>
-<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">uint32_t</span> shift <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> shift <span class="op">&lt;=</span> <span class="dv">28</span> <span class="op">&amp;&amp;</span> p <span class="op">&lt;</span> limit<span class="op">;</span> shift <span class="op">+=</span> <span class="dv">7</span><span class="op">)</span></span>
-<span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 解码出一个字节</span></span>
-<span id="cb2-165"><a href="#cb2-165" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint32_t</span> byte <span class="op">=</span> <span class="op">*(</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>p<span class="op">));</span></span>
-<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a>        p<span class="op">++;</span></span>
-<span id="cb2-167"><a href="#cb2-167" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 判断最高位，如果是1则继续取并执行，否则就返回解码的数据</span></span>
-<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>byte <span class="op">&amp;</span> <span class="dv">128</span><span class="op">)</span></span>
-<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">((</span>byte <span class="op">&amp;</span> <span class="dv">127</span><span class="op">)</span> <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
-<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
-<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">(</span>byte <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
-<span id="cb2-175"><a href="#cb2-175" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>value <span class="op">=</span> result<span class="op">;</span></span>
-<span id="cb2-176"><a href="#cb2-176" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*&gt;(</span>p<span class="op">);</span></span>
-<span id="cb2-177"><a href="#cb2-177" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb2-178"><a href="#cb2-178" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-179"><a href="#cb2-179" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-180"><a href="#cb2-180" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当变长整数编码不正确就返回nullptr</span></span>
-<span id="cb2-181"><a href="#cb2-181" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 不正确的原因只能是因为连续5个字节都是被标记为1</span></span>
-<span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">nullptr</span><span class="op">;</span></span>
-<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码64位变长整数的函数，与解码32位变长的那个函数类似</span></span>
-<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a><span class="co">// 不过这个函数没有回调，是直接在本函数内进行全部的解码工作</span></span>
-<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a><span class="co">// 原因我觉得是这样的：因为小整数比较多，而小整数一般就以32位变长存储</span></span>
-<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a><span class="co">// 而解码最小整数的函数被设置成内联函数，这样效率就会提升很多</span></span>
-<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint64Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>value<span class="op">)</span></span>
-<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint64_t</span> result <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这个函数内部与GetVarint32PtrFallback一致</span></span>
-<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">uint32_t</span> shift <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> shift <span class="op">&lt;=</span> <span class="dv">63</span> <span class="op">&amp;&amp;</span> p <span class="op">&lt;</span> limit<span class="op">;</span> shift <span class="op">+=</span> <span class="dv">7</span><span class="op">)</span></span>
-<span id="cb2-194"><a href="#cb2-194" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint64_t</span> byte <span class="op">=</span> <span class="op">*(</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>p<span class="op">));</span></span>
-<span id="cb2-196"><a href="#cb2-196" aria-hidden="true" tabindex="-1"></a>        p<span class="op">++;</span></span>
-<span id="cb2-197"><a href="#cb2-197" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>byte <span class="op">&amp;</span> <span class="dv">128</span><span class="op">)</span></span>
-<span id="cb2-198"><a href="#cb2-198" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb2-199"><a href="#cb2-199" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">((</span>byte <span class="op">&amp;</span> <span class="dv">127</span><span class="op">)</span> <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
-<span id="cb2-200"><a href="#cb2-200" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb2-201"><a href="#cb2-201" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
-<span id="cb2-202"><a href="#cb2-202" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
-<span id="cb2-203"><a href="#cb2-203" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">(</span>byte <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
-<span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>value <span class="op">=</span> result<span class="op">;</span></span>
-<span id="cb2-205"><a href="#cb2-205" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*&gt;(</span>p<span class="op">);</span></span>
-<span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
-<span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">nullptr</span><span class="op">;</span></span>
-<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a><span class="co">/*=============Put与Get方法=============*/</span></span>
-<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a><span class="co">// 把32位定长转换成字符串</span></span>
-<span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">)</span></span>
-<span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 设置一个缓存区，然后把value编码到缓存区后插入</span></span>
-<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="kw">sizeof</span><span class="op">(</span>value<span class="op">)];</span></span>
-<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a>    EncodeFixed32<span class="op">(</span>buf<span class="op">,</span> value<span class="op">);</span></span>
-<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>buf<span class="op">));</span></span>
-<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a><span class="co">// 把64位定长转化成字符串</span></span>
-<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">)</span></span>
-<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 设置一个缓存区，然后把value编码到缓存区后插入</span></span>
-<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="kw">sizeof</span><span class="op">(</span>value<span class="op">)];</span></span>
-<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a>    EncodeFixed64<span class="op">(</span>buf<span class="op">,</span> value<span class="op">);</span></span>
-<span id="cb2-228"><a href="#cb2-228" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>buf<span class="op">));</span></span>
-<span id="cb2-229"><a href="#cb2-229" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-230"><a href="#cb2-230" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-231"><a href="#cb2-231" aria-hidden="true" tabindex="-1"></a><span class="co">// 把32位变长转化成字符串</span></span>
-<span id="cb2-232"><a href="#cb2-232" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> v<span class="op">)</span></span>
-<span id="cb2-233"><a href="#cb2-233" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-234"><a href="#cb2-234" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 设置最大的缓冲区，注意EncodeVarint32会返回指向编码后的一个字节的指针</span></span>
-<span id="cb2-235"><a href="#cb2-235" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 所以就能根据指针偏移来计算出当前变长整数的长度</span></span>
-<span id="cb2-236"><a href="#cb2-236" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">5</span><span class="op">];</span></span>
-<span id="cb2-237"><a href="#cb2-237" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>ptr <span class="op">=</span> EncodeVarint32<span class="op">(</span>buf<span class="op">,</span> v<span class="op">);</span></span>
-<span id="cb2-238"><a href="#cb2-238" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> ptr <span class="op">-</span> buf<span class="op">);</span></span>
-<span id="cb2-239"><a href="#cb2-239" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-240"><a href="#cb2-240" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-241"><a href="#cb2-241" aria-hidden="true" tabindex="-1"></a><span class="co">// 把64位变长转化成字符串</span></span>
-<span id="cb2-242"><a href="#cb2-242" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> v<span class="op">)</span></span>
-<span id="cb2-243"><a href="#cb2-243" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-244"><a href="#cb2-244" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 原理和PutVarint32一样，只是缓冲区大小大了一些</span></span>
-<span id="cb2-245"><a href="#cb2-245" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">10</span><span class="op">];</span></span>
-<span id="cb2-246"><a href="#cb2-246" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>ptr <span class="op">=</span> EncodeVarint64<span class="op">(</span>buf<span class="op">,</span> v<span class="op">);</span></span>
-<span id="cb2-247"><a href="#cb2-247" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> ptr <span class="op">-</span> buf<span class="op">);</span></span>
-<span id="cb2-248"><a href="#cb2-248" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-249"><a href="#cb2-249" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-250"><a href="#cb2-250" aria-hidden="true" tabindex="-1"></a><span class="co">// 把slice转化成字符串存储</span></span>
-<span id="cb2-251"><a href="#cb2-251" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutLengthPrefixedSlice<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="at">const</span> Slice <span class="op">&amp;</span>value<span class="op">)</span></span>
-<span id="cb2-252"><a href="#cb2-252" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-253"><a href="#cb2-253" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 字符串的编码格式是长度在前，然后是字符串本身</span></span>
-<span id="cb2-254"><a href="#cb2-254" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 所以按照定义就可以插入了</span></span>
-<span id="cb2-255"><a href="#cb2-255" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 先插入长度，然后把字符串移动过去</span></span>
-<span id="cb2-256"><a href="#cb2-256" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 由于Slice末尾不需要'\0'，所以需要指定长度</span></span>
-<span id="cb2-257"><a href="#cb2-257" aria-hidden="true" tabindex="-1"></a>    PutVarint32<span class="op">(</span>dst<span class="op">,</span> value<span class="op">.</span>size<span class="op">());</span></span>
-<span id="cb2-258"><a href="#cb2-258" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>value<span class="op">.</span>data<span class="op">(),</span> value<span class="op">.</span>size<span class="op">());</span></span>
-<span id="cb2-259"><a href="#cb2-259" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-260"><a href="#cb2-260" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-261"><a href="#cb2-261" aria-hidden="true" tabindex="-1"></a><span class="co">// 计算变长整数的长度</span></span>
-<span id="cb2-262"><a href="#cb2-262" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> VarintLength<span class="op">(</span><span class="dt">uint64_t</span> v<span class="op">)</span></span>
-<span id="cb2-263"><a href="#cb2-263" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-264"><a href="#cb2-264" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这个函数思路很简单，不解析了</span></span>
-<span id="cb2-265"><a href="#cb2-265" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> len <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb2-266"><a href="#cb2-266" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>v <span class="op">&gt;=</span> <span class="dv">128</span><span class="op">)</span></span>
-<span id="cb2-267"><a href="#cb2-267" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-268"><a href="#cb2-268" aria-hidden="true" tabindex="-1"></a>        v <span class="op">&gt;&gt;=</span> <span class="dv">7</span><span class="op">;</span></span>
-<span id="cb2-269"><a href="#cb2-269" aria-hidden="true" tabindex="-1"></a>        len<span class="op">++;</span></span>
-<span id="cb2-270"><a href="#cb2-270" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-271"><a href="#cb2-271" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> len<span class="op">;</span></span>
-<span id="cb2-272"><a href="#cb2-272" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-273"><a href="#cb2-273" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-274"><a href="#cb2-274" aria-hidden="true" tabindex="-1"></a><span class="co">// 从字符串中获取32位变长</span></span>
-<span id="cb2-275"><a href="#cb2-275" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint32<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
-<span id="cb2-276"><a href="#cb2-276" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-277"><a href="#cb2-277" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> input<span class="op">-&gt;</span>data<span class="op">();</span>                   <span class="co">// 先拿到字符串的首指针</span></span>
-<span id="cb2-278"><a href="#cb2-278" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit <span class="op">=</span> p <span class="op">+</span> input<span class="op">-&gt;</span>size<span class="op">();</span>           <span class="co">// 然后获取尾部地址</span></span>
-<span id="cb2-279"><a href="#cb2-279" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>q <span class="op">=</span> GetVarint32Ptr<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span> <span class="co">//先解码出数据</span></span>
-<span id="cb2-280"><a href="#cb2-280" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb2-281"><a href="#cb2-281" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-282"><a href="#cb2-282" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 所请求元素不合法</span></span>
-<span id="cb2-283"><a href="#cb2-283" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb2-284"><a href="#cb2-284" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-285"><a href="#cb2-285" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb2-286"><a href="#cb2-286" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-287"><a href="#cb2-287" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 由于一个字符串可能内部不止一个整数</span></span>
-<span id="cb2-288"><a href="#cb2-288" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 解码完一个整数后可能还剩余一部分未解码的数据</span></span>
-<span id="cb2-289"><a href="#cb2-289" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 比如字符串存储格式是前面一个32位变长+字符串本身</span></span>
-<span id="cb2-290"><a href="#cb2-290" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>input <span class="op">=</span> Slice<span class="op">(</span>q<span class="op">,</span> limit <span class="op">-</span> q<span class="op">);</span></span>
-<span id="cb2-291"><a href="#cb2-291" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb2-292"><a href="#cb2-292" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-293"><a href="#cb2-293" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-294"><a href="#cb2-294" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-295"><a href="#cb2-295" aria-hidden="true" tabindex="-1"></a><span class="co">// 从字符串中获取64位变长</span></span>
-<span id="cb2-296"><a href="#cb2-296" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint64<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>value<span class="op">)</span></span>
-<span id="cb2-297"><a href="#cb2-297" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-298"><a href="#cb2-298" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 同上，只是部分接口不一样</span></span>
-<span id="cb2-299"><a href="#cb2-299" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> input<span class="op">-&gt;</span>data<span class="op">();</span></span>
-<span id="cb2-300"><a href="#cb2-300" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit <span class="op">=</span> p <span class="op">+</span> input<span class="op">-&gt;</span>size<span class="op">();</span></span>
-<span id="cb2-301"><a href="#cb2-301" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>q <span class="op">=</span> GetVarint64Ptr<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span></span>
-<span id="cb2-302"><a href="#cb2-302" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb2-303"><a href="#cb2-303" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-304"><a href="#cb2-304" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb2-305"><a href="#cb2-305" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-306"><a href="#cb2-306" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb2-307"><a href="#cb2-307" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-308"><a href="#cb2-308" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>input <span class="op">=</span> Slice<span class="op">(</span>q<span class="op">,</span> limit <span class="op">-</span> q<span class="op">);</span></span>
-<span id="cb2-309"><a href="#cb2-309" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb2-310"><a href="#cb2-310" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-311"><a href="#cb2-311" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb2-312"><a href="#cb2-312" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-313"><a href="#cb2-313" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码出字符串</span></span>
-<span id="cb2-314"><a href="#cb2-314" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetLengthPrefixedSlice<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> Slice <span class="op">*</span>result<span class="op">)</span></span>
-<span id="cb2-315"><a href="#cb2-315" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb2-316"><a href="#cb2-316" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> len<span class="op">;</span></span>
-<span id="cb2-317"><a href="#cb2-317" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 先获取长度，然后根据长度去解码</span></span>
-<span id="cb2-318"><a href="#cb2-318" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GetVarint32<span class="op">(</span>input<span class="op">,</span> <span class="op">&amp;</span>len<span class="op">)</span> <span class="op">&amp;&amp;</span> input<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">&gt;=</span> len<span class="op">)</span></span>
-<span id="cb2-319"><a href="#cb2-319" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-320"><a href="#cb2-320" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>result <span class="op">=</span> Slice<span class="op">(</span>input<span class="op">-&gt;</span>data<span class="op">(),</span> len<span class="op">);</span></span>
-<span id="cb2-321"><a href="#cb2-321" aria-hidden="true" tabindex="-1"></a>        input<span class="op">-&gt;</span>remove_prefix<span class="op">(</span>len<span class="op">);</span></span>
-<span id="cb2-322"><a href="#cb2-322" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb2-323"><a href="#cb2-323" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-324"><a href="#cb2-324" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb2-325"><a href="#cb2-325" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb2-326"><a href="#cb2-326" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb2-327"><a href="#cb2-327" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb2-328"><a href="#cb2-328" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><br><span class="hljs-comment">// 内联函数本来是在头文件中的，但是此处将其当成一个函数来进行分析</span><br><br><span class="hljs-comment">/*=============编码解码定长整数=============*/</span><br><br><span class="hljs-comment">// 编码定长32位整数，实现思路就是类似结构体那样去分割uint32即可</span><br><span class="hljs-comment">// 但注意保证让dst有足够的空间去存储，否则会溢出或段错误</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">void</span> <span class="hljs-title">EncodeFixed32</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint32_t</span> value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// reinterpret_cast允许指针(引用)之间转换</span><br>    <span class="hljs-comment">// 整型与指针类型间的转换以及指针与足够大的整型之间的转换</span><br>    <span class="hljs-type">uint8_t</span> *<span class="hljs-type">const</span> buffer = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">uint8_t</span> *&gt;(dst);<br><br>    buffer[<span class="hljs-number">0</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value);<br>    buffer[<span class="hljs-number">1</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">8</span>);<br>    buffer[<span class="hljs-number">2</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">16</span>);<br>    buffer[<span class="hljs-number">3</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">24</span>);<br>}<br><br><span class="hljs-comment">// 编码定长64位整数，思路与编码定长32位整数一致</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">void</span> <span class="hljs-title">EncodeFixed64</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint64_t</span> value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">uint8_t</span> *<span class="hljs-type">const</span> buffer = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">uint8_t</span> *&gt;(dst);<br><br>    buffer[<span class="hljs-number">0</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value);<br>    buffer[<span class="hljs-number">1</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">8</span>);<br>    buffer[<span class="hljs-number">2</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">16</span>);<br>    buffer[<span class="hljs-number">3</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">24</span>);<br>    buffer[<span class="hljs-number">4</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">32</span>);<br>    buffer[<span class="hljs-number">5</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">40</span>);<br>    buffer[<span class="hljs-number">6</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">48</span>);<br>    buffer[<span class="hljs-number">7</span>] = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(value &gt;&gt; <span class="hljs-number">56</span>);<br>}<br><br><span class="hljs-comment">// 解码32位定长整数并返回，这同样不做边界检查</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">uint32_t</span> <span class="hljs-title">DecodeFixed32</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *<span class="hljs-type">const</span> buffer = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *&gt;(ptr);<br><br>    <span class="hljs-comment">// 注意是小端存储结构</span><br>    <span class="hljs-keyword">return</span> (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(buffer[<span class="hljs-number">0</span>])) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(buffer[<span class="hljs-number">1</span>]) &lt;&lt; <span class="hljs-number">8</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(buffer[<span class="hljs-number">2</span>]) &lt;&lt; <span class="hljs-number">16</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(buffer[<span class="hljs-number">3</span>]) &lt;&lt; <span class="hljs-number">24</span>);<br>}<br><br><span class="hljs-comment">// 解码64位定长整数并返回，与上类似</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">uint64_t</span> <span class="hljs-title">DecodeFixed64</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *ptr)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *<span class="hljs-type">const</span> buffer = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *&gt;(ptr);<br><br>    <span class="hljs-keyword">return</span> (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">0</span>])) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">1</span>]) &lt;&lt; <span class="hljs-number">8</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">2</span>]) &lt;&lt; <span class="hljs-number">16</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">3</span>]) &lt;&lt; <span class="hljs-number">24</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">4</span>]) &lt;&lt; <span class="hljs-number">32</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">5</span>]) &lt;&lt; <span class="hljs-number">40</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">6</span>]) &lt;&lt; <span class="hljs-number">48</span>) |<br>           (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(buffer[<span class="hljs-number">7</span>]) &lt;&lt; <span class="hljs-number">56</span>);<br>}<br><br><span class="hljs-comment">/*=============编码解码变长整数=============*/</span><br><br><span class="hljs-comment">// 编码32位变长整数</span><br><span class="hljs-function"><span class="hljs-type">char</span> *<span class="hljs-title">EncodeVarint32</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint32_t</span> v)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 这一部分的编码就是完全按照定义来的，用了5个if</span><br>    <span class="hljs-comment">// 分别对应了1-5个字节范围内的长度</span><br>    <span class="hljs-type">uint8_t</span> *ptr = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">uint8_t</span> *&gt;(dst);<br>    <span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">int</span> B = <span class="hljs-number">128</span>;<br>    <span class="hljs-comment">/* 仿照EncodeVarint64的循环写法来重写这一部分</span><br><span class="hljs-comment">    while(v&gt;=B)</span><br><span class="hljs-comment">    {</span><br><span class="hljs-comment">        *(ptr++) = v|B;</span><br><span class="hljs-comment">        v &gt;&gt;= 7;</span><br><span class="hljs-comment">    }</span><br><span class="hljs-comment">    *(ptr++) = static_cast&lt;uint8_t&gt;(v);</span><br><span class="hljs-comment">    return reinterpret_cast&lt;char *&gt;(ptr);</span><br><span class="hljs-comment">    */</span><br>    <span class="hljs-keyword">if</span> (v &lt; (<span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">7</span>))<br>    {<br>        *(ptr++) = v;<br>    }<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (v &lt; (<span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">14</span>))<br>    {<br>        *(ptr++) = v | B;<br>        *(ptr++) = v &gt;&gt; <span class="hljs-number">7</span>;<br>    }<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (v &lt; (<span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">21</span>))<br>    {<br>        *(ptr++) = v | B;<br>        *(ptr++) = (v &gt;&gt; <span class="hljs-number">7</span>) | B;<br>        *(ptr++) = v &gt;&gt; <span class="hljs-number">14</span>;<br>    }<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (v &lt; (<span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">28</span>))<br>    {<br>        *(ptr++) = v | B;<br>        *(ptr++) = (v &gt;&gt; <span class="hljs-number">7</span>) | B;<br>        *(ptr++) = (v &gt;&gt; <span class="hljs-number">14</span>) | B;<br>        *(ptr++) = v &gt;&gt; <span class="hljs-number">21</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        *(ptr++) = v | B;<br>        *(ptr++) = (v &gt;&gt; <span class="hljs-number">7</span>) | B;<br>        *(ptr++) = (v &gt;&gt; <span class="hljs-number">14</span>) | B;<br>        *(ptr++) = (v &gt;&gt; <span class="hljs-number">21</span>) | B;<br>        *(ptr++) = v &gt;&gt; <span class="hljs-number">28</span>;<br>    }<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">char</span> *&gt;(ptr);<br>}<br><br><span class="hljs-comment">// 编码64位变长整数，此处没有使用循环，同样的，上面32位的也可以这样写</span><br><span class="hljs-function"><span class="hljs-type">char</span> *<span class="hljs-title">EncodeVarint64</span><span class="hljs-params">(<span class="hljs-type">char</span> *dst, <span class="hljs-type">uint64_t</span> v)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 将函数内的常数设置为局部静态变量，减少每次调用函数时的分配与开销</span><br>    <span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">int</span> B = <span class="hljs-number">128</span>;<br>    <span class="hljs-type">uint8_t</span> *ptr = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">uint8_t</span> *&gt;(dst);<br>    <span class="hljs-comment">// B被设置成1&lt;&lt;7，当v&gt;=b时表示7位存不下</span><br>    <span class="hljs-keyword">while</span> (v &gt;= B)<br>    {<br>        *(ptr++) = v | B;<br>        v &gt;&gt;= <span class="hljs-number">7</span>;<br>    }<br>    *(ptr++) = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(v);<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">char</span> *&gt;(ptr);<br>}<br><br><span class="hljs-comment">// 解码32位变长整数，这个函数只处理小于128的单字节变长整数</span><br><span class="hljs-comment">// 大于127的部分则调用GetVarint32PtrFallback处理</span><br><span class="hljs-comment">// 此函数将解码后的值放在value中</span><br><span class="hljs-comment">// limit总是为p+5，因为变长整数最多5个字节</span><br><span class="hljs-comment">// p是一个指向包含值得字符串</span><br><span class="hljs-comment">// 返回的是对变长整数解码后的一个字节，设置成这样的目的是用于get方法</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">GetVarint32Ptr</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit,</span></span><br><span class="hljs-params"><span class="hljs-function">                                  <span class="hljs-type">uint32_t</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-keyword">if</span> (p &lt; limit)<br>    {<br>        <span class="hljs-type">uint32_t</span> result = *(<span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *&gt;(p));<br>        <span class="hljs-comment">// 内部只解码不超过127的整数，剩下的更长的交给GetVarint32PtrFallback处理</span><br>        <span class="hljs-keyword">if</span> ((result &amp; <span class="hljs-number">128</span>) == <span class="hljs-number">0</span>)<br>        {<br>            *value = result;<br>            <span class="hljs-keyword">return</span> p + <span class="hljs-number">1</span>;<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">GetVarint32PtrFallback</span>(p, limit, value);<br>}<br><br><span class="hljs-comment">// 解码32位变长整数中大于127的数字，即存储超过1个字节的变长32位整数</span><br><span class="hljs-comment">// 被GetVarint32Ptr调用</span><br><span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">GetVarint32PtrFallback</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit,</span></span><br><span class="hljs-params"><span class="hljs-function">                                   <span class="hljs-type">uint32_t</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">uint32_t</span> result = <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 由于32位变长整数只能由28位存储数字，所以偏移的上限就是28位</span><br>    <span class="hljs-comment">// 每个字节只能存储7位有效字符，所以每处理一字节就偏移7位</span><br>    <span class="hljs-comment">// shift同时也是每个字节中有效数字的权</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> shift = <span class="hljs-number">0</span>; shift &lt;= <span class="hljs-number">28</span> &amp;&amp; p &lt; limit; shift += <span class="hljs-number">7</span>)<br>    {<br>        <span class="hljs-comment">// 解码出一个字节</span><br>        <span class="hljs-type">uint32_t</span> byte = *(<span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *&gt;(p));<br>        p++;<br>        <span class="hljs-comment">// 判断最高位，如果是1则继续取并执行，否则就返回解码的数据</span><br>        <span class="hljs-keyword">if</span> (byte &amp; <span class="hljs-number">128</span>)<br>        {<br>            result |= ((byte &amp; <span class="hljs-number">127</span>) &lt;&lt; shift);<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            result |= (byte &lt;&lt; shift);<br>            *value = result;<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">char</span> *&gt;(p);<br>        }<br>    }<br><br>    <span class="hljs-comment">// 当变长整数编码不正确就返回nullptr</span><br>    <span class="hljs-comment">// 不正确的原因只能是因为连续5个字节都是被标记为1</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>}<br><br><span class="hljs-comment">// 解码64位变长整数的函数，与解码32位变长的那个函数类似</span><br><span class="hljs-comment">// 不过这个函数没有回调，是直接在本函数内进行全部的解码工作</span><br><span class="hljs-comment">// 原因我觉得是这样的：因为小整数比较多，而小整数一般就以32位变长存储</span><br><span class="hljs-comment">// 而解码最小整数的函数被设置成内联函数，这样效率就会提升很多</span><br><span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">GetVarint64Ptr</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit, <span class="hljs-type">uint64_t</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">uint64_t</span> result = <span class="hljs-number">0</span>;<br>    <span class="hljs-comment">// 这个函数内部与GetVarint32PtrFallback一致</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> shift = <span class="hljs-number">0</span>; shift &lt;= <span class="hljs-number">63</span> &amp;&amp; p &lt; limit; shift += <span class="hljs-number">7</span>)<br>    {<br>        <span class="hljs-type">uint64_t</span> byte = *(<span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> *&gt;(p));<br>        p++;<br>        <span class="hljs-keyword">if</span> (byte &amp; <span class="hljs-number">128</span>)<br>        {<br>            result |= ((byte &amp; <span class="hljs-number">127</span>) &lt;&lt; shift);<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            result |= (byte &lt;&lt; shift);<br>            *value = result;<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">char</span> *&gt;(p);<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>}<br><br><span class="hljs-comment">/*=============Put与Get方法=============*/</span><br><br><span class="hljs-comment">// 把32位定长转换成字符串</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutFixed32</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint32_t</span> value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 设置一个缓存区，然后把value编码到缓存区后插入</span><br>    <span class="hljs-type">char</span> buf[<span class="hljs-built_in">sizeof</span>(value)];<br>    <span class="hljs-built_in">EncodeFixed32</span>(buf, value);<br>    dst-&gt;<span class="hljs-built_in">append</span>(buf, <span class="hljs-built_in">sizeof</span>(buf));<br>}<br><br><span class="hljs-comment">// 把64位定长转化成字符串</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutFixed64</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint64_t</span> value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 设置一个缓存区，然后把value编码到缓存区后插入</span><br>    <span class="hljs-type">char</span> buf[<span class="hljs-built_in">sizeof</span>(value)];<br>    <span class="hljs-built_in">EncodeFixed64</span>(buf, value);<br>    dst-&gt;<span class="hljs-built_in">append</span>(buf, <span class="hljs-built_in">sizeof</span>(buf));<br>}<br><br><span class="hljs-comment">// 把32位变长转化成字符串</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutVarint32</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint32_t</span> v)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 设置最大的缓冲区，注意EncodeVarint32会返回指向编码后的一个字节的指针</span><br>    <span class="hljs-comment">// 所以就能根据指针偏移来计算出当前变长整数的长度</span><br>    <span class="hljs-type">char</span> buf[<span class="hljs-number">5</span>];<br>    <span class="hljs-type">char</span> *ptr = <span class="hljs-built_in">EncodeVarint32</span>(buf, v);<br>    dst-&gt;<span class="hljs-built_in">append</span>(buf, ptr - buf);<br>}<br><br><span class="hljs-comment">// 把64位变长转化成字符串</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutVarint64</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">uint64_t</span> v)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 原理和PutVarint32一样，只是缓冲区大小大了一些</span><br>    <span class="hljs-type">char</span> buf[<span class="hljs-number">10</span>];<br>    <span class="hljs-type">char</span> *ptr = <span class="hljs-built_in">EncodeVarint64</span>(buf, v);<br>    dst-&gt;<span class="hljs-built_in">append</span>(buf, ptr - buf);<br>}<br><br><span class="hljs-comment">// 把slice转化成字符串存储</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">PutLengthPrefixedSlice</span><span class="hljs-params">(std::string *dst, <span class="hljs-type">const</span> Slice &amp;value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 字符串的编码格式是长度在前，然后是字符串本身</span><br>    <span class="hljs-comment">// 所以按照定义就可以插入了</span><br>    <span class="hljs-comment">// 先插入长度，然后把字符串移动过去</span><br>    <span class="hljs-comment">// 由于Slice末尾不需要'\0'，所以需要指定长度</span><br>    <span class="hljs-built_in">PutVarint32</span>(dst, value.<span class="hljs-built_in">size</span>());<br>    dst-&gt;<span class="hljs-built_in">append</span>(value.<span class="hljs-built_in">data</span>(), value.<span class="hljs-built_in">size</span>());<br>}<br><br><span class="hljs-comment">// 计算变长整数的长度</span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">VarintLength</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> v)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 这个函数思路很简单，不解析了</span><br>    <span class="hljs-type">int</span> len = <span class="hljs-number">1</span>;<br>    <span class="hljs-keyword">while</span> (v &gt;= <span class="hljs-number">128</span>)<br>    {<br>        v &gt;&gt;= <span class="hljs-number">7</span>;<br>        len++;<br>    }<br>    <span class="hljs-keyword">return</span> len;<br>}<br><br><span class="hljs-comment">// 从字符串中获取32位变长</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetVarint32</span><span class="hljs-params">(Slice *input, <span class="hljs-type">uint32_t</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *p = input-&gt;<span class="hljs-built_in">data</span>();                   <span class="hljs-comment">// 先拿到字符串的首指针</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit = p + input-&gt;<span class="hljs-built_in">size</span>();           <span class="hljs-comment">// 然后获取尾部地址</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *q = <span class="hljs-built_in">GetVarint32Ptr</span>(p, limit, value); <span class="hljs-comment">//先解码出数据</span><br>    <span class="hljs-keyword">if</span> (q == <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-comment">// 所请求元素不合法</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-comment">// 由于一个字符串可能内部不止一个整数</span><br>        <span class="hljs-comment">// 解码完一个整数后可能还剩余一部分未解码的数据</span><br>        <span class="hljs-comment">// 比如字符串存储格式是前面一个32位变长+字符串本身</span><br>        *input = <span class="hljs-built_in">Slice</span>(q, limit - q);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    }<br>}<br><br><span class="hljs-comment">// 从字符串中获取64位变长</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetVarint64</span><span class="hljs-params">(Slice *input, <span class="hljs-type">uint64_t</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 同上，只是部分接口不一样</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *p = input-&gt;<span class="hljs-built_in">data</span>();<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit = p + input-&gt;<span class="hljs-built_in">size</span>();<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *q = <span class="hljs-built_in">GetVarint64Ptr</span>(p, limit, value);<br>    <span class="hljs-keyword">if</span> (q == <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        *input = <span class="hljs-built_in">Slice</span>(q, limit - q);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    }<br>}<br><br><span class="hljs-comment">// 解码出字符串</span><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetLengthPrefixedSlice</span><span class="hljs-params">(Slice *input, Slice *result)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">uint32_t</span> len;<br>    <span class="hljs-comment">// 先获取长度，然后根据长度去解码</span><br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">GetVarint32</span>(input, &amp;len) &amp;&amp; input-&gt;<span class="hljs-built_in">size</span>() &gt;= len)<br>    {<br>        *result = <span class="hljs-built_in">Slice</span>(input-&gt;<span class="hljs-built_in">data</span>(), len);<br>        input-&gt;<span class="hljs-built_in">remove_prefix</span>(len);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
 <p>其中，关于字符串的解码部分我认为还是很巧妙的，因为字符串编码后的长度在前，且长度是一个变长整数，所以解码时需要先提取出长度。正常情况下的写法可能是先对整个编码后字符串遍历，解析出前面的长度，记录下这个字符串长度以及变长整数的长度后再去处理后面的字符串。</p>
-<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic2.png" class="" title="_">
+<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic2.png" srcset="/img/loading.gif" lazyload class="" title="_">
 <p>但是levelDB中的处理方式是让变长解码函数解码多少就把输入中解码的这段数据给弄掉(修改了源字符串的指针)，因为这部分需要解码的值已经被解析出来并返回了，也就不再需要了。</p>
-<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic3.png" class="" title="_">
+<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic3.png" srcset="/img/loading.gif" lazyload class="" title="_">
 <p><strong><em>每个解码函数只处理字符串开头，并且处理完成后及时改变字符串的首地址(后移)，这样就不需要记录这部分的状态并考虑处理细节了</em></strong></p>
 <p>能够这样做的原因就是通过传递超尾元素来标定界限，同时所有处理函数都以指针作为数据传递的方式(统一接口标准)。</p>
 <p>而直接移动字符串指针很容易就引出另外一个问题：会不会内存泄漏呢？</p>
 <p>答案是不会，因为内存并不由Slice管理，Slice只是对底层字符串做出了映射而已，其主要目的是用于传递，后续我们会对Slice进行解析。</p>
 <p>再特意把这段代码贴出来</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint32<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> input<span class="op">-&gt;</span>data<span class="op">();</span>                   <span class="co">// 先拿到字符串的首指针</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit <span class="op">=</span> p <span class="op">+</span> input<span class="op">-&gt;</span>size<span class="op">();</span>           <span class="co">// 然后获取尾部地址</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>q <span class="op">=</span> GetVarint32Ptr<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span> <span class="co">//先解码出数据，q是超尾元素(相对变长整数而言)</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 所请求元素不合法</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 由于一个字符串可能内部不止一个整数</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 解码完一个整数后可能还剩余一部分未解码的数据</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 比如字符串存储格式是前面一个32位变长+字符串本身</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>input <span class="op">=</span> Slice<span class="op">(</span>q<span class="op">,</span> limit <span class="op">-</span> q<span class="op">);</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetLengthPrefixedSlice<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> Slice <span class="op">*</span>result<span class="op">)</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> len<span class="op">;</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 先获取长度，然后根据长度去解码</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GetVarint32<span class="op">(</span>input<span class="op">,</span> <span class="op">&amp;</span>len<span class="op">)</span> <span class="op">&amp;&amp;</span> input<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">&gt;=</span> len<span class="op">)</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>result <span class="op">=</span> Slice<span class="op">(</span>input<span class="op">-&gt;</span>data<span class="op">(),</span> len<span class="op">);</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        input<span class="op">-&gt;</span>remove_prefix<span class="op">(</span>len<span class="op">);</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetVarint32</span><span class="hljs-params">(Slice *input, <span class="hljs-type">uint32_t</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *p = input-&gt;<span class="hljs-built_in">data</span>();                   <span class="hljs-comment">// 先拿到字符串的首指针</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit = p + input-&gt;<span class="hljs-built_in">size</span>();           <span class="hljs-comment">// 然后获取尾部地址</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *q = <span class="hljs-built_in">GetVarint32Ptr</span>(p, limit, value); <span class="hljs-comment">//先解码出数据，q是超尾元素(相对变长整数而言)</span><br>    <span class="hljs-keyword">if</span> (q == <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-comment">// 所请求元素不合法</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-comment">// 由于一个字符串可能内部不止一个整数</span><br>        <span class="hljs-comment">// 解码完一个整数后可能还剩余一部分未解码的数据</span><br>        <span class="hljs-comment">// 比如字符串存储格式是前面一个32位变长+字符串本身</span><br>        *input = <span class="hljs-built_in">Slice</span>(q, limit - q);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    }<br>}<br><br><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetLengthPrefixedSlice</span><span class="hljs-params">(Slice *input, Slice *result)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">uint32_t</span> len;<br>    <span class="hljs-comment">// 先获取长度，然后根据长度去解码</span><br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">GetVarint32</span>(input, &amp;len) &amp;&amp; input-&gt;<span class="hljs-built_in">size</span>() &gt;= len)<br>    {<br>        *result = <span class="hljs-built_in">Slice</span>(input-&gt;<span class="hljs-built_in">data</span>(), len);<br>        input-&gt;<span class="hljs-built_in">remove_prefix</span>(len);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
 <hr>
 <h2 id="总结部分">总结部分</h2>
 <table>
-<colgroup>
-<col style="width: 61%">
-<col style="width: 38%">
-</colgroup>
+
 <thead>
 <tr class="header">
 <th style="text-align: center;">函数/变量</th>
@@ -825,49 +534,333 @@ uint64_t </em>value)</td>
 </tbody>
 </table>
 <p>编码解码部分使用到了很多位级编程，这部分都很有意思，可以做到四两拨千斤的作用。</p>
-<blockquote>
-<h3 id="编程小技巧">编程小技巧</h3>
-<ul>
-<li><p>在函数内需要用到的常量可以定义成内部静态常量<code>static const</code>，这样就避免了全局变量的额外开销与权限混乱、同时也能避免局部变量的每次都需要额外分配的开销。</p></li>
-<li><p>当函数是处理连续的区间时，预留出超尾元素接口是很有必要的。</p></li>
-</ul>
-</blockquote>
+<div class="note note-primary">
+            <h3 id="编程小技巧">编程小技巧</h3><ul><li><p>在函数内需要用到的常量可以定义成内部静态常量<code>static const</code>，这样就避免了全局变量的额外开销与权限混乱、同时也能避免局部变量的每次都需要额外分配的开销。</p></li><li><p>当函数是处理连续的区间时，预留出超尾元素接口是很有必要的。</p></li></ul>
+          </div>
 
-    </div>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
     
-</div>
-                         
-<footer id="footer">
-    <div class="footer-wrap">
-        <div>
-            © 2022 - 2022 PPXXXG22
-            <span class="footer-icon">
-                <i class="fa-solid fa-font-awesome fa-fw"></i>
-            </span>
-            @PPXXXG22
-        </div>
-        <div></div>
-        <div>Based on the <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo Engine</a> & <a
-                target="_blank" rel="noopener" href="https://github.com/argvchs/hexo-theme-particlex">ParticleX Theme</a></div>
+      <span class="category-chain">
         
-    </div>
-</footer>
-                    </div>
-                </div>
-            </transition>
-            <div id="img_show">
-                <img id="img_content" alt="img_show">
-            </div>
-        </div>
-        <script src="https://cdn.staticfile.org/highlight.js/11.5.1/highlight.min.js"></script>
-        <script src="/js/particlex.js"></script>
-        <script src="/js/showimg.js"></script>
-        <canvas
-    id="background"
-    style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:-1"
-></canvas>
-<script src="/js/background.js"></script>
-        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
 
-    </body>
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-1/" title="Python奇技淫巧(1)">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python奇技淫巧(1)</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-3/" title="levelDB源码剖析(3)">
+                        <span class="hidden-mobile">levelDB源码剖析(3)</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://lib.baomitu.com/valine/1.4.17/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"FcpooxC4UEovOWDZHZBpnODC-gzGzoHsz","appKey":"UEJZ24LhnBiV5kEvGc6UjM4z","path":"window.location.pathname","placeholder":"小作文","avatar":"retro","meta":["nick","mail"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":true,"recordIP":true,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          var imgSelector = '#valine .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
 </html>
