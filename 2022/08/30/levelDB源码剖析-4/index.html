@@ -261,14 +261,14 @@ mjx-container[display="true"] + br {
             
             <span class="tag">
                 
-                <a href="/tags/C/" style="color: #00a596">
+                <a href="/tags/C/" style="color: #03a9f4">
                     C++
                 </a>
             </span>
             
             <span class="tag">
                 
-                <a href="/tags/levelDB/" style="color: #ff7d73">
+                <a href="/tags/levelDB/" style="color: #00a596">
                     levelDB
                 </a>
             </span>
@@ -326,7 +326,7 @@ mjx-container[display="true"] + br {
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>v<span class="op">);</span></span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint64Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>v<span class="op">);</span></span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">// 这是上面那俩函数的内部回调函数，是实际处理变长整数的东西</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">// 这是上面GetVarint32Ptr函数的内部回调函数，是实际处理变长整数的东西</span></span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32PtrFallback<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
 <span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">);</span></span>
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
@@ -334,10 +334,503 @@ mjx-container[display="true"] + br {
 <span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span> <span class="co">// 编码变长32位整数</span></span>
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span> <span class="co">// 编码变长64位整数</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span></code></pre></div>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">);</span> <span class="co">// 编码定长32位整数</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">);</span> <span class="co">// 编码定长64位整数</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint32_t</span> DecodeFixed32<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">);</span>       <span class="co">// 解码32位定长整数</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint64_t</span> DecodeFixed64<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">);</span>       <span class="co">// 解码64位定长整数</span></span></code></pre></div>
+<p>头文件只是给出了函数接口，下面我们就来进一步去分析各个函数。</p>
+<p>为了方便分析，我们将其分成：编码解码定长整数、编码解码变长整数、Put和Get方法。</p>
+<p>这部分代码全部围绕编码解码来实现的，其中定长的编解码很简单，就不在此赘述了。关于变长整数的编解码，其关于编码和解码的相关函数都预留了类似迭代器一样的超尾元素(指针)，这种形式的接口可以很方便的确定所处理数据的区间(变长整数的Put和Get相关函数都使用到了预留的超尾元素)。</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// 内联函数本来是在头文件中的，但是此处将其当成一个函数来进行分析</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">/*=============编码解码定长整数=============*/</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码定长32位整数，实现思路就是类似结构体那样去分割uint32即可</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// 但注意保证让dst有足够的空间去存储，否则会溢出或段错误</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// reinterpret_cast允许指针(引用)之间转换</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 整型与指针类型间的转换以及指针与足够大的整型之间的转换</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value<span class="op">);</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">8</span><span class="op">);</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">16</span><span class="op">);</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">3</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">24</span><span class="op">);</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码定长64位整数，思路与编码定长32位整数一致</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">void</span> EncodeFixed64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">)</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">0</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value<span class="op">);</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">1</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">8</span><span class="op">);</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">2</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">16</span><span class="op">);</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">3</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">24</span><span class="op">);</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">4</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">32</span><span class="op">);</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">5</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">40</span><span class="op">);</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">6</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">48</span><span class="op">);</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    buffer<span class="op">[</span><span class="dv">7</span><span class="op">]</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>value <span class="op">&gt;&gt;</span> <span class="dv">56</span><span class="op">);</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码32位定长整数并返回，这同样不做边界检查</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint32_t</span> DecodeFixed32<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">)</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 注意是小端存储结构</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">|</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">8</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">16</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint32_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">3</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">24</span><span class="op">);</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码64位定长整数并返回，与上类似</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="dt">uint64_t</span> DecodeFixed64<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>ptr<span class="op">)</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*</span><span class="at">const</span> buffer <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">0</span><span class="op">]))</span> <span class="op">|</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">1</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">8</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">2</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">16</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">3</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">24</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">4</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">32</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">5</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">40</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">6</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">48</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>           <span class="op">(</span><span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint64_t</span><span class="op">&gt;(</span>buffer<span class="op">[</span><span class="dv">7</span><span class="op">])</span> <span class="op">&lt;&lt;</span> <span class="dv">56</span><span class="op">);</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="co">/*=============编码解码变长整数=============*/</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码32位变长整数</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint32<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> v<span class="op">)</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这一部分的编码就是完全按照定义来的，用了5个if</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 分别对应了1-5个字节范围内的长度</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span>ptr <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="at">const</span> <span class="dt">int</span> B <span class="op">=</span> <span class="dv">128</span><span class="op">;</span></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>    <span class="co">/* 仿照EncodeVarint64的循环写法来重写这一部分</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a><span class="co">    while(v&gt;=B)</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="co">    {</span></span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a><span class="co">        *(ptr++) = v|B;</span></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="co">        v &gt;&gt;= 7;</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a><span class="co">    }</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="co">    *(ptr++) = static_cast&lt;uint8_t&gt;(v);</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a><span class="co">    return reinterpret_cast&lt;char *&gt;(ptr);</span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="co">    */</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">7</span><span class="op">))</span></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v<span class="op">;</span></span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">14</span><span class="op">))</span></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">;</span></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">21</span><span class="op">))</span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">14</span><span class="op">;</span></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>v <span class="op">&lt;</span> <span class="op">(</span><span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">28</span><span class="op">))</span></span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">14</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">21</span><span class="op">;</span></span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">7</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">14</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="op">(</span>v <span class="op">&gt;&gt;</span> <span class="dv">21</span><span class="op">)</span> <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">&gt;&gt;</span> <span class="dv">28</span><span class="op">;</span></span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">char</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a><span class="co">// 编码64位变长整数，此处没有使用循环，同样的，上面32位的也可以这样写</span></span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a><span class="dt">char</span> <span class="op">*</span>EncodeVarint64<span class="op">(</span><span class="dt">char</span> <span class="op">*</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> v<span class="op">)</span></span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 将函数内的常数设置为局部静态变量，减少每次调用函数时的分配与开销</span></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a>    <span class="at">static</span> <span class="at">const</span> <span class="dt">int</span> B <span class="op">=</span> <span class="dv">128</span><span class="op">;</span></span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint8_t</span> <span class="op">*</span>ptr <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span> <span class="op">*&gt;(</span>dst<span class="op">);</span></span>
+<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a>    <span class="co">// B被设置成1&lt;&lt;7，当v&gt;=b时表示7位存不下</span></span>
+<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>v <span class="op">&gt;=</span> B<span class="op">)</span></span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a>        <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> v <span class="op">|</span> B<span class="op">;</span></span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a>        v <span class="op">&gt;&gt;=</span> <span class="dv">7</span><span class="op">;</span></span>
+<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a>    <span class="op">*(</span>ptr<span class="op">++)</span> <span class="op">=</span> <span class="kw">static_cast</span><span class="op">&lt;</span><span class="dt">uint8_t</span><span class="op">&gt;(</span>v<span class="op">);</span></span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="dt">char</span> <span class="op">*&gt;(</span>ptr<span class="op">);</span></span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码32位变长整数，这个函数只处理小于128的单字节变长整数</span></span>
+<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a><span class="co">// 大于127的部分则调用GetVarint32PtrFallback处理</span></span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a><span class="co">// 此函数将解码后的值放在value中</span></span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a><span class="co">// limit总是为p+5，因为变长整数最多5个字节</span></span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="co">// p是一个指向包含值得字符串</span></span>
+<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a><span class="co">// 返回的是对变长整数解码后的一个字节，设置成这样的目的是用于get方法</span></span>
+<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a><span class="kw">inline</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
+<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a>                                  <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
+<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>p <span class="op">&lt;</span> limit<span class="op">)</span></span>
+<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint32_t</span> result <span class="op">=</span> <span class="op">*(</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>p<span class="op">));</span></span>
+<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 内部只解码不超过127的整数，剩下的更长的交给GetVarint32PtrFallback处理</span></span>
+<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">((</span>result <span class="op">&amp;</span> <span class="dv">128</span><span class="op">)</span> <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>value <span class="op">=</span> result<span class="op">;</span></span>
+<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> p <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> GetVarint32PtrFallback<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span></span>
+<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码32位变长整数中大于127的数字，即存储超过1个字节的变长32位整数</span></span>
+<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a><span class="co">// 被GetVarint32Ptr调用</span></span>
+<span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint32PtrFallback<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span></span>
+<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a>                                   <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
+<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> result <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-158"><a href="#cb2-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 由于32位变长整数只能由28位存储数字，所以偏移的上限就是28位</span></span>
+<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 每个字节只能存储7位有效字符，所以每处理一字节就偏移7位</span></span>
+<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a>    <span class="co">// shift同时也是每个字节中有效数字的权</span></span>
+<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">uint32_t</span> shift <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> shift <span class="op">&lt;=</span> <span class="dv">28</span> <span class="op">&amp;&amp;</span> p <span class="op">&lt;</span> limit<span class="op">;</span> shift <span class="op">+=</span> <span class="dv">7</span><span class="op">)</span></span>
+<span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 解码出一个字节</span></span>
+<span id="cb2-165"><a href="#cb2-165" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint32_t</span> byte <span class="op">=</span> <span class="op">*(</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>p<span class="op">));</span></span>
+<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a>        p<span class="op">++;</span></span>
+<span id="cb2-167"><a href="#cb2-167" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 判断最高位，如果是1则继续取并执行，否则就返回解码的数据</span></span>
+<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>byte <span class="op">&amp;</span> <span class="dv">128</span><span class="op">)</span></span>
+<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">((</span>byte <span class="op">&amp;</span> <span class="dv">127</span><span class="op">)</span> <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
+<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
+<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">(</span>byte <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
+<span id="cb2-175"><a href="#cb2-175" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>value <span class="op">=</span> result<span class="op">;</span></span>
+<span id="cb2-176"><a href="#cb2-176" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*&gt;(</span>p<span class="op">);</span></span>
+<span id="cb2-177"><a href="#cb2-177" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-178"><a href="#cb2-178" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-179"><a href="#cb2-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-180"><a href="#cb2-180" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 当变长整数编码不正确就返回nullptr</span></span>
+<span id="cb2-181"><a href="#cb2-181" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 不正确的原因只能是因为连续5个字节都是被标记为1</span></span>
+<span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码64位变长整数的函数，与解码32位变长的那个函数类似</span></span>
+<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a><span class="co">// 不过这个函数没有回调，是直接在本函数内进行全部的解码工作</span></span>
+<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a><span class="co">// 原因我觉得是这样的：因为小整数比较多，而小整数一般就以32位变长存储</span></span>
+<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a><span class="co">// 而解码最小整数的函数被设置成内联函数，这样效率就会提升很多</span></span>
+<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>GetVarint64Ptr<span class="op">(</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p<span class="op">,</span> <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>value<span class="op">)</span></span>
+<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint64_t</span> result <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这个函数内部与GetVarint32PtrFallback一致</span></span>
+<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">uint32_t</span> shift <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> shift <span class="op">&lt;=</span> <span class="dv">63</span> <span class="op">&amp;&amp;</span> p <span class="op">&lt;</span> limit<span class="op">;</span> shift <span class="op">+=</span> <span class="dv">7</span><span class="op">)</span></span>
+<span id="cb2-194"><a href="#cb2-194" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a>        <span class="dt">uint64_t</span> byte <span class="op">=</span> <span class="op">*(</span><span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">uint8_t</span> <span class="op">*&gt;(</span>p<span class="op">));</span></span>
+<span id="cb2-196"><a href="#cb2-196" aria-hidden="true" tabindex="-1"></a>        p<span class="op">++;</span></span>
+<span id="cb2-197"><a href="#cb2-197" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">(</span>byte <span class="op">&amp;</span> <span class="dv">128</span><span class="op">)</span></span>
+<span id="cb2-198"><a href="#cb2-198" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb2-199"><a href="#cb2-199" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">((</span>byte <span class="op">&amp;</span> <span class="dv">127</span><span class="op">)</span> <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
+<span id="cb2-200"><a href="#cb2-200" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-201"><a href="#cb2-201" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
+<span id="cb2-202"><a href="#cb2-202" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb2-203"><a href="#cb2-203" aria-hidden="true" tabindex="-1"></a>            result <span class="op">|=</span> <span class="op">(</span>byte <span class="op">&lt;&lt;</span> shift<span class="op">);</span></span>
+<span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a>            <span class="op">*</span>value <span class="op">=</span> result<span class="op">;</span></span>
+<span id="cb2-205"><a href="#cb2-205" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span><span class="at">const</span> <span class="dt">char</span> <span class="op">*&gt;(</span>p<span class="op">);</span></span>
+<span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">nullptr</span><span class="op">;</span></span>
+<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a><span class="co">/*=============Put与Get方法=============*/</span></span>
+<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a><span class="co">// 把32位定长转换成字符串</span></span>
+<span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> value<span class="op">)</span></span>
+<span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 设置一个缓存区，然后把value编码到缓存区后插入</span></span>
+<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="kw">sizeof</span><span class="op">(</span>value<span class="op">)];</span></span>
+<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a>    EncodeFixed32<span class="op">(</span>buf<span class="op">,</span> value<span class="op">);</span></span>
+<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>buf<span class="op">));</span></span>
+<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a><span class="co">// 把64位定长转化成字符串</span></span>
+<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutFixed64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> value<span class="op">)</span></span>
+<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 设置一个缓存区，然后把value编码到缓存区后插入</span></span>
+<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="kw">sizeof</span><span class="op">(</span>value<span class="op">)];</span></span>
+<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a>    EncodeFixed64<span class="op">(</span>buf<span class="op">,</span> value<span class="op">);</span></span>
+<span id="cb2-228"><a href="#cb2-228" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> <span class="kw">sizeof</span><span class="op">(</span>buf<span class="op">));</span></span>
+<span id="cb2-229"><a href="#cb2-229" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-230"><a href="#cb2-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-231"><a href="#cb2-231" aria-hidden="true" tabindex="-1"></a><span class="co">// 把32位变长转化成字符串</span></span>
+<span id="cb2-232"><a href="#cb2-232" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint32<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint32_t</span> v<span class="op">)</span></span>
+<span id="cb2-233"><a href="#cb2-233" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-234"><a href="#cb2-234" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 设置最大的缓冲区，注意EncodeVarint32会返回指向编码后的一个字节的指针</span></span>
+<span id="cb2-235"><a href="#cb2-235" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 所以就能根据指针偏移来计算出当前变长整数的长度</span></span>
+<span id="cb2-236"><a href="#cb2-236" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">5</span><span class="op">];</span></span>
+<span id="cb2-237"><a href="#cb2-237" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>ptr <span class="op">=</span> EncodeVarint32<span class="op">(</span>buf<span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb2-238"><a href="#cb2-238" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> ptr <span class="op">-</span> buf<span class="op">);</span></span>
+<span id="cb2-239"><a href="#cb2-239" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-240"><a href="#cb2-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-241"><a href="#cb2-241" aria-hidden="true" tabindex="-1"></a><span class="co">// 把64位变长转化成字符串</span></span>
+<span id="cb2-242"><a href="#cb2-242" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutVarint64<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="dt">uint64_t</span> v<span class="op">)</span></span>
+<span id="cb2-243"><a href="#cb2-243" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-244"><a href="#cb2-244" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 原理和PutVarint32一样，只是缓冲区大小大了一些</span></span>
+<span id="cb2-245"><a href="#cb2-245" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> buf<span class="op">[</span><span class="dv">10</span><span class="op">];</span></span>
+<span id="cb2-246"><a href="#cb2-246" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> <span class="op">*</span>ptr <span class="op">=</span> EncodeVarint64<span class="op">(</span>buf<span class="op">,</span> v<span class="op">);</span></span>
+<span id="cb2-247"><a href="#cb2-247" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>buf<span class="op">,</span> ptr <span class="op">-</span> buf<span class="op">);</span></span>
+<span id="cb2-248"><a href="#cb2-248" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-249"><a href="#cb2-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-250"><a href="#cb2-250" aria-hidden="true" tabindex="-1"></a><span class="co">// 把slice转化成字符串存储</span></span>
+<span id="cb2-251"><a href="#cb2-251" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> PutLengthPrefixedSlice<span class="op">(</span><span class="bu">std::</span>string<span class="op"> *</span>dst<span class="op">,</span> <span class="at">const</span> Slice <span class="op">&amp;</span>value<span class="op">)</span></span>
+<span id="cb2-252"><a href="#cb2-252" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-253"><a href="#cb2-253" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 字符串的编码格式是长度在前，然后是字符串本身</span></span>
+<span id="cb2-254"><a href="#cb2-254" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 所以按照定义就可以插入了</span></span>
+<span id="cb2-255"><a href="#cb2-255" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 先插入长度，然后把字符串移动过去</span></span>
+<span id="cb2-256"><a href="#cb2-256" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 由于Slice末尾不需要'\0'，所以需要指定长度</span></span>
+<span id="cb2-257"><a href="#cb2-257" aria-hidden="true" tabindex="-1"></a>    PutVarint32<span class="op">(</span>dst<span class="op">,</span> value<span class="op">.</span>size<span class="op">());</span></span>
+<span id="cb2-258"><a href="#cb2-258" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">-&gt;</span>append<span class="op">(</span>value<span class="op">.</span>data<span class="op">(),</span> value<span class="op">.</span>size<span class="op">());</span></span>
+<span id="cb2-259"><a href="#cb2-259" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-260"><a href="#cb2-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-261"><a href="#cb2-261" aria-hidden="true" tabindex="-1"></a><span class="co">// 计算变长整数的长度</span></span>
+<span id="cb2-262"><a href="#cb2-262" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> VarintLength<span class="op">(</span><span class="dt">uint64_t</span> v<span class="op">)</span></span>
+<span id="cb2-263"><a href="#cb2-263" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-264"><a href="#cb2-264" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 这个函数思路很简单，不解析了</span></span>
+<span id="cb2-265"><a href="#cb2-265" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> len <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-266"><a href="#cb2-266" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>v <span class="op">&gt;=</span> <span class="dv">128</span><span class="op">)</span></span>
+<span id="cb2-267"><a href="#cb2-267" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-268"><a href="#cb2-268" aria-hidden="true" tabindex="-1"></a>        v <span class="op">&gt;&gt;=</span> <span class="dv">7</span><span class="op">;</span></span>
+<span id="cb2-269"><a href="#cb2-269" aria-hidden="true" tabindex="-1"></a>        len<span class="op">++;</span></span>
+<span id="cb2-270"><a href="#cb2-270" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-271"><a href="#cb2-271" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> len<span class="op">;</span></span>
+<span id="cb2-272"><a href="#cb2-272" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-273"><a href="#cb2-273" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-274"><a href="#cb2-274" aria-hidden="true" tabindex="-1"></a><span class="co">// 从字符串中获取32位变长</span></span>
+<span id="cb2-275"><a href="#cb2-275" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint32<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
+<span id="cb2-276"><a href="#cb2-276" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-277"><a href="#cb2-277" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> input<span class="op">-&gt;</span>data<span class="op">();</span>                   <span class="co">// 先拿到字符串的首指针</span></span>
+<span id="cb2-278"><a href="#cb2-278" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit <span class="op">=</span> p <span class="op">+</span> input<span class="op">-&gt;</span>size<span class="op">();</span>           <span class="co">// 然后获取尾部地址</span></span>
+<span id="cb2-279"><a href="#cb2-279" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>q <span class="op">=</span> GetVarint32Ptr<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span> <span class="co">//先解码出数据</span></span>
+<span id="cb2-280"><a href="#cb2-280" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb2-281"><a href="#cb2-281" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-282"><a href="#cb2-282" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 所请求元素不合法</span></span>
+<span id="cb2-283"><a href="#cb2-283" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb2-284"><a href="#cb2-284" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-285"><a href="#cb2-285" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb2-286"><a href="#cb2-286" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-287"><a href="#cb2-287" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 由于一个字符串可能内部不止一个整数</span></span>
+<span id="cb2-288"><a href="#cb2-288" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 解码完一个整数后可能还剩余一部分未解码的数据</span></span>
+<span id="cb2-289"><a href="#cb2-289" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 比如字符串存储格式是前面一个32位变长+字符串本身</span></span>
+<span id="cb2-290"><a href="#cb2-290" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>input <span class="op">=</span> Slice<span class="op">(</span>q<span class="op">,</span> limit <span class="op">-</span> q<span class="op">);</span></span>
+<span id="cb2-291"><a href="#cb2-291" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-292"><a href="#cb2-292" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-293"><a href="#cb2-293" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-294"><a href="#cb2-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-295"><a href="#cb2-295" aria-hidden="true" tabindex="-1"></a><span class="co">// 从字符串中获取64位变长</span></span>
+<span id="cb2-296"><a href="#cb2-296" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint64<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint64_t</span> <span class="op">*</span>value<span class="op">)</span></span>
+<span id="cb2-297"><a href="#cb2-297" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-298"><a href="#cb2-298" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 同上，只是部分接口不一样</span></span>
+<span id="cb2-299"><a href="#cb2-299" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> input<span class="op">-&gt;</span>data<span class="op">();</span></span>
+<span id="cb2-300"><a href="#cb2-300" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit <span class="op">=</span> p <span class="op">+</span> input<span class="op">-&gt;</span>size<span class="op">();</span></span>
+<span id="cb2-301"><a href="#cb2-301" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>q <span class="op">=</span> GetVarint64Ptr<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span></span>
+<span id="cb2-302"><a href="#cb2-302" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb2-303"><a href="#cb2-303" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-304"><a href="#cb2-304" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb2-305"><a href="#cb2-305" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-306"><a href="#cb2-306" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb2-307"><a href="#cb2-307" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-308"><a href="#cb2-308" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>input <span class="op">=</span> Slice<span class="op">(</span>q<span class="op">,</span> limit <span class="op">-</span> q<span class="op">);</span></span>
+<span id="cb2-309"><a href="#cb2-309" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-310"><a href="#cb2-310" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-311"><a href="#cb2-311" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-312"><a href="#cb2-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-313"><a href="#cb2-313" aria-hidden="true" tabindex="-1"></a><span class="co">// 解码出字符串</span></span>
+<span id="cb2-314"><a href="#cb2-314" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetLengthPrefixedSlice<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> Slice <span class="op">*</span>result<span class="op">)</span></span>
+<span id="cb2-315"><a href="#cb2-315" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb2-316"><a href="#cb2-316" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> len<span class="op">;</span></span>
+<span id="cb2-317"><a href="#cb2-317" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 先获取长度，然后根据长度去解码</span></span>
+<span id="cb2-318"><a href="#cb2-318" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GetVarint32<span class="op">(</span>input<span class="op">,</span> <span class="op">&amp;</span>len<span class="op">)</span> <span class="op">&amp;&amp;</span> input<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">&gt;=</span> len<span class="op">)</span></span>
+<span id="cb2-319"><a href="#cb2-319" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-320"><a href="#cb2-320" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>result <span class="op">=</span> Slice<span class="op">(</span>input<span class="op">-&gt;</span>data<span class="op">(),</span> len<span class="op">);</span></span>
+<span id="cb2-321"><a href="#cb2-321" aria-hidden="true" tabindex="-1"></a>        input<span class="op">-&gt;</span>remove_prefix<span class="op">(</span>len<span class="op">);</span></span>
+<span id="cb2-322"><a href="#cb2-322" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-323"><a href="#cb2-323" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-324"><a href="#cb2-324" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb2-325"><a href="#cb2-325" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb2-326"><a href="#cb2-326" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb2-327"><a href="#cb2-327" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-328"><a href="#cb2-328" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>其中，关于字符串的解码部分我认为还是很巧妙的，因为字符串编码后的长度在前，且长度是一个变长整数，所以解码时需要先提取出长度。正常情况下的写法可能是先对整个编码后字符串遍历，解析出前面的长度，记录下这个字符串长度以及变长整数的长度后再去处理后面的字符串。</p>
+<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic2.png" class="" title="_">
+<p>但是levelDB中的处理方式是让变长解码函数解码多少就把输入中解码的这段数据给弄掉(修改了源字符串的指针)，因为这部分需要解码的值已经被解析出来并返回了，也就不再需要了。</p>
+<img src="/2022/08/30/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-4/pic3.png" class="" title="_">
+<p><strong><em>每个解码函数只处理字符串开头，并且处理完成后及时改变字符串的首地址(后移)，这样就不需要记录这部分的状态并考虑处理细节了</em></strong></p>
+<p>能够这样做的原因就是通过传递超尾元素来标定界限，同时所有处理函数都以指针作为数据传递的方式(统一接口标准)。</p>
+<p>而直接移动字符串指针很容易就引出另外一个问题：会不会内存泄漏呢？</p>
+<p>答案是不会，因为内存并不由Slice管理，Slice只是对底层字符串做出了映射而已，其主要目的是用于传递，后续我们会对Slice进行解析。</p>
+<p>再特意把这段代码贴出来</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetVarint32<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> <span class="dt">uint32_t</span> <span class="op">*</span>value<span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>p <span class="op">=</span> input<span class="op">-&gt;</span>data<span class="op">();</span>                   <span class="co">// 先拿到字符串的首指针</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>limit <span class="op">=</span> p <span class="op">+</span> input<span class="op">-&gt;</span>size<span class="op">();</span>           <span class="co">// 然后获取尾部地址</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">const</span> <span class="dt">char</span> <span class="op">*</span>q <span class="op">=</span> GetVarint32Ptr<span class="op">(</span>p<span class="op">,</span> limit<span class="op">,</span> value<span class="op">);</span> <span class="co">//先解码出数据，q是超尾元素(相对变长整数而言)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>q <span class="op">==</span> <span class="kw">nullptr</span><span class="op">)</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 所请求元素不合法</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 由于一个字符串可能内部不止一个整数</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 解码完一个整数后可能还剩余一部分未解码的数据</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 比如字符串存储格式是前面一个32位变长+字符串本身</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>input <span class="op">=</span> Slice<span class="op">(</span>q<span class="op">,</span> limit <span class="op">-</span> q<span class="op">);</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> GetLengthPrefixedSlice<span class="op">(</span>Slice <span class="op">*</span>input<span class="op">,</span> Slice <span class="op">*</span>result<span class="op">)</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> len<span class="op">;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 先获取长度，然后根据长度去解码</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>GetVarint32<span class="op">(</span>input<span class="op">,</span> <span class="op">&amp;</span>len<span class="op">)</span> <span class="op">&amp;&amp;</span> input<span class="op">-&gt;</span>size<span class="op">()</span> <span class="op">&gt;=</span> len<span class="op">)</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span>result <span class="op">=</span> Slice<span class="op">(</span>input<span class="op">-&gt;</span>data<span class="op">(),</span> len<span class="op">);</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        input<span class="op">-&gt;</span>remove_prefix<span class="op">(</span>len<span class="op">);</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<hr>
 <h2 id="总结部分">总结部分</h2>
+<table>
+<colgroup>
+<col style="width: 61%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">函数/变量</th>
+<th style="text-align: center;">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">inline void EncodeFixed32(char *dst,
+uint32_t value)</td>
+<td style="text-align: center;">编码定长32位整数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">inline void EncodeFixed64(char *dst,
+uint64_t value)</td>
+<td style="text-align: center;">编码定长64位整数</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">inline uint32_t DecodeFixed32(const char
+*ptr)</td>
+<td style="text-align: center;">解码32位定长整数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">inline uint64_t DecodeFixed64(const char
+*ptr)</td>
+<td style="text-align: center;">解码64位定长整数</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">char <em>EncodeVarint32(char </em>dst,
+uint32_t v)</td>
+<td style="text-align: center;">编码32位变长整数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">char <em>EncodeVarint64(char </em>dst,
+uint64_t v)</td>
+<td style="text-align: center;">编码64位变长整数</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">inline const char
+<em>GetVarint32Ptr(const char </em>p, const char <em>limit, uint32_t
+</em>value)</td>
+<td style="text-align: center;">解码32位变长整数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">const char
+<em>GetVarint32PtrFallback(const char </em>p, const char
+<em>limit,uint32_t </em>value)</td>
+<td style="text-align: center;">解码32位变长整数中大于127的数字，被GetVarint32Ptr调用</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">const char <em>GetVarint64Ptr(const char
+</em>p, const char <em>limit, uint64_t </em>value)</td>
+<td style="text-align: center;">解码64位变长整数的函数</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">void PutFixed32(std::string *dst,
+uint32_t value)</td>
+<td style="text-align: center;">把32位定长转换成字符串</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">void PutFixed64(std::string *dst,
+uint64_t value)</td>
+<td style="text-align: center;">把64位定长转化成字符串</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">void PutVarint32(std::string *dst,
+uint32_t v)</td>
+<td style="text-align: center;">把32位变长转化成字符串</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">void PutVarint64(std::string *dst,
+uint64_t v)</td>
+<td style="text-align: center;">把64位变长转化成字符串</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">void PutLengthPrefixedSlice(std::string
+*dst, const Slice &amp;value)</td>
+<td style="text-align: center;">把slice转化成字符串存储</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">int VarintLength(uint64_t v)</td>
+<td style="text-align: center;">计算变长整数的长度</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">bool GetVarint32(Slice <em>input,
+uint32_t </em>value)</td>
+<td style="text-align: center;">从字符串中获取32位变长</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">bool GetVarint64(Slice <em>input,
+uint64_t </em>value)</td>
+<td style="text-align: center;">从字符串中获取64位变长</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">bool GetLengthPrefixedSlice(Slice
+<em>input, Slice </em>result)</td>
+<td style="text-align: center;">解码出字符串</td>
+</tr>
+</tbody>
+</table>
+<p>编码解码部分使用到了很多位级编程，这部分都很有意思，可以做到四两拨千斤的作用。</p>
 <blockquote>
 <h3 id="编程小技巧">编程小技巧</h3>
+<ul>
+<li><p>在函数内需要用到的常量可以定义成内部静态常量<code>static const</code>，这样就避免了全局变量的额外开销与权限混乱、同时也能避免局部变量的每次都需要额外分配的开销。</p></li>
+<li><p>当函数是处理连续的区间时，预留出超尾元素接口是很有必要的。</p></li>
+</ul>
 </blockquote>
 
     </div>
