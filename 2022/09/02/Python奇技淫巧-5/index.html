@@ -16,25 +16,25 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Webbench源码剖析">
+    <meta name="description" content="文件和IO----来源于cookbook第五章">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Webbench源码剖析">
-<meta property="og:url" content="http://example.com/2022/09/01/Webbench%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/index.html">
+<meta property="og:title" content="Python奇技淫巧(5)">
+<meta property="og:url" content="http://example.com/2022/09/02/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-5/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="Webbench源码剖析">
+<meta property="og:description" content="文件和IO----来源于cookbook第五章">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/webbench.jpg">
-<meta property="article:published_time" content="2022-09-01T12:02:36.000Z">
-<meta property="article:modified_time" content="2022-09-01T13:05:15.953Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
+<meta property="article:published_time" content="2022-09-02T13:52:52.000Z">
+<meta property="article:modified_time" content="2022-09-03T07:17:51.605Z">
 <meta property="article:author" content="PPXXXG22">
-<meta property="article:tag" content="C">
-<meta property="article:tag" content="小型C语言项目源码剖析">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="PythonCookbook">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/webbench.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
   
   
   
-  <title>Webbench源码剖析 - PPXXXG22</title>
+  <title>Python奇技淫巧(5) - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -322,13 +322,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/webbench.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/pycook5.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="剖析Webbench源码，从经典中汲取营养。"></span>
+            <span id="subtitle" data-typed-text="Python的奇技淫巧，让代码更Pythonic"></span>
           
         </div>
 
@@ -339,8 +339,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-01 20:02" pubdate>
-          September 1, 2022 pm
+        <time datetime="2022-09-02 21:52" pubdate>
+          September 2, 2022 pm
         </time>
       </span>
     
@@ -351,7 +351,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          241 words
+          1.8k words
         
       </span>
     
@@ -362,7 +362,7 @@ mjx-container[display="true"] + br {
         
         
         
-          3 mins
+          15 mins
         
       </span>
     
@@ -408,19 +408,56 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">剖析Webbench源码，从经典中汲取营养。</h1>
+            <h1 style="display: none">Python的奇技淫巧，让代码更Pythonic</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="webbench源码剖析">Webbench源码剖析</h2>
+                <h2 id="文件和io----来源于cookbook第五章">文件和IO----来源于cookbook第五章</h2>
 <span id="more"></span>
-<p><a target="_blank" rel="noopener" href="https://github.com/EZLippi/WebBench">项目地址</a></p>
+<p><font color="#a0add0">记录第五章中比较有意思的部分</font></p>
+<hr>
+<h3 id="open函数打开文件的小技巧">open函数打开文件的小技巧</h3>
 <div class="note note-primary">
-            <h3 id="webbench介绍">Webbench介绍</h3><p>Webbench是一个在linux下使用的非常简单的网站压测工具。它使用fork()模拟多个客户端同时访问我们设定的URL，测试网站在压力下工作的性能，最多可以模拟3万个并发连接去测试网站的负载能力。</p><p>而其源码也相当的短，只有500行，读起来非常容易。</p>
+            <p>由于有些文件中会出现编码错误或与当前主机不匹配，使用<code>open</code>函数时可以增加<code>errors='ignore'</code>来忽略掉错误的编码。</p>
           </div>
-<p>不过虽然代码量很小，但是最好熟悉unix网络编程，以及linux下C语言多线程的实现(fork()函数)，否则可能看起来会比较吃力。</p>
-<p>我们将代码拉下来后，可以发现，其只包含两个文件，</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>g = <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile.txt"</span>, <span class="hljs-string">'rt'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>)<br><br></code></pre></td></tr></table></figure>
+<h3 id="使用print函数重定向到文件">使用print函数重定向到文件</h3>
+<div class="note note-primary">
+            <p>使用<code>print</code>函数的<code>file = handler</code>参数即可</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>l = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-string">'3'</span>,(<span class="hljs-number">4</span>,<span class="hljs-number">5</span>)]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"file"</span>,<span class="hljs-string">"w"</span>) <span class="hljs-keyword">as</span> f:<br>    <span class="hljs-built_in">print</span>(*l, sep = <span class="hljs-string">','</span>, file = f)<br><br></code></pre></td></tr></table></figure>
+<h3 id="对不存在的文件进行写入操作">对不存在的文件进行写入操作</h3>
+<div class="note note-primary">
+            <p>直接使用<code>xt</code>模式来操作文件即可</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'wt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会报错</span><br>    ...<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'xt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会创建，存在时不影响</span><br>    ...<br><br></code></pre></td></tr></table></figure>
+<h3 id="将二进制文件做内存映射">将二进制文件做内存映射</h3>
+<div class="note note-primary">
+            <p>使用<code>mmap</code>模块来创建映射，这样可以直接访问，而不需要频繁的seek、read等操作。</p><p>另外，由于虚拟内存的存在，多个python解释器可以映射到同一个文件上从而实现共享数据。</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> mmap<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">memory_map</span>(<span class="hljs-params">filename, access = mmap.ACCESS_WRITE</span>):<br>    size = os.path.getsize(filename)<br>    fd = os.<span class="hljs-built_in">open</span>(filename, os.O_RDWR)<br>    <span class="hljs-keyword">return</span> mmap.mmap(fd, size, access = access)<br><br>m = memory_map(<span class="hljs-string">"data"</span>)<br><br><span class="hljs-comment"># 此时就可以像操作数组那样操作m</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(m))<br><span class="hljs-built_in">print</span>(m[:<span class="hljs-number">34</span>])<br>m[:<span class="hljs-number">11</span>] = <span class="hljs-string">b'hello world'</span><br>m.close()<br><br></code></pre></td></tr></table></figure>
+<h3 id="将字节数据写入文本文件">将字节数据写入文本文件</h3>
+<div class="note note-primary">
+            <p>只需要简答的将字节数据写入到文件底层buffer中就可以了。</p>
+          </div>
+<div class="note note-warning">
+            <p>在python中调用print时，事实上调用了sys.stdout.write(obj+'\n')</p><p>而stdout就像是一个类文件对象，因为你可以将他赋值给任意的一个文件对象，重定向输出</p><p>原始的sys.stdout指向控制台，如果把文件的对象引用赋给sys.stdout，那么print调用的就是文件对象的write方法</p><p>而buffer是缓冲区，所以此操作就是不调用上层的write方法而直接写入底层的缓冲区</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-comment"># 示例一</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br><br><span class="hljs-comment"># 示例二</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout = <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">"xt"</span>)<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br></code></pre></td></tr></table></figure>
+<h3 id="创建临时文件与文件夹">创建临时文件与文件夹</h3>
+<div class="note note-primary">
+            <p><code>tempfile</code>模块中有各种实现了上下文管理协议的函数来处理临时文件</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> tempfile <span class="hljs-keyword">import</span> TemporaryFile<br><br><span class="hljs-keyword">with</span> TemporaryFile(<span class="hljs-string">'w+t'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>, delete = <span class="hljs-literal">True</span>):<br>    ...<br><br></code></pre></td></tr></table></figure>
+<h3 id="序列化python对象">序列化python对象</h3>
+<div class="note note-primary">
+            <p><code>pickle</code>模块的dump和load函数就足以处理这些</p>
+          </div>
+<div class="note note-warning">
+            <p>注意不要对来源不明的对象进行load，因为这会产生副作用，严重甚至可能导致计算机被入侵。</p>
+          </div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> pickle<br><br>a = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">'wb'</span>) <span class="hljs-keyword">as</span> f:<br>    pickle.dump(a,f)<br>    ...<br>    pickle.load(a,f)<br><br></code></pre></td></tr></table></figure>
 
                 
               </div>
@@ -439,7 +476,7 @@ mjx-container[display="true"] + br {
     
       <span class="category-chain">
         
-  <a href="/categories/%E5%B0%8F%E5%9E%8BC%E8%AF%AD%E8%A8%80%E9%A1%B9%E7%9B%AE%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">小型C语言项目源码剖析</a>
+  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
   
   
 
@@ -454,9 +491,9 @@ mjx-container[display="true"] + br {
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/C/">#C</a>
+        <a href="/tags/Python/">#Python</a>
       
-        <a href="/tags/%E5%B0%8F%E5%9E%8BC%E8%AF%AD%E8%A8%80%E9%A1%B9%E7%9B%AE%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/">#小型C语言项目源码剖析</a>
+        <a href="/tags/PythonCookbook/">#PythonCookbook</a>
       
     </div>
   
@@ -470,18 +507,12 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/02/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-5/" title="Python奇技淫巧(5)">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Python奇技淫巧(5)</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/08/30/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-4/" title="Python奇技淫巧(4)">
-                        <span class="hidden-mobile">Python奇技淫巧(4)</span>
+                      <a href="/2022/09/01/Webbench%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="Webbench源码剖析">
+                        <span class="hidden-mobile">Webbench源码剖析</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
