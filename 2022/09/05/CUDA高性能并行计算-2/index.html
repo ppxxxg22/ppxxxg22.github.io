@@ -16,25 +16,24 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="文件和IO----来源于cookbook第五章">
+    <meta name="description" content="CUDA基础知识">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Python奇技淫巧(5)">
-<meta property="og:url" content="http://example.com/2022/09/02/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-5/index.html">
+<meta property="og:title" content="CUDA高性能并行计算(2)">
+<meta property="og:url" content="http://example.com/2022/09/05/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-2/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="文件和IO----来源于cookbook第五章">
+<meta property="og:description" content="CUDA基础知识">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
-<meta property="article:published_time" content="2022-09-02T13:52:52.000Z">
-<meta property="article:modified_time" content="2022-09-03T07:17:51.605Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda2.jpg">
+<meta property="article:published_time" content="2022-09-05T07:38:20.000Z">
+<meta property="article:modified_time" content="2022-09-05T09:07:53.523Z">
 <meta property="article:author" content="PPXXXG22">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="PythonCookbook">
+<meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda2.jpg">
   
   
   
-  <title>Python奇技淫巧(5) - PPXXXG22</title>
+  <title>CUDA高性能并行计算(2) - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -322,13 +321,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/pycook5.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/cuda2.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Python的奇技淫巧，让代码更Pythonic"></span>
+            <span id="subtitle" data-typed-text="CUDA高性能并行计算(2)"></span>
           
         </div>
 
@@ -339,8 +338,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-02 21:52" pubdate>
-          September 2, 2022 pm
+        <time datetime="2022-09-05 15:38" pubdate>
+          September 5, 2022 pm
         </time>
       </span>
     
@@ -351,7 +350,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.8k words
+          2.2k words
         
       </span>
     
@@ -362,7 +361,7 @@ mjx-container[display="true"] + br {
         
         
         
-          15 mins
+          18 mins
         
       </span>
     
@@ -408,56 +407,50 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Python的奇技淫巧，让代码更Pythonic</h1>
+            <h1 style="display: none">CUDA高性能并行计算(2)</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="文件和io----来源于cookbook第五章">文件和IO----来源于cookbook第五章</h2>
+                <h2 id="cuda基础知识">CUDA基础知识</h2>
 <span id="more"></span>
-<p><font color="#a0add0">记录第五章中比较有意思的部分</font></p>
-<hr>
-<h3 id="open函数打开文件的小技巧">open函数打开文件的小技巧</h3>
+<h3 id="并行计算与串行计算">并行计算与串行计算</h3>
+<p>对于计算密集型任务，当我们有很多计算核心时，每次只调用其中的一个核心进行一次计算任务，这时很浪费的，而这恰恰正式上一节中编写的程序的工作模式。而为了提高计算单元的效率，我们需要将串行工作模式改成并行计算模式，而这就需要用到CUDA和其API接口。</p>
+<h3 id="cuda的基本概念">CUDA的基本概念</h3>
+<p>由于GPU存在成千上万个廉价的计算单元，如果我们能将一个计算任务分解成多个子任务，这样就可以用GPU来完成并行计算，下面来介绍一下在并行计算中的规划方法。</p>
+<p>CUDA引用了<strong>单指令多线程</strong>的并行模式(即每个线程执行相同的数据计算，然后使用一条指令控制从而减少控制器数目和系统复杂度--设想成千上万的线程各自做不同的事情，如果再有线程间通讯/同步，将会是怎样的梦魇)，GPU中包含大量的基础计算单元，称为<strong>核</strong>，每个核都包含了一个逻辑计算单元和一个浮点计算单元，多个核集成在一起被称为<strong>多流处理器</strong>。</p>
+<img src="/2022/09/05/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-2/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<p>而将每个计算任务分解成多个子任务，称为<strong>线程</strong>，多个线程被组织成<strong>线程块</strong>，线程块被分解成大小与一个SM中核数量相同的<strong>线程束</strong>，每个线程束由一个SM负责执行，这些多流处理器的控制单元指挥其他所有核同时在一个线程束的每个线程中执行同一个指令，这是单指令多线程的来源。</p>
+<h3 id="gpu与cpu对比">GPU与CPU对比</h3>
+<p>众所周知，CPU也是可以执行并行计算的，那两者有什么区别呢？</p>
+<p>首先，CPU是通用计算单元，其核心数目比较少，但是具备处理能力较强，同时其芯片上大部分空间是被设计成用于加速IO的高速缓存。而GPU拥有大量的能力稍弱的核，且每次都是使用一堆核做相同的计算(并不是做一摸一样的计算，而是做类型一样的计算，比如都是加法这样，这是更大的计算任务中的一小部分)，与CPU另一个不同之处在于GPU倾向于延迟隐藏，由于GPU上没有很多高速缓存，因此当一个线程束需要的数据不可达时，SM会转向去处理另一个线程束(挂起)。</p>
+<h3 id="cuda计算任务流程">CUDA计算任务流程</h3>
+<p>GPU计算中的关键结构是<strong>核函数</strong>，其产生大量组织成可以分配给SM的计算线程。</p>
+<p>因此在计算时，需要加载核函数来创建一个由多个线程块组成的<strong>线程网格</strong>，同一个网格上的线程共享相同的全局内存空间，每个网格内有很多线程块，而每个线程块由多个线程组成。</p>
+<p>一个线程块只会由一个SM来调度，但是一个SM可以调度多个线程块。另外由于SM的资源是有限的，所以其调用线程是由上限的。</p>
+<img src="/2022/09/05/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-2/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<h3 id="核函数">核函数</h3>
+<p>上面说了核函数是计算的关键函数，下面就来了解一下核函数怎么写。</p>
+<h4 id="核函数的声明与标识符">核函数的声明与标识符</h4>
+<p>由于GPU是一个外部设备，因此每个函数都需要指明这个函数是在主机上调用(CPU)还是在外部设备上调用(GPU)，并根据调用来编译出不同的代码。</p>
+<p>为了告知编译器在哪个设备上编译，就需要额外引入标识符，有以下三种标识符</p>
+<ul>
+<li><p>__global__：在CPU调用父函数，子函数在GPU执行(异步)。用__global__修饰的一般就是内核(kernel)函数。</p></li>
+<li><p>__device__：在GPU调用父函数，子函数在GPU执行。
+由__device__修饰的函数可以被由__global__和__device__修饰的函数调用，这种情况是动态并行。</p></li>
+<li><p>__host__：在CPU调用父函数，子函数在CPU执行（这是默认的标识符）。</p></li>
+</ul>
+<span class="label label-info">用__host__与__device__修饰的函数将同时在主机核设备上被编译。</span>
 <div class="note note-primary">
-            <p>由于有些文件中会出现编码错误或与当前主机不匹配，使用<code>open</code>函数时可以增加<code>errors='ignore'</code>来忽略掉错误的编码。</p>
+            <p>一般来说，我们只需要2个修饰词就够了，但是cuda却提供了3个——2个执行位置为GPU。这儿要引入一个“函数执行环境标识符”的概念。父函数调用子函数时，父函数可能运行于CPU或者GPU，相应的子函数也可能运行于CPU或者GPU，但是这绝不是一个2*2的组合关系。因为GPU作为CPU的计算组件，不可以调度CPU去做事，所以不存在父函数运行于GPU，而子函数运行于CPU的情况。</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>g = <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile.txt"</span>, <span class="hljs-string">'rt'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>)<br><br></code></pre></td></tr></table></figure>
-<h3 id="使用print函数重定向到文件">使用print函数重定向到文件</h3>
-<div class="note note-primary">
-            <p>使用<code>print</code>函数的<code>file = handler</code>参数即可</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>l = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-string">'3'</span>,(<span class="hljs-number">4</span>,<span class="hljs-number">5</span>)]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"file"</span>,<span class="hljs-string">"w"</span>) <span class="hljs-keyword">as</span> f:<br>    <span class="hljs-built_in">print</span>(*l, sep = <span class="hljs-string">','</span>, file = f)<br><br></code></pre></td></tr></table></figure>
-<h3 id="对不存在的文件进行写入操作">对不存在的文件进行写入操作</h3>
-<div class="note note-primary">
-            <p>直接使用<code>xt</code>模式来操作文件即可</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'wt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会报错</span><br>    ...<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'xt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会创建，存在时不影响</span><br>    ...<br><br></code></pre></td></tr></table></figure>
-<h3 id="将二进制文件做内存映射">将二进制文件做内存映射</h3>
-<div class="note note-primary">
-            <p>使用<code>mmap</code>模块来创建映射，这样可以直接访问，而不需要频繁的seek、read等操作。</p><p>另外，由于虚拟内存的存在，多个python解释器可以映射到同一个文件上从而实现共享数据。</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> mmap<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">memory_map</span>(<span class="hljs-params">filename, access = mmap.ACCESS_WRITE</span>):<br>    size = os.path.getsize(filename)<br>    fd = os.<span class="hljs-built_in">open</span>(filename, os.O_RDWR)<br>    <span class="hljs-keyword">return</span> mmap.mmap(fd, size, access = access)<br><br>m = memory_map(<span class="hljs-string">"data"</span>)<br><br><span class="hljs-comment"># 此时就可以像操作数组那样操作m</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(m))<br><span class="hljs-built_in">print</span>(m[:<span class="hljs-number">34</span>])<br>m[:<span class="hljs-number">11</span>] = <span class="hljs-string">b'hello world'</span><br>m.close()<br><br></code></pre></td></tr></table></figure>
-<h3 id="将字节数据写入文本文件">将字节数据写入文本文件</h3>
-<div class="note note-primary">
-            <p>只需要简答的将字节数据写入到文件底层buffer中就可以了。</p>
-          </div>
-<div class="note note-warning">
-            <p>在python中调用print时，事实上调用了sys.stdout.write(obj+'\n')</p><p>而stdout就像是一个类文件对象，因为你可以将他赋值给任意的一个文件对象，重定向输出</p><p>原始的sys.stdout指向控制台，如果把文件的对象引用赋给sys.stdout，那么print调用的就是文件对象的write方法</p><p>而buffer是缓冲区，所以此操作就是不调用上层的write方法而直接写入底层的缓冲区</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-comment"># 示例一</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br><br><span class="hljs-comment"># 示例二</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout = <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">"xt"</span>)<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br></code></pre></td></tr></table></figure>
-<h3 id="创建临时文件与文件夹">创建临时文件与文件夹</h3>
-<div class="note note-primary">
-            <p><code>tempfile</code>模块中有各种实现了上下文管理协议的函数来处理临时文件</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> tempfile <span class="hljs-keyword">import</span> TemporaryFile<br><br><span class="hljs-keyword">with</span> TemporaryFile(<span class="hljs-string">'w+t'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>, delete = <span class="hljs-literal">True</span>):<br>    ...<br><br></code></pre></td></tr></table></figure>
-<h3 id="序列化python对象">序列化python对象</h3>
-<div class="note note-primary">
-            <p><code>pickle</code>模块的dump和load函数就足以处理这些</p>
-          </div>
-<div class="note note-warning">
-            <p>注意不要对来源不明的对象进行load，因为这会产生副作用，严重甚至可能导致计算机被入侵。</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> pickle<br><br>a = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">'wb'</span>) <span class="hljs-keyword">as</span> f:<br>    pickle.dump(a,f)<br>    ...<br>    pickle.load(a,f)<br><br></code></pre></td></tr></table></figure>
+<p>另外，核函数不能带有返回值，因此返回类型通常为void，以及在GPU上的核函数是不能访问主机端CPU可以访问的内存数据。</p>
+<p>给出一个声明实例<code>__global__ void run_on_gpu()</code></p>
+<h4 id="核函数的调用">核函数的调用</h4>
+<p>核函数是一种特殊的函数，调用核函数从一个函数名开始，然后以一个包含逗号分割的参数列表，其中网格维度核线程块维度被放在参数列表中(三个尖括号，这是编译器扩展后的)。</p>
+<p>形如<code>aKernal &lt;&lt;&lt;2, 2 &gt;&gt;&gt; ();</code></p>
+<h4 id="一个示例">一个示例</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"device_launch_parameters.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><br><span class="hljs-function">__host__ __device__ <span class="hljs-type">int</span> <span class="hljs-title">run_on_cpu_or_gpu</span><span class="hljs-params">()</span> </span>{<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>}<br><br><span class="hljs-function">__global__ <span class="hljs-type">void</span> <span class="hljs-title">run_on_gpu</span><span class="hljs-params">()</span> </span>{<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"run_on_cpu_or_gpu GPU: %d\n"</span>, <span class="hljs-built_in">run_on_cpu_or_gpu</span>());<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>{<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"run_on_cpu_or_gpu CPU: %d\n"</span>, <span class="hljs-built_in">run_on_cpu_or_gpu</span>());<br>	run_on_gpu &lt;&lt; &lt;<span class="hljs-number">2</span>, <span class="hljs-number">2</span> &gt;&gt; &gt; ();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><br></code></pre></td></tr></table></figure>
 
                 
               </div>
@@ -476,7 +469,7 @@ mjx-container[display="true"] + br {
     
       <span class="category-chain">
         
-  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
+  <a href="/categories/CUDA%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/" class="category-chain-item">CUDA并行程序设计</a>
   
   
 
@@ -491,9 +484,7 @@ mjx-container[display="true"] + br {
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Python/">#Python</a>
-      
-        <a href="/tags/PythonCookbook/">#PythonCookbook</a>
+        <a href="/tags/CUDA/">#CUDA</a>
       
     </div>
   
@@ -507,18 +498,12 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/04/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-1/" title="CUDA高性能并行计算(1)">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CUDA高性能并行计算(1)</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/01/Webbench%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="Webbench源码剖析">
-                        <span class="hidden-mobile">Webbench源码剖析</span>
+                      <a href="/2022/09/04/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-1/" title="CUDA高性能并行计算(1)">
+                        <span class="hidden-mobile">CUDA高性能并行计算(1)</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

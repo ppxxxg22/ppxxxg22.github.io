@@ -16,25 +16,24 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="文件和IO----来源于cookbook第五章">
+    <meta name="description" content="CUDA初步探究">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Python奇技淫巧(5)">
-<meta property="og:url" content="http://example.com/2022/09/02/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-5/index.html">
+<meta property="og:title" content="CUDA高性能并行计算(1)">
+<meta property="og:url" content="http://example.com/2022/09/04/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-1/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="文件和IO----来源于cookbook第五章">
+<meta property="og:description" content="CUDA初步探究">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
-<meta property="article:published_time" content="2022-09-02T13:52:52.000Z">
-<meta property="article:modified_time" content="2022-09-03T07:17:51.605Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda1.jpg">
+<meta property="article:published_time" content="2022-09-04T12:35:44.000Z">
+<meta property="article:modified_time" content="2022-09-05T07:39:11.864Z">
 <meta property="article:author" content="PPXXXG22">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="PythonCookbook">
+<meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/pycook5.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda1.jpg">
   
   
   
-  <title>Python奇技淫巧(5) - PPXXXG22</title>
+  <title>CUDA高性能并行计算(1) - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -322,13 +321,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/pycook5.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/cuda1.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Python的奇技淫巧，让代码更Pythonic"></span>
+            <span id="subtitle" data-typed-text="CUDA高性能并行计算(1)"></span>
           
         </div>
 
@@ -339,8 +338,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-02 21:52" pubdate>
-          September 2, 2022 pm
+        <time datetime="2022-09-04 20:35" pubdate>
+          September 4, 2022 pm
         </time>
       </span>
     
@@ -351,7 +350,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.8k words
+          2.1k words
         
       </span>
     
@@ -362,7 +361,7 @@ mjx-container[display="true"] + br {
         
         
         
-          15 mins
+          18 mins
         
       </span>
     
@@ -408,56 +407,41 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Python的奇技淫巧，让代码更Pythonic</h1>
+            <h1 style="display: none">CUDA高性能并行计算(1)</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="文件和io----来源于cookbook第五章">文件和IO----来源于cookbook第五章</h2>
+                <h2 id="cuda初步探究">CUDA初步探究</h2>
 <span id="more"></span>
-<p><font color="#a0add0">记录第五章中比较有意思的部分</font></p>
-<hr>
-<h3 id="open函数打开文件的小技巧">open函数打开文件的小技巧</h3>
+<h3 id="什么是cuda">什么是CUDA</h3>
+<p>CUDA，即Compute Unified Device
+Architecture的简称，是由NVIDIA公司创立的基于他们公司生产的图形处理器GPUs的一个并行计算平台和编程模型。</p>
+<p>通过CUDA，GPUs可以很方便地被用来进行通用计算（有点像在CPU中进行的数值计算等等）。在没有CUDA之前，GPUs一般只用来进行图形渲染（如通过OpenGL，DirectX）。<br>
+开发人员可以通过调用CUDA的API，来进行并行编程，达到高性能计算目的。NVIDIA公司为了吸引更多的开发人员，对CUDA进行了编程语言扩展，如CUDA
+C/C++,CUDA Fortran语言。注意CUDA
+C/C++可以看作一个新的编程语言，因为NVIDIA配置了相应的编译器nvcc,CUDA
+Fortran一样。更多信息可以参考文献。</p>
 <div class="note note-primary">
-            <p>由于有些文件中会出现编码错误或与当前主机不匹配，使用<code>open</code>函数时可以增加<code>errors='ignore'</code>来忽略掉错误的编码。</p>
+            <p>本系列的博客跳过了CUDA环境的安装，如果有需要，请自行查阅相关教程，这方面资料还是很多的。</p><p>另外，本博客的环境是基于CUDA10.2，VS2017，windows10下的。</p>
           </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>g = <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile.txt"</span>, <span class="hljs-string">'rt'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>)<br><br></code></pre></td></tr></table></figure>
-<h3 id="使用print函数重定向到文件">使用print函数重定向到文件</h3>
-<div class="note note-primary">
-            <p>使用<code>print</code>函数的<code>file = handler</code>参数即可</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>l = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-string">'3'</span>,(<span class="hljs-number">4</span>,<span class="hljs-number">5</span>)]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"file"</span>,<span class="hljs-string">"w"</span>) <span class="hljs-keyword">as</span> f:<br>    <span class="hljs-built_in">print</span>(*l, sep = <span class="hljs-string">','</span>, file = f)<br><br></code></pre></td></tr></table></figure>
-<h3 id="对不存在的文件进行写入操作">对不存在的文件进行写入操作</h3>
-<div class="note note-primary">
-            <p>直接使用<code>xt</code>模式来操作文件即可</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'wt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会报错</span><br>    ...<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"somefile"</span>, <span class="hljs-string">'xt'</span>) <span class="hljs-keyword">as</span> f: <span class="hljs-comment"># 当somefile不存在时会创建，存在时不影响</span><br>    ...<br><br></code></pre></td></tr></table></figure>
-<h3 id="将二进制文件做内存映射">将二进制文件做内存映射</h3>
-<div class="note note-primary">
-            <p>使用<code>mmap</code>模块来创建映射，这样可以直接访问，而不需要频繁的seek、read等操作。</p><p>另外，由于虚拟内存的存在，多个python解释器可以映射到同一个文件上从而实现共享数据。</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> mmap<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">memory_map</span>(<span class="hljs-params">filename, access = mmap.ACCESS_WRITE</span>):<br>    size = os.path.getsize(filename)<br>    fd = os.<span class="hljs-built_in">open</span>(filename, os.O_RDWR)<br>    <span class="hljs-keyword">return</span> mmap.mmap(fd, size, access = access)<br><br>m = memory_map(<span class="hljs-string">"data"</span>)<br><br><span class="hljs-comment"># 此时就可以像操作数组那样操作m</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(m))<br><span class="hljs-built_in">print</span>(m[:<span class="hljs-number">34</span>])<br>m[:<span class="hljs-number">11</span>] = <span class="hljs-string">b'hello world'</span><br>m.close()<br><br></code></pre></td></tr></table></figure>
-<h3 id="将字节数据写入文本文件">将字节数据写入文本文件</h3>
-<div class="note note-primary">
-            <p>只需要简答的将字节数据写入到文件底层buffer中就可以了。</p>
-          </div>
-<div class="note note-warning">
-            <p>在python中调用print时，事实上调用了sys.stdout.write(obj+'\n')</p><p>而stdout就像是一个类文件对象，因为你可以将他赋值给任意的一个文件对象，重定向输出</p><p>原始的sys.stdout指向控制台，如果把文件的对象引用赋给sys.stdout，那么print调用的就是文件对象的write方法</p><p>而buffer是缓冲区，所以此操作就是不调用上层的write方法而直接写入底层的缓冲区</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-comment"># 示例一</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br><br><span class="hljs-comment"># 示例二</span><br><br><span class="hljs-keyword">import</span> sys<br><br>sys.stdout = <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">"xt"</span>)<br><br>sys.stdout.buffer.write(<span class="hljs-string">b'hello\n'</span>)<br><br></code></pre></td></tr></table></figure>
-<h3 id="创建临时文件与文件夹">创建临时文件与文件夹</h3>
-<div class="note note-primary">
-            <p><code>tempfile</code>模块中有各种实现了上下文管理协议的函数来处理临时文件</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> tempfile <span class="hljs-keyword">import</span> TemporaryFile<br><br><span class="hljs-keyword">with</span> TemporaryFile(<span class="hljs-string">'w+t'</span>, encoding = <span class="hljs-string">'utf-8'</span>, errors = <span class="hljs-string">'ignore'</span>, delete = <span class="hljs-literal">True</span>):<br>    ...<br><br></code></pre></td></tr></table></figure>
-<h3 id="序列化python对象">序列化python对象</h3>
-<div class="note note-primary">
-            <p><code>pickle</code>模块的dump和load函数就足以处理这些</p>
-          </div>
-<div class="note note-warning">
-            <p>注意不要对来源不明的对象进行load，因为这会产生副作用，严重甚至可能导致计算机被入侵。</p>
-          </div>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> pickle<br><br>a = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>]<br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">"filename"</span>,<span class="hljs-string">'wb'</span>) <span class="hljs-keyword">as</span> f:<br>    pickle.dump(a,f)<br>    ...<br>    pickle.load(a,f)<br><br></code></pre></td></tr></table></figure>
+<h3 id="运行cuda的样例">运行CUDA的样例</h3>
+<p>首先先找到CUDA的安装目录（本机是<code>C:\Program Files\NVIDIA GPU Computing Toolkit</code>），然后进入<code>extras/demo_suite</code>目录，就能看到已经编译好的样例程序。</p>
+<p>我们运行<code>nbody.exe</code>，这是一个模拟上千个受到万有引力的粒子运动并进行可视化的程序。可以在控制台中进行调整参数，这个程序还有很炫酷的。</p>
+
+<p>除了<code>nbody.exe</code>，这个目录下还有其他的一些例程可以运行，同样的，还有一些未被编译的例程，可以手动去编译。</p>
+<h3 id="编写一个串行程序">编写一个串行程序</h3>
+<p>我们首先使用传统方式来写一个计算一个点到一条直线上若干点的距离的程序。</p>
+<p>这个简单的cpp程序使用了一个for循环，先对循环变量进行归一化处理，然后计算并存储与参考位置的距离。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;math.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> N 64</span><br><br><br><span class="hljs-function"><span class="hljs-type">float</span> <span class="hljs-title">scale</span><span class="hljs-params">(<span class="hljs-type">int</span> i, <span class="hljs-type">int</span> n)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-keyword">return</span> ((<span class="hljs-type">float</span>)i / (n - <span class="hljs-number">1</span>));<br>}<br><br><span class="hljs-function"><span class="hljs-type">float</span> <span class="hljs-title">distance</span><span class="hljs-params">(<span class="hljs-type">float</span> x1, <span class="hljs-type">float</span> x2)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-keyword">return</span> <span class="hljs-built_in">sqrt</span>((x2 - x1)*(x2 - x1));<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">float</span> out[N] = { <span class="hljs-number">0.0f</span> };<br>	<span class="hljs-type">float</span> ref = <span class="hljs-number">0.5f</span>;<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; i++)<br>	{<br>		<span class="hljs-type">float</span> x = <span class="hljs-built_in">scale</span>(i, N);<br>		out[i] = <span class="hljs-built_in">distance</span>(x, ref);<br>	}<br>	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">auto</span> &amp; i : out)<br>	{<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">"%f "</span>, i);<br>	}<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><br><br></code></pre></td></tr></table></figure>
+<p>接下来我们使用另外一种方式来编写这个程序。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;math.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> N 64</span><br><br><span class="hljs-function"><span class="hljs-type">float</span> <span class="hljs-title">scale</span><span class="hljs-params">(<span class="hljs-type">int</span> i, <span class="hljs-type">int</span> n)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-keyword">return</span> ((<span class="hljs-type">float</span>)i / (n - <span class="hljs-number">1</span>));<br>}<br><br><span class="hljs-function"><span class="hljs-type">float</span> <span class="hljs-title">distance</span><span class="hljs-params">(<span class="hljs-type">float</span> x1, <span class="hljs-type">float</span> x2)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-keyword">return</span> <span class="hljs-built_in">sqrt</span>((x2 - x1)*(x2 - x1));<br>}<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">distanceArray</span><span class="hljs-params">(<span class="hljs-type">float</span> * out, <span class="hljs-type">float</span> * in, <span class="hljs-type">float</span> ref, <span class="hljs-type">int</span> n)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; n; i++)<br>	{<br>		out[i] = <span class="hljs-built_in">distance</span>(i, n);<br>	}<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">float</span> * in = (<span class="hljs-type">float</span> *)<span class="hljs-built_in">calloc</span>(N, <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">float</span>));<br>	<span class="hljs-type">float</span> * out = (<span class="hljs-type">float</span> *)<span class="hljs-built_in">calloc</span>(N, <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">float</span>));<br>	<span class="hljs-type">const</span> <span class="hljs-type">float</span> ref = <span class="hljs-number">0.5f</span>;<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; i++)<br>	{<br>		in[i] = <span class="hljs-built_in">scale</span>(i, N);<br>	}<br><br>	<span class="hljs-built_in">distanceArray</span>(out, in, ref, N);<br><br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i =<span class="hljs-number">0</span>;i&lt;N;i++)<br>	{<br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">"%f "</span>, out[i]);<br>	}<br><br>	<span class="hljs-built_in">free</span>(in);<br>	<span class="hljs-built_in">free</span>(out);<br><br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>我们来重新审视一下这两个程序，这两个程序都是使用串行的方式处理的，即每次处理一个数值，只是两个的写法不一样。</p>
+<ul>
+<li><p>第一个程序是在mian函数中手动处理每个点</p></li>
+<li><p>而第二个程序则是提供了一个统一的抽象接口，mian函数只需要一次调用这个函数就能计算出所有的值</p></li>
+</ul>
+<p>表面上看这两个程序没有本质的区别，但是其标志性的指出了并行程序的编写思路：<strong><em>提供数据并调用接口，一次性获得所有的结果</em></strong></p>
 
                 
               </div>
@@ -476,7 +460,7 @@ mjx-container[display="true"] + br {
     
       <span class="category-chain">
         
-  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
+  <a href="/categories/CUDA%E5%B9%B6%E8%A1%8C%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1/" class="category-chain-item">CUDA并行程序设计</a>
   
   
 
@@ -491,9 +475,7 @@ mjx-container[display="true"] + br {
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Python/">#Python</a>
-      
-        <a href="/tags/PythonCookbook/">#PythonCookbook</a>
+        <a href="/tags/CUDA/">#CUDA</a>
       
     </div>
   
@@ -507,9 +489,9 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/04/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-1/" title="CUDA高性能并行计算(1)">
+                      <a href="/2022/09/05/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-2/" title="CUDA高性能并行计算(2)">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CUDA高性能并行计算(1)</span>
+                        <span class="hidden-mobile">CUDA高性能并行计算(2)</span>
                         <span class="visible-mobile">Previous</span>
                       </a>
                     
@@ -517,8 +499,8 @@ mjx-container[display="true"] + br {
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/01/Webbench%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" title="Webbench源码剖析">
-                        <span class="hidden-mobile">Webbench源码剖析</span>
+                      <a href="/2022/09/02/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-5/" title="Python奇技淫巧(5)">
+                        <span class="hidden-mobile">Python奇技淫巧(5)</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
