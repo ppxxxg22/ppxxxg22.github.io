@@ -18,14 +18,14 @@
   
     <meta name="description" content="CUDA二维计算网格">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CUDA高性能并行计算(5)">
+<meta property="og:title" content="CUDA高性能并行计算(5)--CUDA二维计算网格">
 <meta property="og:url" content="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-5/index.html">
 <meta property="og:site_name" content="PPXXXG22">
 <meta property="og:description" content="CUDA二维计算网格">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/imgs/post_index_img/cuda5.jpg">
 <meta property="article:published_time" content="2022-09-08T08:18:45.390Z">
-<meta property="article:modified_time" content="2022-09-08T12:16:40.995Z">
+<meta property="article:modified_time" content="2022-09-09T12:27:12.296Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
@@ -33,7 +33,7 @@
   
   
   
-  <title>CUDA高性能并行计算(5) - PPXXXG22</title>
+  <title>CUDA高性能并行计算(5)--CUDA二维计算网格 - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -327,7 +327,7 @@ mjx-container[display="true"] + br {
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="CUDA高性能并行计算(5)"></span>
+            <span id="subtitle" data-typed-text="CUDA!高性能!"></span>
           
         </div>
 
@@ -350,7 +350,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.3k words
+          2.4k words
         
       </span>
     
@@ -407,7 +407,7 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">CUDA高性能并行计算(5)</h1>
+            <h1 style="display: none">CUDA!高性能!</h1>
             
             
               <div class="markdown-body">
@@ -430,6 +430,11 @@ mjx-container[display="true"] + br {
 <p>下面给出一个简单的二维计算网格的程序。</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;device_launch_parameters.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;cuda_runtime.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;math.h&gt;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> CHECK(call)                                   \</span><br><span class="hljs-meta">do                                                    \</span><br><span class="hljs-meta">{                                                     \</span><br><span class="hljs-meta">    const cudaError_t error_code = call;              \</span><br><span class="hljs-meta">    <span class="hljs-keyword">if</span> (error_code != cudaSuccess)                    \</span><br><span class="hljs-meta">    {                                                 \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"CUDA Error:\n"</span>);                      \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    File:       %s\n"</span>, __FILE__);     \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    Line:       %d\n"</span>, __LINE__);     \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    Error code: %d\n"</span>, error_code);   \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    Error text: %s\n"</span>,                \</span><br><span class="hljs-meta">            cudaGetErrorString(error_code));          \</span><br><span class="hljs-meta">        exit(1);                                      \</span><br><span class="hljs-meta">    }                                                 \</span><br><span class="hljs-meta">} while (0)</span><br><br><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> W 500</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> H 500</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> TX 32</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> TY 32</span><br><br><span class="hljs-comment">// 核函数，这里的float2是一个二维向量</span><br><span class="hljs-function">__global__ <span class="hljs-type">void</span> <span class="hljs-title">distanceKernel</span><span class="hljs-params">(<span class="hljs-type">float</span> * d_out, <span class="hljs-type">int</span> w, <span class="hljs-type">int</span> h, float2 pos)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> c = blockIdx.x * blockDim.x + threadIdx.x; <span class="hljs-comment">// 行索引</span><br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> r = blockIdx.y*blockDim.y + threadIdx.y; <span class="hljs-comment">// 列索引</span><br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> i = r * w + c; <span class="hljs-comment">// 行优先存储，获取到当前线程的实际位置</span><br><br>	<span class="hljs-keyword">if</span> ((c &gt;= w) || (r &gt;= h))<br>		<span class="hljs-keyword">return</span>;<br><br>	d_out[i] = <span class="hljs-built_in">sqrtf</span>((c - pos.x)*(c - pos.x) + (r - pos.y)*(r - pos.y)); <span class="hljs-comment">// 计算结果</span><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"thread (%d, %d) in grid (%d, %d) computes the result is %f\n"</span>, threadIdx.x, threadIdx.y, blockIdx.x, blockIdx.y,d_out[i]);<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">float</span> *out = (<span class="hljs-type">float</span> *)<span class="hljs-built_in">calloc</span>(W*H, <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">float</span>)); <span class="hljs-comment">// 主机内存</span><br>	<span class="hljs-type">float</span> * d_out; <span class="hljs-comment">// 设备内存</span><br>	<span class="hljs-built_in">cudaMalloc</span>(&amp;d_out, W*H* <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">float</span>)); <span class="hljs-comment">// 为设备分配内存</span><br>	<span class="hljs-type">const</span> float2 pos = { <span class="hljs-number">0.0f</span>,<span class="hljs-number">0.0f</span> }; <span class="hljs-comment">// 初始化计算过程中传递的常量</span><br>	<span class="hljs-function"><span class="hljs-type">const</span> dim3 <span class="hljs-title">blockSize</span><span class="hljs-params">(TX, TY)</span></span>; <span class="hljs-comment">// 指定线程块大小</span><br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> bx = (W + TX - <span class="hljs-number">1</span>) / TX; <span class="hljs-comment">// 向上舍入计算出x方向的计算网格数目</span><br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> by = (H + TY - <span class="hljs-number">1</span>) / TY; <span class="hljs-comment">// 向上摄入计算处y方向的计算网格数目</span><br>	<span class="hljs-type">const</span> dim3 gridSize = <span class="hljs-built_in">dim3</span>(bx, by); <span class="hljs-comment">// 指定计算网格大小</span><br><br>	distanceKernel &lt;&lt; &lt;gridSize, blockSize &gt;&gt; &gt; (d_out, W, H, pos); <span class="hljs-comment">// 启动核函数</span><br><br>	<span class="hljs-built_in">cudaDeviceSynchronize</span>(); <span class="hljs-comment">// 同步设备与主机</span><br>	<span class="hljs-built_in">cudaMemcpy</span>(out, d_out, W*H * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyDeviceToHost); <span class="hljs-comment">// 拷贝计算结果</span><br><br>	<span class="hljs-built_in">cudaFree</span>(d_out); <span class="hljs-comment">// 释放内存</span><br>	<span class="hljs-built_in">free</span>(out);<br>}<br><br></code></pre></td></tr></table></figure>
 <p>注意，执行这个程序的时候，可以观测到明显的输出卡顿，这就是前面提到的由于GPU高速缓存能力比较弱，所以当核函数执行简单的计算时内存IO将成为瓶颈。</p>
+<h2 id="总结">总结</h2>
+<ul>
+<li>线程块内线程总数不超过1024。</li>
+<li>blockIdx和threadIdx存在三个成员来保存维度</li>
+</ul>
 
                 
               </div>
@@ -477,9 +482,9 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/" title="CUDA高性能并行计算(6)">
+                      <a href="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/" title="CUDA高性能并行计算(6)--CUDA内存组织与使用">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CUDA高性能并行计算(6)</span>
+                        <span class="hidden-mobile">CUDA高性能并行计算(6)--CUDA内存组织与使用</span>
                         <span class="visible-mobile">Previous</span>
                       </a>
                     
@@ -487,8 +492,8 @@ mjx-container[display="true"] + br {
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/06/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-4/" title="CUDA高性能并行计算(4)">
-                        <span class="hidden-mobile">CUDA高性能并行计算(4)</span>
+                      <a href="/2022/09/06/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-4/" title="CUDA高性能并行计算(4)--CUDA错误检测与程序计时">
+                        <span class="hidden-mobile">CUDA高性能并行计算(4)--CUDA错误检测与程序计时</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
