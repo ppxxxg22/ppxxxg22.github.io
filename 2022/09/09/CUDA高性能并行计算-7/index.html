@@ -16,24 +16,24 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="CUDA内存组织与使用">
+    <meta name="description" content="CUDA软件抽象与硬件抽象">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CUDA高性能并行计算(6)">
-<meta property="og:url" content="http://example.com/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/index.html">
+<meta property="og:title" content="CUDA高性能并行计算(7)">
+<meta property="og:url" content="http://example.com/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-7/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="CUDA内存组织与使用">
+<meta property="og:description" content="CUDA软件抽象与硬件抽象">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda6.jpg">
-<meta property="article:published_time" content="2022-09-08T12:19:17.000Z">
-<meta property="article:modified_time" content="2022-09-09T03:53:29.755Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda7.jpg">
+<meta property="article:published_time" content="2022-09-09T03:54:14.000Z">
+<meta property="article:modified_time" content="2022-09-09T08:03:18.803Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda6.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda7.jpg">
   
   
   
-  <title>CUDA高性能并行计算(6) - PPXXXG22</title>
+  <title>CUDA高性能并行计算(7) - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -321,13 +321,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/cuda6.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/cuda7.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="CUDA高性能并行计算(6)"></span>
+            <span id="subtitle" data-typed-text="CUDA高性能并行计算(7)"></span>
           
         </div>
 
@@ -338,8 +338,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-08 20:19" pubdate>
-          September 8, 2022 pm
+        <time datetime="2022-09-09 11:54" pubdate>
+          September 9, 2022 am
         </time>
       </span>
     
@@ -350,7 +350,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.8k words
+          1.4k words
         
       </span>
     
@@ -361,7 +361,7 @@ mjx-container[display="true"] + br {
         
         
         
-          16 mins
+          6 mins
         
       </span>
     
@@ -407,128 +407,38 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">CUDA高性能并行计算(6)</h1>
+            <h1 style="display: none">CUDA高性能并行计算(7)</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="cuda内存组织与使用">CUDA内存组织与使用</h2>
+                <h2 id="cuda软件抽象与硬件抽象">CUDA软件抽象与硬件抽象</h2>
 <span id="more"></span>
-<h3 id="cuda的内存组织结构">CUDA的内存组织结构</h3>
-<p>与CPU的内存结构相似，GPU也是存在类似L1、L2之类的高速缓存的东西，而且CUDA为程序员提供更多的控制权，下面列出CUDA的内存模型。</p>
-<table>
-
-<thead>
-<tr class="header">
-<th style="text-align: center;">内存类型</th>
-<th style="text-align: center;">物理位置</th>
-<th style="text-align: center;">访问权限</th>
-<th style="text-align: center;">可见范围</th>
-<th style="text-align: center;">生命周期</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;">全局内存</td>
-<td style="text-align: center;">芯片外</td>
-<td style="text-align: center;">R/W</td>
-<td style="text-align: center;">所有线程和主机端</td>
-<td style="text-align: center;">主机分配和释放</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">常量内存</td>
-<td style="text-align: center;">芯片外</td>
-<td style="text-align: center;">R</td>
-<td style="text-align: center;">所有线程和主机端</td>
-<td style="text-align: center;">主机分配和释放</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">纹理和表面内存</td>
-<td style="text-align: center;">芯片外</td>
-<td style="text-align: center;">R</td>
-<td style="text-align: center;">所有线程和主机端</td>
-<td style="text-align: center;">主机分配和释放</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">寄存器内存</td>
-<td style="text-align: center;">芯片内</td>
-<td style="text-align: center;">R/W</td>
-<td style="text-align: center;">单个线程</td>
-<td style="text-align: center;">所在线程</td>
-</tr>
-<tr class="odd">
-<td style="text-align: center;">局部内存</td>
-<td style="text-align: center;">芯片外</td>
-<td style="text-align: center;">R/W</td>
-<td style="text-align: center;">单个线程</td>
-<td style="text-align: center;">所在线程</td>
-</tr>
-<tr class="even">
-<td style="text-align: center;">共享内存</td>
-<td style="text-align: center;">芯片内</td>
-<td style="text-align: center;">R/W</td>
-<td style="text-align: center;">单个线程块</td>
-<td style="text-align: center;">所在线程块</td>
-</tr>
-</tbody>
-</table>
-<img src="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
-<p>下面对这些内存逐一阐述</p>
-<h4 id="全局内存">全局内存</h4>
-<p>全局内存是指核函数中所有线程都访问的内存，与C语言中的全局内存概念上存在差异。其容量是最大的，基本上就是显存容量。当然，其访问速度也是相对比较低的。</p>
-<p>全局内存的主要目的就是为核函数提供数据、在主机与设备和在设备与设备之间传递数据。</p>
-<p>全局内存对所有线程可见，且其是完全由主机端来进行分配和回收的，另外，全局内存是线性排列的。</p>
-<p>我们通过使用cudaMalloc()函数可以动态地在全局内存中分配，但是我们也可以在全局内存上分配静态内存，这样的<code>全局的静态全局内存变量</code>必须在所有函数外部定义，即类似与C语言中的全局变量的定义，同样是所有线程可访问，且大小在编译时确定。</p>
-<p>定义方法如下所示</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br>__device__ T x; <span class="hljs-comment">// 单个类型为T的变量</span><br>__device__ T x[<span class="hljs-number">120</span>]; <span class="hljs-comment">// 固定长度的数组</span><br><br></code></pre></td></tr></table></figure>
-<p>在核函数内可以对这些<code>全局的静态全局内存变量</code>进行访问，而不需要显示传递，但是这些变量对主机端不可见。</p>
-<p>要想让主机端访问这些变量，或者在主机端和设备之间传递这些数据，需要用到<code>cudaMemcpyToSymbol(symbol:设备符号, src:主机符号, count:长度, offset:设备偏移量, Flag:方向)</code>和<code>cudaMemcpyFromSymbol(dst:主机, symbol:设备, count:长度, offset:设备偏移量,Flag:方向)</code>来进行传递。</p>
-<h4 id="常量内存">常量内存</h4>
-<p>常量内存是有常量缓存的内存，数量有限，只有64K，其可见范围与生存周期与全局内存一样。不过常量内存仅可读，不可写。但是由于其存在缓存，所以速度会高很多。如果想得到高速的访问速度，需要保证线程束中的线程(线程块中相邻的32个线程)读取相同的常量内存(这样高速缓存才会命中)，(每个线程束由一个SM负责处理)。</p>
-<p>定义常量内存的方式是使用<code>__constant__</code>关键字来修饰变量，并使用<code>cudaMemcpyToSymbol()</code>来将数据复制到设备端。一般来说，给核函数按指传递的数据就放在常量内存中，但给核函数传递的参数最多在核函数内使用4KB常量内存。</p>
-<h4 id="纹理内存与表面内存">纹理内存与表面内存</h4>
-<p>纹理内存与表面内存类似与常量内存，有相同的可见范围与生命周期，但是其容量更大，使用方式也略微有些区别。</p>
-<p>对比较新的架构，对全局只读内存使用<code>__ldg(*addr)</code>函数可以通过全局只读缓存读取，这样速度会快一些。</p>
-<h4 id="寄存器">寄存器</h4>
-<p>核函数中定义的不加任何修饰符的变量就位于寄存器，gridDim这些也位于特殊的寄存器，所以访问的很快。在核函数中定义的数组有可能放在寄存器中，这取决于数组大小。</p>
-<p>寄存器变量位于芯片中，是访问速度最高的，且与所属线程生命周期一样长。</p>
-<h4 id="局部内存">局部内存</h4>
-<p>局部内存是全局内存的一部分，所以延迟很高，但是其使用方式跟寄存器内存一致。即在核函数内定义的不加修饰的变量或数组，存的下的位于寄存器，存不下的位于局部内存。</p>
-<p>每个线程最多使用512k的局部内存，但是使用过多会降低性能。</p>
-<h4 id="共享内存">共享内存</h4>
-<p>共享内存位于芯片上，读写速度仅次于寄存器，不过其声明周期是与线程块一样长。线程块内的所有线程都可以访问共享内存。</p>
-<h4 id="缓存">缓存</h4>
-<p>一般来说，高速缓存是不能被编程的，其执行过程是自动的，但是其对优化程序速度非常大。</p>
-<p>GPU的缓存有L1缓存(SM层次)、L2缓存(设备层次)，但是从硬件角度看L1缓存、纹理缓存和共享内存使用的相同的物理结构。</p>
+<p>之前我们了解了许多概念，比如SM、计算网格、线程块等等，但这些包含对软件部分的抽象和对硬件部分的抽象，下面我们来分别对这些层次的抽象进行具体的描述。</p>
+<h3 id="硬件抽象">硬件抽象</h3>
+<img src="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-7/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>硬件抽象包括SM(流多处理器，大核心)、SP(流处理器，小核心)。SP是GPU最基本的处理单元，也称为CUDA
+core，每个SM中包含几十或者上百个CUDA核心。</p>
+<p>其中，SP是执行每个线程的单元，一个SP对应一个线程。每个SP有自己的寄存器和局部内存，可以看作是微型CPU。</p>
+<p>而SM则是多个SP聚合在一起，并且有负责管理线程调度的单元，和共享内存等。</p>
 <div class="note note-primary">
-            <p>此处仅考虑图灵架构，因为图灵架构是最新的架构。</p>
+            <p>可以用下面这个例子来进行类比：</p><p>将GPU比作教学楼，那么SM就是教学楼中的每一个楼层，有着一些共享设施(wrap调度器、共享内存等)；而SP就是每一间教室里的学生，有着自己的课桌和其他资源(寄存器、局部内存、运算器等)；而每间教室则可以看成是对SP进行的一个分组(线程束)，活动(计算)都是以班级为单位整体进行的(即单指令多线程)。</p>
           </div>
-<p>因此，共享内存其实就可以看成是可以编程的缓存。</p>
-<h3 id="sm中的资源数目">SM中的资源数目</h3>
-<p>一个GPU是由多个SM组成的，一个SM包含以下资源：</p>
-<ul>
-<li>一定数量的寄存器</li>
-<li>一定数量的共享内存</li>
-<li>常量内存缓存</li>
-<li>纹理和表面内存缓存</li>
-<li>L1缓存</li>
-<li>线程束调度器，用于对就绪线程发出执行命令</li>
-<li>执行核心
-<ul>
-<li>若干整型运算核心INT32</li>
-<li>若干单精度浮点数运算核心FP32</li>
-<li>若干双精度浮点数运算核心FP64</li>
-<li>若干单精度浮点数超越函数的函数单元SFUs</li>
-<li>若干混合精度的张量核心tensor core</li>
-</ul></li>
-</ul>
-<p>因为一个SM的资源是有限的，所以有些情况下SM中驻留的线程数可能达不到理想的最大值，也就是SM的占有率不足100%。</p>
-<p>一般来说，让SM占有率保持在一个值(25%)以上，才可能获得高性能计算。</p>
-<p>另外，在图灵架构中，一个SM最多拥有16个线程块，且一个SM中最多有1024个线程（注意一个线程块中最多线程数目也是1024，而一个线程束大小为32）</p>
-<h4 id="运行时api查询设备">运行时API查询设备</h4>
-<p>通过一些运行时API来查询设备资源，可以用于编写针对不同架构的的显卡的程序。</p>
-<p>下面给出一个代码示例：</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;device_launch_parameters.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;cuda_runtime.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;math.h&gt;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> TARGET 1</span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> CHECK(call)                                   \</span><br><span class="hljs-meta">do                                                    \</span><br><span class="hljs-meta">{                                                     \</span><br><span class="hljs-meta">    const cudaError_t error_code = call;              \</span><br><span class="hljs-meta">    <span class="hljs-keyword">if</span> (error_code != cudaSuccess)                    \</span><br><span class="hljs-meta">    {                                                 \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"CUDA Error:\n"</span>);                      \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    File:       %s\n"</span>, __FILE__);     \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    Line:       %d\n"</span>, __LINE__);     \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    Error code: %d\n"</span>, error_code);   \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">"    Error text: %s\n"</span>,                \</span><br><span class="hljs-meta">            cudaGetErrorString(error_code));          \</span><br><span class="hljs-meta">        exit(1);                                      \</span><br><span class="hljs-meta">    }                                                 \</span><br><span class="hljs-meta">} while (0)</span><br><br><br><span class="hljs-meta">#<span class="hljs-keyword">if</span> TARGET == 1</span><br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">int</span> device_id = <span class="hljs-number">0</span>;<br><br>	cudaDeviceProp prop;<br>	<span class="hljs-built_in">CHECK</span>(<span class="hljs-built_in">cudaGetDeviceProperties</span>(&amp;prop, device_id)); <span class="hljs-comment">// 获取设备数据</span><br><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"device id : %d \n"</span>, device_id);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"device name : %s \n"</span>, prop.name);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"compute capability %d.%d\n"</span>, prop.major, prop.minor);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"global mem : %g GB\n"</span>, prop.totalGlobalMem / (<span class="hljs-number">1024.0</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span>));<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"constant mem : %g kb\n"</span>, prop.totalConstMem / <span class="hljs-number">1024.0</span>);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max grid size : (%d, %d, %d)\n"</span>, prop.maxGridSize[<span class="hljs-number">0</span>], prop.maxGridSize[<span class="hljs-number">1</span>], prop.maxGridSize[<span class="hljs-number">2</span>]);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max block size : (%d, %d, %d)\n"</span>, prop.maxThreadsDim[<span class="hljs-number">0</span>], prop.maxThreadsDim[<span class="hljs-number">1</span>], prop.maxThreadsDim[<span class="hljs-number">2</span>]);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"numbers of SM : %d\n"</span>, prop.multiGpuBoardGroupID);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max shared mem per block : %g kb\n"</span>, prop.sharedMemPerBlock / <span class="hljs-number">1024.0</span>);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max numbers of register per block : %d K\n"</span>, prop.regsPerBlock);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max numbers of register per SM : %d K\n"</span>, prop.regsPerMultiprocessor/<span class="hljs-number">1024</span>);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max number of threads per block : %d\n"</span>, prop.maxThreadsPerBlock);<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"max number of threads per SM : %d\n"</span>, prop.maxThreadsPerMultiProcessor);<br>}<br><br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><br></code></pre></td></tr></table></figure>
+<h3 id="软件抽象">软件抽象</h3>
+<img src="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-7/pic2.png" srcset="/img/loading.gif" lazyload class="">
+<p>软件抽象包括计算网格、线程块、线程束、线程。</p>
+<p>计算网格是用于对计算任务的抽象，其大小限制为(<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.186ex;" xmlns="http://www.w3.org/2000/svg" width="6.816ex" height="2.072ex" role="img" focusable="false" viewBox="0 -833.9 3012.6 915.9"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="msup"><g data-mml-node="mn"><path data-c="32" d="M109 429Q82 429 66 447T50 491Q50 562 103 614T235 666Q326 666 387 610T449 465Q449 422 429 383T381 315T301 241Q265 210 201 149L142 93L218 92Q375 92 385 97Q392 99 409 186V189H449V186Q448 183 436 95T421 3V0H50V19V31Q50 38 56 46T86 81Q115 113 136 137Q145 147 170 174T204 211T233 244T261 278T284 308T305 340T320 369T333 401T340 431T343 464Q343 527 309 573T212 619Q179 619 154 602T119 569T109 550Q109 549 114 549Q132 549 151 535T170 489Q170 464 154 447T109 429Z"></path></g><g data-mml-node="TeXAtom" transform="translate(533,363) scale(0.707)" data-mjx-texclass="ORD"><g data-mml-node="mn"><path data-c="33" d="M127 463Q100 463 85 480T69 524Q69 579 117 622T233 665Q268 665 277 664Q351 652 390 611T430 522Q430 470 396 421T302 350L299 348Q299 347 308 345T337 336T375 315Q457 262 457 175Q457 96 395 37T238 -22Q158 -22 100 21T42 130Q42 158 60 175T105 193Q133 193 151 175T169 130Q169 119 166 110T159 94T148 82T136 74T126 70T118 67L114 66Q165 21 238 21Q293 21 321 74Q338 107 338 175V195Q338 290 274 322Q259 328 213 329L171 330L168 332Q166 335 166 348Q166 366 174 366Q202 366 232 371Q266 376 294 413T322 525V533Q322 590 287 612Q265 626 240 626Q208 626 181 615T143 592T132 580H135Q138 579 143 578T153 573T165 566T175 555T183 540T186 520Q186 498 172 481T127 463Z"></path><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z" transform="translate(500,0)"></path></g></g></g><g data-mml-node="mo" transform="translate(1512.3,0)"><path data-c="2212" d="M84 237T84 250T98 270H679Q694 262 694 250T679 230H98Q84 237 84 250Z"></path></g><g data-mml-node="mn" transform="translate(2512.6,0)"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path></g></g></g></svg></mjx-container></span>,<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.05ex;" xmlns="http://www.w3.org/2000/svg" width="5.656ex" height="1.557ex" role="img" focusable="false" viewBox="0 -666 2500 688"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mn"><path data-c="36" d="M42 313Q42 476 123 571T303 666Q372 666 402 630T432 550Q432 525 418 510T379 495Q356 495 341 509T326 548Q326 592 373 601Q351 623 311 626Q240 626 194 566Q147 500 147 364L148 360Q153 366 156 373Q197 433 263 433H267Q313 433 348 414Q372 400 396 374T435 317Q456 268 456 210V192Q456 169 451 149Q440 90 387 34T253 -22Q225 -22 199 -14T143 16T92 75T56 172T42 313ZM257 397Q227 397 205 380T171 335T154 278T148 216Q148 133 160 97T198 39Q222 21 251 21Q302 21 329 59Q342 77 347 104T352 209Q352 289 347 316T329 361Q302 397 257 397Z"></path><path data-c="35" d="M164 157Q164 133 148 117T109 101H102Q148 22 224 22Q294 22 326 82Q345 115 345 210Q345 313 318 349Q292 382 260 382H254Q176 382 136 314Q132 307 129 306T114 304Q97 304 95 310Q93 314 93 485V614Q93 664 98 664Q100 666 102 666Q103 666 123 658T178 642T253 634Q324 634 389 662Q397 666 402 666Q410 666 410 648V635Q328 538 205 538Q174 538 149 544L139 546V374Q158 388 169 396T205 412T256 420Q337 420 393 355T449 201Q449 109 385 44T229 -22Q148 -22 99 32T50 154Q50 178 61 192T84 210T107 214Q132 214 148 197T164 157Z" transform="translate(500,0)"></path><path data-c="35" d="M164 157Q164 133 148 117T109 101H102Q148 22 224 22Q294 22 326 82Q345 115 345 210Q345 313 318 349Q292 382 260 382H254Q176 382 136 314Q132 307 129 306T114 304Q97 304 95 310Q93 314 93 485V614Q93 664 98 664Q100 666 102 666Q103 666 123 658T178 642T253 634Q324 634 389 662Q397 666 402 666Q410 666 410 648V635Q328 538 205 538Q174 538 149 544L139 546V374Q158 388 169 396T205 412T256 420Q337 420 393 355T449 201Q449 109 385 44T229 -22Q148 -22 99 32T50 154Q50 178 61 192T84 210T107 214Q132 214 148 197T164 157Z" transform="translate(1000,0)"></path><path data-c="33" d="M127 463Q100 463 85 480T69 524Q69 579 117 622T233 665Q268 665 277 664Q351 652 390 611T430 522Q430 470 396 421T302 350L299 348Q299 347 308 345T337 336T375 315Q457 262 457 175Q457 96 395 37T238 -22Q158 -22 100 21T42 130Q42 158 60 175T105 193Q133 193 151 175T169 130Q169 119 166 110T159 94T148 82T136 74T126 70T118 67L114 66Q165 21 238 21Q293 21 321 74Q338 107 338 175V195Q338 290 274 322Q259 328 213 329L171 330L168 332Q166 335 166 348Q166 366 174 366Q202 366 232 371Q266 376 294 413T322 525V533Q322 590 287 612Q265 626 240 626Q208 626 181 615T143 592T132 580H135Q138 579 143 578T153 573T165 566T175 555T183 540T186 520Q186 498 172 481T127 463Z" transform="translate(1500,0)"></path><path data-c="35" d="M164 157Q164 133 148 117T109 101H102Q148 22 224 22Q294 22 326 82Q345 115 345 210Q345 313 318 349Q292 382 260 382H254Q176 382 136 314Q132 307 129 306T114 304Q97 304 95 310Q93 314 93 485V614Q93 664 98 664Q100 666 102 666Q103 666 123 658T178 642T253 634Q324 634 389 662Q397 666 402 666Q410 666 410 648V635Q328 538 205 538Q174 538 149 544L139 546V374Q158 388 169 396T205 412T256 420Q337 420 393 355T449 201Q449 109 385 44T229 -22Q148 -22 99 32T50 154Q50 178 61 192T84 210T107 214Q132 214 148 197T164 157Z" transform="translate(2000,0)"></path></g></g></g></svg></mjx-container></span>,<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.05ex;" xmlns="http://www.w3.org/2000/svg" width="5.656ex" height="1.557ex" role="img" focusable="false" viewBox="0 -666 2500 688"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mn"><path data-c="36" d="M42 313Q42 476 123 571T303 666Q372 666 402 630T432 550Q432 525 418 510T379 495Q356 495 341 509T326 548Q326 592 373 601Q351 623 311 626Q240 626 194 566Q147 500 147 364L148 360Q153 366 156 373Q197 433 263 433H267Q313 433 348 414Q372 400 396 374T435 317Q456 268 456 210V192Q456 169 451 149Q440 90 387 34T253 -22Q225 -22 199 -14T143 16T92 75T56 172T42 313ZM257 397Q227 397 205 380T171 335T154 278T148 216Q148 133 160 97T198 39Q222 21 251 21Q302 21 329 59Q342 77 347 104T352 209Q352 289 347 316T329 361Q302 397 257 397Z"></path><path data-c="35" d="M164 157Q164 133 148 117T109 101H102Q148 22 224 22Q294 22 326 82Q345 115 345 210Q345 313 318 349Q292 382 260 382H254Q176 382 136 314Q132 307 129 306T114 304Q97 304 95 310Q93 314 93 485V614Q93 664 98 664Q100 666 102 666Q103 666 123 658T178 642T253 634Q324 634 389 662Q397 666 402 666Q410 666 410 648V635Q328 538 205 538Q174 538 149 544L139 546V374Q158 388 169 396T205 412T256 420Q337 420 393 355T449 201Q449 109 385 44T229 -22Q148 -22 99 32T50 154Q50 178 61 192T84 210T107 214Q132 214 148 197T164 157Z" transform="translate(500,0)"></path><path data-c="35" d="M164 157Q164 133 148 117T109 101H102Q148 22 224 22Q294 22 326 82Q345 115 345 210Q345 313 318 349Q292 382 260 382H254Q176 382 136 314Q132 307 129 306T114 304Q97 304 95 310Q93 314 93 485V614Q93 664 98 664Q100 666 102 666Q103 666 123 658T178 642T253 634Q324 634 389 662Q397 666 402 666Q410 666 410 648V635Q328 538 205 538Q174 538 149 544L139 546V374Q158 388 169 396T205 412T256 420Q337 420 393 355T449 201Q449 109 385 44T229 -22Q148 -22 99 32T50 154Q50 178 61 192T84 210T107 214Q132 214 148 197T164 157Z" transform="translate(1000,0)"></path><path data-c="33" d="M127 463Q100 463 85 480T69 524Q69 579 117 622T233 665Q268 665 277 664Q351 652 390 611T430 522Q430 470 396 421T302 350L299 348Q299 347 308 345T337 336T375 315Q457 262 457 175Q457 96 395 37T238 -22Q158 -22 100 21T42 130Q42 158 60 175T105 193Q133 193 151 175T169 130Q169 119 166 110T159 94T148 82T136 74T126 70T118 67L114 66Q165 21 238 21Q293 21 321 74Q338 107 338 175V195Q338 290 274 322Q259 328 213 329L171 330L168 332Q166 335 166 348Q166 366 174 366Q202 366 232 371Q266 376 294 413T322 525V533Q322 590 287 612Q265 626 240 626Q208 626 181 615T143 592T132 580H135Q138 579 143 578T153 573T165 566T175 555T183 540T186 520Q186 498 172 481T127 463Z" transform="translate(1500,0)"></path><path data-c="35" d="M164 157Q164 133 148 117T109 101H102Q148 22 224 22Q294 22 326 82Q345 115 345 210Q345 313 318 349Q292 382 260 382H254Q176 382 136 314Q132 307 129 306T114 304Q97 304 95 310Q93 314 93 485V614Q93 664 98 664Q100 666 102 666Q103 666 123 658T178 642T253 634Q324 634 389 662Q397 666 402 666Q410 666 410 648V635Q328 538 205 538Q174 538 149 544L139 546V374Q158 388 169 396T205 412T256 420Q337 420 393 355T449 201Q449 109 385 44T229 -22Q148 -22 99 32T50 154Q50 178 61 192T84 210T107 214Q132 214 148 197T164 157Z" transform="translate(2000,0)"></path></g></g></g></svg></mjx-container></span>)，主要目的是用于将计算任务划分成不同的最小计算单元。<strong>计算网格是GPU级别的基本调度单位</strong>。</p>
+<p>线程块也是用于对计算任务的抽象，线程块大小最大为1024。同一线程块的线程(线程束)将会被分配到同一个SM上。<strong>线程块是SM级别的基本调度单位</strong>。</p>
+<p>线程束，线程束就是软件抽象与硬件抽象的桥梁，与硬件中的线程束相对应，线程束大小为32。每个线程束中的线程是通过单指令多线程来执行的，所以每个线程做的工作是一样的。<strong>线程束是ALU级别的基本调度单位</strong>。</p>
+<p>线程，线程是执行具体计算的东西，但是线程不会被单个调度，都是以线程束为整体进行调度的。</p>
+<div class="note note-primary">
+            <p>可以用下面这个例子来进行类比：</p><p>将GPU所有的计算资源看作学校，那么计算网格就是学校里面的年级，有时候不同年级也会出现在同一层楼中(一个SM可以对应多个线程块，<strong>但这里稍微有些差异，因为一个线程块只能对应一个SM</strong>)；线程块对应的是班级，一个班级的所有人肯定是在一层楼中的(对应线程块上所有线程束在同一个SM上)，且班级一般都是一样大的(最大线程数相同)；线程束是班级里面划分的小组，一般收作业都是每个小组一起交(线程束统一被调度，且任务相同)；线程则对应个人。</p>
+          </div>
+<h3 id="执行计算过程">执行计算过程</h3>
+<img src="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-7/pic3.png" srcset="/img/loading.gif" lazyload class="">
+<p>有了软件抽象和硬件抽象，下面我们就来考虑具体的任务是怎么被执行的。</p>
+<p>虽然GPU是并行运行，但也并不是我们理想中所有的线程一起工作。下面我们还是以例子来进行说明。</p>
+<p>当学校组织全校大扫除时(计算任务)，首先会按照年级来为各年级(SM)下达指令(计算网格)，然后每个年级再为每个班级(线程块)分配包干区(线程块分配)，在打扫卫生时，并不是所有学生一起干活，学生经过老师（这里我们理解为线程束调度器）安排后，分为一组一组的小组(线程束)，每一个小组都只会做一件一样的事情，如果有人先做完了或者不需要做，那么他也会在旁边等他的组员，处于等待状态，直到小组内所有组员工作完成；另外，由于工具是有限的(计算资源有限)，所以可能会存在一部分小组暂时干不了活(没有足够资源调度)，且某个小组干完活之后送还工具是需要时间的(调度耗时)。</p>
 
                 
               </div>
@@ -576,18 +486,12 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-7/" title="CUDA高性能并行计算(7)">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CUDA高性能并行计算(7)</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-5/" title="CUDA高性能并行计算(5)">
-                        <span class="hidden-mobile">CUDA高性能并行计算(5)</span>
+                      <a href="/2022/09/08/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-6/" title="CUDA高性能并行计算(6)">
+                        <span class="hidden-mobile">CUDA高性能并行计算(6)</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
