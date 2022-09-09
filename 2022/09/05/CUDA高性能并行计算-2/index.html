@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/imgs/post_index_img/cuda2.jpg">
 <meta property="article:published_time" content="2022-09-05T07:38:20.000Z">
-<meta property="article:modified_time" content="2022-09-06T02:35:29.551Z">
+<meta property="article:modified_time" content="2022-09-09T03:52:23.086Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
@@ -361,7 +361,7 @@ mjx-container[display="true"] + br {
         
         
         
-          9 mins
+          10 mins
         
       </span>
     
@@ -420,7 +420,7 @@ mjx-container[display="true"] + br {
 <p>由于GPU存在成千上万个廉价的计算单元，如果我们能将一个计算任务分解成多个子任务，这样就可以用GPU来完成并行计算，下面来介绍一下在并行计算中的规划方法。</p>
 <p>CUDA引用了<strong>单指令多线程</strong>的并行模式(即每个线程执行相同的数据计算，然后使用一条指令控制从而减少控制器数目和系统复杂度--设想成千上万的线程各自做不同的事情，如果再有线程间通讯/同步，将会是怎样的梦魇)，GPU中包含大量的基础计算单元，称为<strong>核</strong>，每个核都包含了一个逻辑计算单元和一个浮点计算单元，多个核集成在一起被称为<strong>多流处理器</strong>。</p>
 <img src="/2022/09/05/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-2/pic1.png" srcset="/img/loading.gif" lazyload class="">
-<p>而将每个计算任务分解成多个子任务，称为<strong>线程</strong>，多个线程被组织成<strong>线程块</strong>，线程块被分解成大小与一个SM中核数量相同的<strong>线程束</strong>，每个线程束由一个SM负责执行，这些多流处理器的控制单元指挥其他所有核同时在一个线程束的每个线程中执行同一个指令，这是单指令多线程的来源。</p>
+<p>而将每个计算任务分解成多个子任务，称为<strong>线程</strong>，多个线程被组织成<strong>线程块</strong>，线程块被分解成大小与一个SM中核数量相同的<strong>线程束</strong>(大小为32)，每个线程束由一个SM负责执行，这些多流处理器的控制单元指挥其他所有核同时在一个线程束的每个线程中执行同一个指令，这是单指令多线程的来源。</p>
 <h3 id="gpu与cpu对比">GPU与CPU对比</h3>
 <p>众所周知，CPU也是可以执行并行计算的，那两者有什么区别呢？</p>
 <p>首先，CPU是通用计算单元，其核心数目比较少，但是具备处理能力较强，同时其芯片上大部分空间是被设计成用于加速IO的高速缓存。而GPU拥有大量的能力稍弱的核，且每次都是使用一堆核做相同的计算(并不是做一摸一样的计算，而是做类型一样的计算，比如都是加法这样，这是更大的计算任务中的一小部分)，与CPU另一个不同之处在于GPU倾向于延迟隐藏，由于GPU上没有很多高速缓存，因此当一个线程束需要的数据不可达时，SM会转向去处理另一个线程束(挂起)。</p>
@@ -451,6 +451,8 @@ mjx-container[display="true"] + br {
 <p>形如<code>aKernal &lt;&lt;&lt;2, 2 &gt;&gt;&gt; ();</code></p>
 <h4 id="一个示例">一个示例</h4>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"device_launch_parameters.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><br><span class="hljs-function">__host__ __device__ <span class="hljs-type">int</span> <span class="hljs-title">run_on_cpu_or_gpu</span><span class="hljs-params">()</span> </span>{<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>}<br><br><span class="hljs-function">__global__ <span class="hljs-type">void</span> <span class="hljs-title">run_on_gpu</span><span class="hljs-params">()</span> </span>{<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"run_on_cpu_or_gpu GPU: %d\n"</span>, <span class="hljs-built_in">run_on_cpu_or_gpu</span>());<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>{<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"run_on_cpu_or_gpu CPU: %d\n"</span>, <span class="hljs-built_in">run_on_cpu_or_gpu</span>());<br>	run_on_gpu &lt;&lt; &lt;<span class="hljs-number">2</span>, <span class="hljs-number">2</span> &gt;&gt; &gt; ();<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<h2 id="软件抽象与硬件抽象">软件抽象与硬件抽象</h2>
+<p>上面介绍了许多概念，分别涉及到了软件抽象与硬件抽象</p>
 
                 
               </div>
