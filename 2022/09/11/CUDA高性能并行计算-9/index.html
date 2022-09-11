@@ -18,22 +18,22 @@
   
     <meta name="description" content="CUDA全局内存、共享内存的合理使用">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CUDA高性能并行计算(8)--CUDA全局内存、共享内存的合理使用">
-<meta property="og:url" content="http://example.com/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-8/index.html">
+<meta property="og:title" content="CUDA高性能并行计算(9)--原子函数及其合理使用">
+<meta property="og:url" content="http://example.com/2022/09/11/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-9/index.html">
 <meta property="og:site_name" content="PPXXXG22">
 <meta property="og:description" content="CUDA全局内存、共享内存的合理使用">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda8.jpg">
-<meta property="article:published_time" content="2022-09-09T08:19:12.000Z">
-<meta property="article:modified_time" content="2022-09-09T13:11:25.276Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda9.jpg">
+<meta property="article:published_time" content="2022-09-11T09:16:56.000Z">
+<meta property="article:modified_time" content="2022-09-11T12:51:37.889Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda8.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda9.jpg">
   
   
   
-  <title>CUDA高性能并行计算(8)--CUDA全局内存、共享内存的合理使用 - PPXXXG22</title>
+  <title>CUDA高性能并行计算(9)--原子函数及其合理使用 - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -321,7 +321,7 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/cuda8.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/cuda9.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
@@ -338,8 +338,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-09 16:19" pubdate>
-          September 9, 2022 pm
+        <time datetime="2022-09-11 17:16" pubdate>
+          September 11, 2022 pm
         </time>
       </span>
     
@@ -350,7 +350,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3k words
+          2.8k words
         
       </span>
     
@@ -361,7 +361,7 @@ mjx-container[display="true"] + br {
         
         
         
-          13 mins
+          12 mins
         
       </span>
     
@@ -414,49 +414,77 @@ mjx-container[display="true"] + br {
                 
                 <h2 id="cuda全局内存共享内存的合理使用">CUDA全局内存、共享内存的合理使用</h2>
 <span id="more"></span>
-<h3 id="全局内存与合理使用">全局内存与合理使用</h3>
-<p>由于全局内存是GPU内存中容量最大、访问速度最慢的内存，因此对全局内存的关注是十分必要的，只有正确使用全局内存，才能写出高性能的CUDA程序。一般依次传输数据量是32字节。</p>
-<p>对全局内存是存在L1、L2高速缓存的，因此访问全局内存首先会经过缓存，如果不命中则执行缺页中断，再从主存中取出。对全局内存的访问有合并和非合并两种方式。</p>
-<h4 id="全局内存的合并与非合并访问">全局内存的合并与非合并访问</h4>
-<p>合并访问是指一个线程束对全局内存的一次访问申请求所导致的最小数量的数据传输，否则称为非合并访问。</p>
-<p>即如果一次请求的数据全部是线程束需要的就是合并访问，否则就是非合并访问。因此合并度可以看作是资源利用率，合并度越高则说明效率越高。</p>
-<p>合并度不到100%的原因是因为内存对齐问题，内存对齐在CPU中是非常普遍的现象，<code>malloc</code>分配的内存全部都是内存对齐的，内存对齐也有利于访问速度的提升，此处不再赘诉。在GPU中，全局内存转移到L2缓存的内存是首地址为32字节的整数倍，因此内存首地址需要被对齐到32的整倍数时，即首地址满足<code>addr &amp; ~~(11111b) == 0</code>(低5位位0)才能满足合并度为100%。</p>
-<p>使用<code>cudaMalloc()</code>分配的内存地址至少为256的整倍数。</p>
+<h3 id="原子操作">原子操作</h3>
+<p>所谓原子操作，就是不能被中断的操作，因为在多线程任务中，假设有全局内存可以被所有线程访问，且线程的任务均为读--将值加一--写回，那么当线程1进行加一的操作时，线程2将其结果写入到该内存中，那么接下来线程1再写回时，就覆盖了线程2的计算结果。如果这个任务被用于计数的话，那么结果就是线程之间串扰导致错误。</p>
+<p>因此，我们希望某个线程在执行这一套流程时，其他线程不能访问这个全局内存，只有这样我们才能保证最终结果的正确性，这就是<strong>原子操作</strong>。</p>
+<p>当然，假如说每个线程执行的任务都是需要对共享内存进行大量的原子读写，就会导致性能下降的很多。</p>
+<p>我们可以使用形如<code>atomicxxx(addr, val)</code>的函数来进行原子操作，**原子函数都是__device__修饰的**。</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">函数</th>
+<th style="text-align: center;">功能</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">T atomicAdd(T*, T)</td>
+<td style="text-align: center;">加法</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">T atomicSub(T*, T)</td>
+<td style="text-align: center;">减法</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">T atomicExch(T*, T)</td>
+<td style="text-align: center;">交换</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">T atomicMin(T*, T)</td>
+<td style="text-align: center;">最小值</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">T atomicMax(T*, T)</td>
+<td style="text-align: center;">最大值</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">T atomicInc(T*, T)</td>
+<td style="text-align: center;">自增</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">T atomicDec(T*, T)</td>
+<td style="text-align: center;">自减</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">T atomicCAS(T*, T1, T2)</td>
+<td style="text-align: center;">比较-交换</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">T atomicAnd(T*, T)</td>
+<td style="text-align: center;">按位与</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">T atomicOr(T*, T)</td>
+<td style="text-align: center;">按位或</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">T atomicXor(T*, T)</td>
+<td style="text-align: center;">按位异或</td>
+</tr>
+</tbody>
+</table>
 <div class="note note-primary">
-            <p>当读取与写入都是非合并的时候，最好合并写入，因为非合并的读取会被__lgd()优化。</p><p>也可以尝试使用共享内存将非合并转换成合并。</p>
-          </div>
-<h3 id="共享内存与合理使用">共享内存与合理使用</h3>
-<p>前面也提到过，共享内存就是可以被直接编程的缓存，读写速度十分的高，所以很有必要了解其使用。</p>
-<h4 id="对大数组求和">对大数组求和</h4>
-<p>对一个大数组进行求和与两个大数组相加的编程思路是不一样的，后者只需要定义相同元素个线程然后两两相加即可。对于前者，可能C++语言会编写出如下的代码</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c"><br><span class="hljs-type">float</span> <span class="hljs-built_in">array</span>[N]={...};<br><span class="hljs-type">float</span> result = <span class="hljs-number">0</span>;<br><br><span class="hljs-keyword">for</span>(<span class="hljs-keyword">auto</span> &amp; i:<span class="hljs-built_in">array</span>)<br>    result += <span class="hljs-built_in">array</span>;<br><br></code></pre></td></tr></table></figure>
-<p>但是上述代码没有办法直接转化成并行计算模式。如果数组大小刚好是2的N次幂时，可以将数组每次分成一半，后一半加到前一半上，直到只剩一个元素就是最终结果。下面给出并行计算的核函数。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function"><span class="hljs-type">void</span> __global__ <span class="hljs-title">sum_kernel</span><span class="hljs-params">(readl *d_x, <span class="hljs-type">int</span> N)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">int</span> n = blockDim.x * blockIdx.x + threadIdx.x;<br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> offset = N&lt;&lt;<span class="hljs-number">1</span>; offset &gt; <span class="hljs-number">0</span>; offset&gt;&gt;=<span class="hljs-number">1</span>)<br>        <span class="hljs-keyword">if</span>(n &lt; offset )<br>            d_x[n] += d_x[n + offset];<br>}<br><br></code></pre></td></tr></table></figure>
-<p>但是如果想要在并行计算中使用这个方法，需要注意由于每个线程执行顺序是不确定的，因此需要保证当所有线程都完成当前轮迭代后再开启下一轮。</p>
-<p>可以使用<code>__syncthreads()</code>函数来进行<strong>同步</strong>，当其不带任何参数时，会等待一个线程块内所有线程束完成后再继续执行。我们此处先简单考虑，假设线程块为128，先将d_x[n]这个大数组每128个元素求和，并保存在d_y[n/128]中，因此可以得到这样一个代码。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function"><span class="hljs-type">void</span> __global__ <span class="hljs-title">sum_kernel</span><span class="hljs-params">(real *d_x, <span class="hljs-type">int</span> N,real *d_y)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">int</span> tid = threadIdx.x;<br>    real * x = d_x + blockDim.x * block.x;<br>    <br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> offset = N&lt;&lt;<span class="hljs-number">1</span>; offset &gt; <span class="hljs-number">0</span>; offset&gt;&gt;=<span class="hljs-number">1</span>)<br>    {<br>        <span class="hljs-keyword">if</span>(tid &lt; offset )<br>            d_y[tid] += x[tid + offset];<br>        __syncthreads();<br>    }<br><br>    <span class="hljs-keyword">if</span>(tid == <span class="hljs-number">0</span>)<br>    {<br>        d_y[blockIdx.x] = x[<span class="hljs-number">0</span>];<br>    }<br><br>}<br><br></code></pre></td></tr></table></figure>
-<p>很明显，上述代码需要频繁的访问d_y，且由于d_y位于全局内存中，这样IO速度会慢很多。同时d_y是多个线程合作的结果，所以也不能使用寄存器(既存不下也不能被其他线程访问)，所以此处加速的方法是使用共享内存。</p>
-<p><strong>共享内存声明</strong>是使用修饰符<code>__shared__</code>即可，由于每个线程都能访问线程块的共享内存，因此将全局内存数据复制到共享内存中不需要写循环。下面给出代码。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function"><span class="hljs-type">void</span> __global__ <span class="hljs-title">sum_kernel</span><span class="hljs-params">(real *d_x, <span class="hljs-type">int</span> N,real *d_y)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">int</span> tid = threadIdx.x;<br>    real * x = d_x + blockDim.x * block.x;<br>    __shared__ s_y[<span class="hljs-number">128</span>];<br>    s_y[tid] = (n &lt; N) ? d_X[n] : <span class="hljs-number">0.0</span>; <span class="hljs-comment">// 执行数据的复制，</span><br>    __syncthreads();<br>    <br>    <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> offset = N&lt;&lt;<span class="hljs-number">1</span>; offset &gt; <span class="hljs-number">0</span>; offset&gt;&gt;=<span class="hljs-number">1</span>)<br>    {<br>        <span class="hljs-keyword">if</span>(tid &lt; offset )<br>            s_y[tid] += s_y[tid + offset];<br>        __syncthreads();<br>    }<br><br>    <span class="hljs-keyword">if</span>(tid == <span class="hljs-number">0</span>)<br>    {<br>        d_y[blockIdx.x] = x[<span class="hljs-number">0</span>];<br>    }<br><br>}<br><br></code></pre></td></tr></table></figure>
-<p>但是这种共享内存的声明是硬编码的方式声明的，可扩展与可移植性不好，下面给出动态共享内存的声明方式。</p>
-<p>首先，使用了动态共享内存的核函数必须传递三个参数<code>xxx_kernel&lt;&lt;&lt;gridSize,blockSize,sizof(T)*N&gt;&gt;&gt;(...)</code>，其中第三个参数为声明的共享内存大小，且在核函数内部必须以<code>extern __shared__ T array[];</code>的方式进行声明。</p>
-<div class="note note-primary">
-            <p>不能声明成extern <strong>shared</strong> T *array;</p><p>因为指针与数组是不同的，所以这样会编译错误。</p>
+            <p>其结果一般都是 *(T*) = *(T *) operate T</p><p>原子函数的返回值都是*(T *)的原始值。</p><p>举例：T atomicSub(T* addr, T val)</p><p>等效于</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br>T tmp = *addr;<br>*addr = *addr - val;<br><span class="hljs-keyword">return</span> tmp;<br><br></code></pre></td></tr></table></figure><p>其中比较特殊的T atomicCAS(T*, T1, T2)的作用是*(T*) = (*(T*) = T1) ?T2 : *(T*)</p>
           </div>
 <div class="note note-info">
-            <p>在设备上使用动态共享内存和静态共享内存是没有明显的性能差距的，所以最好使用动态共享内存。</p>
+            <p>还有需要注意一点，原子函数是有精度限制的，比如atomicSub要求数据类型为<code>int</code>,<code>unsigned</code>,<code>unsigned long long</code>，而不能是浮点数类型。</p><p>一般所有的原子操作都是通过atomicCAS来实现，但是在实际过程中要避免这样做，因为性能会下降。</p>
           </div>
-<h4 id="共享内存的bank冲突">共享内存的bank冲突</h4>
-<p>在共享内存中，连续的32-bits字被分配到连续的32个bank中，这就像电影院的座位一样：一列的座位就相当于一个bank，所以每行有32个座位，在每个座位上可以“坐”一个32-bits的数据(或者多个小于32-bits的数据，如4个char型的数据，2个short型的数据)；而正常情况下，我们是按照先坐完一行再坐下一行的顺序来坐座位的，在shared
-memory中地址映射的方式也是这样的。下图中内存地址是按照箭头的方向依次映射的：</p>
-<img src="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-8/pic1.png" srcset="/img/loading.gif" lazyload class="">
-<p>每个bank内的存储数据是共用一根总线的，所以当有两个及以上的线程需要访问一个bank内的数据时，需要两次总线操作；而所有线程访问不同bank内的数据时，所有的访问都能在一次总线操作，因此bank冲突会导致性能下降。</p>
+<p>下面给出一个例子</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"cuda_runtime.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"device_launch_parameters.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"device_atomic_functions.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> ATOMIC 0</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> TPB 32</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> N 1024</span><br><br><br><span class="hljs-function">__global__ <span class="hljs-type">void</span> <span class="hljs-title">dotKernel</span><span class="hljs-params">(<span class="hljs-type">int</span> * d_res, <span class="hljs-type">const</span> <span class="hljs-type">int</span> *d_a, <span class="hljs-type">const</span> <span class="hljs-type">int</span> * d_b, <span class="hljs-type">int</span> n)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> idx = threadIdx.x + blockDim.x * blockIdx.x;<br>	<span class="hljs-type">const</span> <span class="hljs-type">int</span> s_idx = threadIdx.x;<br><br>	<span class="hljs-keyword">if</span> (idx &gt;= n)<br>		<span class="hljs-keyword">return</span>;<br><br>	__shared__ <span class="hljs-type">int</span> s_prod[TPB];<br>	s_prod[s_idx] = d_b[idx] * d_a[idx];<br>	__syncthreads(); <span class="hljs-comment">// 至此，所有的分块计算都完成了</span><br><br>	<span class="hljs-keyword">if</span> (s_idx == <span class="hljs-number">0</span>) <span class="hljs-comment">// 使用每个线程块中的第一个线程进行数据合并计算</span><br>	{<br>		<span class="hljs-type">int</span> blockSum = <span class="hljs-number">0</span>;<br>		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j = <span class="hljs-number">0</span>; j &lt; blockDim.x; ++j)<br>		{<br>			blockSum += s_prod[j];<br>		}<br><br>		<span class="hljs-built_in">printf</span>(<span class="hljs-string">"block %d, blocksum %d\n"</span>, blockIdx.x, blockSum);<br><br><span class="hljs-meta">#<span class="hljs-keyword">if</span> ATOMIC == 1</span><br>		<span class="hljs-built_in">atomicAdd</span>(d_res, blockSum); <span class="hljs-comment">// 原子计算</span><br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>		*d_res += blockSum; <span class="hljs-comment">// 直接计算</span><br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>	}<br>}<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">doLauncher</span><span class="hljs-params">(<span class="hljs-type">int</span> * res, <span class="hljs-type">const</span> <span class="hljs-type">int</span> *a, <span class="hljs-type">const</span> <span class="hljs-type">int</span> *b, <span class="hljs-type">int</span> n)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">int</span> * d_res;<br>	<span class="hljs-type">int</span> *d_a = <span class="hljs-number">0</span>;<br>	<span class="hljs-type">int</span> *d_b = <span class="hljs-number">0</span>;<br><br>	<span class="hljs-comment">// 分配内存</span><br>	<span class="hljs-built_in">cudaMalloc</span>(&amp;d_res, <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>));<br>	<span class="hljs-built_in">cudaMalloc</span>(&amp;d_a, n * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>));<br>	<span class="hljs-built_in">cudaMalloc</span>(&amp;d_b, n * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>));<br><br>	<span class="hljs-comment">// 拷贝数据</span><br>	<span class="hljs-built_in">cudaMemset</span>(d_res, <span class="hljs-number">0</span>, <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>));<br>	<span class="hljs-built_in">cudaMemcpy</span>(d_a, a, n * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>), cudaMemcpyHostToDevice);<br>	<span class="hljs-built_in">cudaMemcpy</span>(d_b, b, n * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>), cudaMemcpyHostToDevice);<br>	<br>	<span class="hljs-comment">// 调用核函数计算并将数据写回主机端</span><br>	dotKernel &lt;&lt; &lt;(n + TPB - <span class="hljs-number">1</span>) / TPB, TPB &gt;&gt; &gt; (d_res, d_a, d_b, n);<br>	<span class="hljs-built_in">cudaMemcpy</span>(res, d_res, <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>), cudaMemcpyDeviceToHost);<br><br>	<span class="hljs-comment">// 释放内存</span><br>	<span class="hljs-built_in">cudaFree</span>(d_res);<br>	<span class="hljs-built_in">cudaFree</span>(d_a);<br>	<span class="hljs-built_in">cudaFree</span>(d_b);<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-type">int</span> cpu_res = <span class="hljs-number">0</span>;<br>	<span class="hljs-type">int</span> gpu_res = <span class="hljs-number">0</span>;<br>	<span class="hljs-type">int</span> *a = (<span class="hljs-type">int</span> *)<span class="hljs-built_in">malloc</span>(N * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>));<br>	<span class="hljs-type">int</span> *b = (<span class="hljs-type">int</span> *)<span class="hljs-built_in">malloc</span>(N * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">int</span>));<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; ++i)<br>	{<br>		a[i] = <span class="hljs-number">1</span>;<br>		b[i] = <span class="hljs-number">1</span>;<br>	}<br><br>	<span class="hljs-comment">// 先调用CPU计算结果</span><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; N; i++)<br>	{<br>		cpu_res += a[i] * b[i];<br>	}<br><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"\n\ncpu res = %d\n\n"</span>, cpu_res);<br><br>	<span class="hljs-comment">// 调用GPU对比计算结果</span><br>	<span class="hljs-built_in">doLauncher</span>(&amp;gpu_res, a, b, N);<br><br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"\n\ngpu res = %d\n\n"</span>, gpu_res);<br><br>	<span class="hljs-built_in">free</span>(a);<br>	<span class="hljs-built_in">free</span>(b);<br>	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>可以修改宏ATOMIC来查看使用原子操作和非原子操作的结果。其中原子操作每次都能给出正确结果，而非原子操作每次结果都不一样，且都不正确。</p>
 <h2 id="总结">总结</h2>
 <ul>
-<li>__syncthreads()函数可以用于线程块内线程同步。</li>
-<li>静态共享内存在核函数内使用<code>__shared__</code>修饰符进行修饰。</li>
-<li>动态共享内存需要在核函数调用时传递第三个参数<code>xxx_kernel&lt;&lt;&lt;gridSize,blockSize,sizof(T)*N&gt;&gt;&gt;(...)</code>，并且在核函数内声明为<code>extern __shared__ array[];</code></li>
-<li>要尽可能避免bank冲突。</li>
+<li>当涉及归约或者其他类型的需要多个线程访问同一个地址时，需要使用原子操作。</li>
 </ul>
 
                 
@@ -505,18 +533,12 @@ memory中地址映射的方式也是这样的。下图中内存地址是按照�
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/11/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-9/" title="CUDA高性能并行计算(9)--原子函数及其合理使用">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CUDA高性能并行计算(9)--原子函数及其合理使用</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-7/" title="CUDA高性能并行计算(7)--CUDA软件抽象与硬件抽象">
-                        <span class="hidden-mobile">CUDA高性能并行计算(7)--CUDA软件抽象与硬件抽象</span>
+                      <a href="/2022/09/09/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-8/" title="CUDA高性能并行计算(8)--CUDA全局内存、共享内存的合理使用">
+                        <span class="hidden-mobile">CUDA高性能并行计算(8)--CUDA全局内存、共享内存的合理使用</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
