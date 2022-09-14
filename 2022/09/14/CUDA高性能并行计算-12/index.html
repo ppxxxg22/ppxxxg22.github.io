@@ -16,24 +16,24 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="CUDA流">
+    <meta name="description" content="CUDA标准库与生态">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CUDA高性能并行计算(11)--CUDA流">
-<meta property="og:url" content="http://example.com/2022/09/13/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-11/index.html">
+<meta property="og:title" content="CUDA高性能并行计算(12)--CUDA标准库与生态">
+<meta property="og:url" content="http://example.com/2022/09/14/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-12/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="CUDA流">
+<meta property="og:description" content="CUDA标准库与生态">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda11.jpg">
-<meta property="article:published_time" content="2022-09-13T06:34:43.000Z">
-<meta property="article:modified_time" content="2022-09-14T12:35:15.720Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/cuda12.jpg">
+<meta property="article:published_time" content="2022-09-14T12:53:08.000Z">
+<meta property="article:modified_time" content="2022-09-14T14:23:23.438Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="CUDA">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda11.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/cuda12.jpg">
   
   
   
-  <title>CUDA高性能并行计算(11)--CUDA流 - PPXXXG22</title>
+  <title>CUDA高性能并行计算(12)--CUDA标准库与生态 - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -321,7 +321,7 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/cuda11.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/cuda12.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
@@ -338,8 +338,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-13 14:34" pubdate>
-          September 13, 2022 pm
+        <time datetime="2022-09-14 20:53" pubdate>
+          September 14, 2022 pm
         </time>
       </span>
     
@@ -350,7 +350,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.8k words
+          652 words
         
       </span>
     
@@ -361,7 +361,7 @@ mjx-container[display="true"] + br {
         
         
         
-          12 mins
+          3 mins
         
       </span>
     
@@ -412,54 +412,70 @@ mjx-container[display="true"] + br {
             
               <div class="markdown-body">
                 
-                <h2 id="cuda流">CUDA流</h2>
+                <h2 id="cuda标准库与生态">CUDA标准库与生态</h2>
 <span id="more"></span>
-<p>CUDA程序的并行层次主要有两个，一个是在核函数内部的并行，另一个是在核函数外部的并行。之前的线程块、计算网格之类的都是内部的并行，而外部的并行主要包括核函数计算与数据传输之间的并行、主机计算与数据传输之间的并行、不同数据传输(方向)之间的并行、核函数计算与主机计算之间的并行以及不同核函数之间并行。</p>
-<p>不过核函数外部的并行并不是编程时考虑的重点内容。但是如果需要考虑核函数外的并行，就需要涉及到流的概念了。</p>
-<h3 id="流概述">流概述</h3>
-<p>一个CUDA流是指由主机发出的在一个设备中执行的CUDA操作序列。除了主机端发送的流外，设备端也可以发送流，不过此处我们只考虑前者。</p>
-<p>一个流的哥哥操作的次序是由主机控制的，按照主机发布的次序执行，但是来自于两个不同的流的操作不一定按照某个次序执行，而是按照并发或交错地执行。</p>
-<p>任何CUDA操作都存在于某个流中，要么是默认流，也称空流，要么是明确的非默认流。如果没有显式地指定一个流，那么所有的CUDA操作都是在空流中进行的。</p>
-<p>非默认的流，需要在主机端产生与销毁。一个CUDA流可以由以下的CUDA运行时API产生:<code>cudaError_t cudaStreamCreate(cudaStream_t *)</code>，其输入参数是<code>cudaStream_t</code>类型的一个指针。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br>cudaStream_t stream_1;<br><span class="hljs-built_in">cudaStreamCreate</span>(&amp;stream_1); <span class="hljs-comment">// 创建,这个需要传递流地址</span><br><span class="hljs-built_in">cudaStreamDestroy</span>(stream_1); <span class="hljs-comment">// 销毁,这个不需要流地址</span><br><br></code></pre></td></tr></table></figure>
-<p>为了实现不同的CUDA流之间的并发，主机在向某个CUDA流中发布一系列命令后必须马上获得程序的控制权，不用等待CUDA流在GPU中执行完毕。这样就可以通过主机产生多个并行的CUDA流。</p>
-<p>可以用以下函数检查一个CUDA流的所有操作是否在设备中执行完。</p>
+<h3 id="标准库">标准库</h3>
+<p>CUDA提供了覆盖数学函数、线性代数、图像处理和机器学习以及其他重要领域的标准库供大家使用。这些库提供了大量高性能算法，可以节约大量时间。</p>
+<table>
+
+<thead>
+<tr class="header">
+<th style="text-align: center;">库名称</th>
+<th style="text-align: center;">介绍</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">数学库</td>
+<td style="text-align: center;">涉及到各种精度的数学计算，可以查看<a target="_blank" rel="noopener" href="https://docs.nvidia.com/cuda/cuda-math-api/">文档</a></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Thrust</td>
+<td style="text-align: center;">类似C++的标准模板库</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">cuBLAS</td>
+<td style="text-align: center;">基本线性代数子程序</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">cuFFT</td>
+<td style="text-align: center;">快速傅里叶变换</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">cuSPARSE</td>
+<td style="text-align: center;">稀疏矩阵</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">cuRAND</td>
+<td style="text-align: center;">随机数生成库</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">cuSolver</td>
+<td style="text-align: center;">稠密矩阵和稀疏矩阵计算库</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">cuDNN</td>
+<td style="text-align: center;">深度神经网络</td>
+</tr>
+</tbody>
+</table>
+<p>上述库需要使用时查阅<a target="_blank" rel="noopener" href="https://docs.nvidia.com/cuda/">文档</a>即可</p>
+<h4 id="thrust库">Thrust库</h4>
+<p>这是一个实现了众多基本并行算法的C++模板库，类似于STL。</p>
+<p>其提供了两种矢量结构(vector)，需要包含<code>&lt;thrust/host_vector.h&gt;</code>或<code>&lt;thrust/device_vector.h&gt;</code>来使用。</p>
 <ul>
-<li>cudaError_t cudaStreamSynchronize(cudaStream_t stream);
-强制阻塞主机，直到所有CUDA流中的操作执行完毕。</li>
-<li>cudaError_t cudaStreamQuery(cudaStream_t stream);
-检查CUDA流中操作是否执行完毕，但不阻塞主机。</li>
+<li>thrust::host_vector<t> : 存储于主机的vector</t></li>
+<li>thrust::device_vector<t> : 存储于设备的vector</t></li>
 </ul>
-<h3 id="在默认流中重叠主机和设备计算">在默认流中重叠主机和设备计算</h3>
-<p>同一个CUDA流中的所有CUDA操作都是顺序执行的，但是依然可以重叠默认流和主机之间的计算。</p>
-<p>由于一个CUDA流内是顺序执行的，而我们前面也说过，主机执行完核函数后会立刻执行下一条指令，而不等待设备。因此如果主机执行完核函数后的下一条指令仍然是CUDA相关的(比如从设备中复制计算结果数据到主机)，就会导致这条指令被阻塞(因为设备会等待核函数结束后再执行这条复制相关的指令)。</p>
-<p><strong>而如果主机在执行核函数后执行的指令与设备无关，那么就能实现主机和设备同时计算</strong>。这样就让设备和主机之间的计算重叠，这个技巧有时候会有用，前提是设备和主机执行的计算量差不多。</p>
-<h3 id="用非默认的cuda流来重叠多个核函数的执行">用非默认的CUDA流来重叠多个核函数的执行</h3>
-<p>要实现多个核函数之间并行必须需要使用多个流。</p>
-<h4 id="核函数中流参数">核函数中流参数</h4>
-<p>其实一个核函数在尖括号内可以传递4个参数，分别是网格尺寸，线程块尺寸，共享内存大小，流。因此要配置不同的流，就可以按照前述方法先创建出流，然后传递进核函数就可以了。<strong>其中共享内存大小可以为0</strong>。</p>
-<p><code>xxx_kernel&lt;&lt;&lt;gridDim, blockDim, sharedMem, streamId&gt;&gt;&gt;(...)</code></p>
-<h4 id="重叠多个核函数的例子">重叠多个核函数的例子</h4>
-<p>下面给出一个简单的例子。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"cuda_runtime.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">"device_launch_parameters.h"</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><br><br><span class="hljs-function"><span class="hljs-type">void</span> __global__ <span class="hljs-title">stream_kernel</span><span class="hljs-params">(<span class="hljs-type">int</span> streamid)</span></span><br><span class="hljs-function"></span>{<br>	<span class="hljs-built_in">printf</span>(<span class="hljs-string">"%d thread in %d block in %d\n"</span>, threadIdx.x, blockIdx.x, streamid);<br>}<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>	cudaStream_t streams[<span class="hljs-number">5</span>];<br>	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">auto</span> &amp;x : streams)<br>	{<br>		<span class="hljs-built_in">cudaStreamCreate</span>(&amp;x); <span class="hljs-comment">// 创建流</span><br>	}<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">3</span>;i++)<br>	{<br>		stream_kernel &lt;&lt; &lt;<span class="hljs-number">2</span>, <span class="hljs-number">64</span>, <span class="hljs-number">0</span>, streams[i] &gt;&gt; &gt; (i); <span class="hljs-comment">// 调用核函数</span><br>	}<br><br>	<span class="hljs-keyword">for</span> (<span class="hljs-keyword">auto</span> &amp;x : streams)<br>	{<br>		<span class="hljs-built_in">cudaStreamDestroy</span>(x); <span class="hljs-comment">// 销毁流</span><br>	}<br>}<br><br></code></pre></td></tr></table></figure>
-<h4 id="不同流之间核函数的执行与数据传递">不同流之间核函数的执行与数据传递</h4>
-<p>要实现核函数执行与数据传输的并发，必须让这两个操作处于不同的非默认流中，<strong>且数据传输必须使用<code>cudaMemcpy()</code>的异步版本<code>cudaMemcpyAsync()</code></strong>(这个由GPU中DMA来实现的)；另外，由于我们需要将数据传输实现成异步形式，因此<code>需要使用不可分页内存</code>而不能使用常规的可分页内存(也就是默认的分配内存，因为这些内存在传输时需要和主机进行同步，比如缺页，达不到异步的效果)，可以用<code>cudaMallocHost()</code>函数来实现，不可分页内存需要用<code>cudaFreeHost()</code>来进行释放，否则会出现错误。下面来具体介绍一下这些API。</p>
-<ul>
-<li>cudaError_t cudaMallocHost(void **ptr, size_t size) :
-将*ptr指向的地址分配成不可分页地址。</li>
-<li>cudaError_t cudaFreeHost(void *ptr) : 释放掉不可分页地址</li>
-<li>cudaError_t cudaMemcpyAsync(void *dst, const void *src, size_t size,
-enum cudaMemcpyKind kind, cudaStream_t stream) :
-前面几个参数与cudaMemcpy()一致，最后一个参数是需要复制到的流中。</li>
-</ul>
-<h2 id="总结">总结</h2>
-<ul>
-<li>cudaStreamCreate()和cudaStreamDestroy()可以用于创建和销毁流。</li>
-<li>cudaStreamSynchronize()强制阻塞主机，直到所有CUDA流中的操作执行完毕。cudaStreamQuery()，检查CUDA流中操作是否执行完毕，但不阻塞主机。</li>
-<li>核函数调用中尖括号内第四个参数是流。</li>
-<li>cudaMallocHost()和cudaFreeHost()可以用于分配和销毁不可分页内存。</li>
-<li>cudaMemcpyAsync()可以在流内异步传输数据，且数据类型必须为不可分页内存。</li>
-</ul>
+<p>当然，其也提供了很多常用的算法</p>
+<p>关于Thrust库的文档请查阅<a target="_blank" rel="noopener" href="https://nvidia.github.io/thrust/">此处</a></p>
+<h4 id="cublas">cuBLAS</h4>
+<p>这个库专门用于进行矩阵运算，提供了诸多的矩阵相关的API，可以参阅<a target="_blank" rel="noopener" href="https://docs.nvidia.com/cuda/cublas/index.html">文档</a></p>
+<p>在使用的时候个地方需要特别提及一下，这个库由于最开始是使用Fortran语言实现的，因此带有Fortran语言风格。<strong>比如矩阵式按列有限存储的，这对局部性会产生印象，需要注意</strong>。</p>
+<h4 id="cusolver">cuSolver</h4>
+<p>这个库也是处理矩阵的，但是其主要处理高级矩阵运算，比如矩阵求逆或者对角化之类的东西。</p>
+<h4 id="curand">cuRAND</h4>
+<p>这个库用于产生随机数，可以产生伪随机数和准随机数。</p>
 
                 
               </div>
@@ -507,18 +523,12 @@ enum cudaMemcpyKind kind, cudaStream_t stream) :
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/14/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-12/" title="CUDA高性能并行计算(12)--CUDA标准库与生态">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">CUDA高性能并行计算(12)--CUDA标准库与生态</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/12/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-6/" title="Python奇技淫巧(6)--函数">
-                        <span class="hidden-mobile">Python奇技淫巧(6)--函数</span>
+                      <a href="/2022/09/13/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-11/" title="CUDA高性能并行计算(11)--CUDA流">
+                        <span class="hidden-mobile">CUDA高性能并行计算(11)--CUDA流</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
