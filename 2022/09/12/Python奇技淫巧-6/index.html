@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/imgs/post_index_img/pycook6.jpg">
 <meta property="article:published_time" content="2022-09-12T13:09:38.000Z">
-<meta property="article:modified_time" content="2022-09-13T03:21:52.727Z">
+<meta property="article:modified_time" content="2022-09-13T03:45:00.801Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="Python">
 <meta property="article:tag" content="PythonCookbook">
@@ -465,7 +465,7 @@ mjx-container[display="true"] + br {
           </div>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">closure</span>():<br>    n = <span class="hljs-number">0</span><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">func</span>():<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f"n = <span class="hljs-subst">{n}</span>"</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_</span>():<br>        <span class="hljs-keyword">return</span> n<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">set_</span>(<span class="hljs-params">value</span>):<br>        <span class="hljs-keyword">nonlocal</span> n<br>        n = value<br><br>    func.getn = get_<br>    func.setn = set_<br>    <span class="hljs-keyword">return</span> func<br><br>f = closure()<br>f() <span class="hljs-comment"># 0</span><br>f.get() <span class="hljs-comment"># 0</span><br>f.<span class="hljs-built_in">set</span>(<span class="hljs-number">10</span>) <br>f.get() <span class="hljs-comment"># 10</span><br><br></code></pre></td></tr></table></figure>
 <div class="note note-info">
-            <p>这个结构基本上就是一个类了，但是其运行速度会更快，更加轻量级</p>
+            <p>这个结构基本上就是一个类了，但是其运行速度会更快，更加轻量级。</p>
           </div>
 
                 
@@ -515,6 +515,12 @@ mjx-container[display="true"] + br {
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/2022/09/13/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-11/" title="CUDA高性能并行计算(11)--CUDA流">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">CUDA高性能并行计算(11)--CUDA流</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
