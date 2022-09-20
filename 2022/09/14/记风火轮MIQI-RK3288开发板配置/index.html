@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/imgs/post_index_img/MIQI-rk3288.jpg">
 <meta property="article:published_time" content="2022-09-14T14:44:51.000Z">
-<meta property="article:modified_time" content="2022-09-19T14:06:15.398Z">
+<meta property="article:modified_time" content="2022-09-19T14:21:55.442Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="开发板使用">
 <meta property="article:tag" content="RK3288">
@@ -444,7 +444,7 @@ PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作v
 <li>有足够的充电设备，因为后续扩展硬盘上去是需要额外供电设备的。</li>
 <li>比较阴凉，虽然本身散热还行，但是最好还是找个阴凉的地方。</li>
 </ul>
-<p>我选择把这台小服务器仍在宿舍里，虽然在实验室里可能会更好(宿舍限电，说不定啥时候就崩了)，但是实验室的交换机离我有点远，要拉一根很长的网线才行。</p>
+<p>我选择把这台小服务器扔在宿舍里，虽然在实验室里可能会更好(宿舍限电，说不定啥时候就崩了)，但是实验室的交换机离我有点远，要拉一根很长的网线才行。</p>
 <p>配置网络的时候最好将其配置成局域网内的静态IP，而不要DHCP分配。因为前者在局域网内访问会很方便，而且我这个路由器又是捡垃圾捡来的，它那个地址续租好像有点问题(不是很确定，但是非静态地址过一段时间会断网)。</p>
 <p>首先输入<code>ifconfig</code>查看网卡和当前ip地址，然后通过修改<code>/etc/network/interfaces</code>文件来修改网卡配置信息。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>sudo vim /etc/network/interfaces<br><br><span class="hljs-comment"># 下面是interfaces文件中的内容</span><br><br>auto eth0<br>iface eth0 inet static<br>address 192.168.1.205<br>gateway 192.168.1.1<br>netmask 255.255.255.0<br><br></code></pre></td></tr></table></figure>
