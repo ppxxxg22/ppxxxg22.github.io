@@ -16,25 +16,25 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="记风火轮MIQI-RK3288开发板的踩坑过程">
+    <meta name="description" content="levelDB的字符串Slice">
 <meta property="og:type" content="article">
-<meta property="og:title" content="记风火轮MIQI-RK3288开发板的踩坑过程">
-<meta property="og:url" content="http://example.com/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:title" content="levelDB源码剖析(5)--字符串Slice">
+<meta property="og:url" content="http://example.com/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="记风火轮MIQI-RK3288开发板的踩坑过程">
+<meta property="og:description" content="levelDB的字符串Slice">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/MIQI-rk3288.jpg">
-<meta property="article:published_time" content="2022-09-14T14:44:51.000Z">
-<meta property="article:modified_time" content="2022-09-19T14:21:55.442Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb5.jpg">
+<meta property="article:published_time" content="2022-09-20T00:59:43.000Z">
+<meta property="article:modified_time" content="2022-09-20T02:13:22.316Z">
 <meta property="article:author" content="PPXXXG22">
-<meta property="article:tag" content="开发板使用">
-<meta property="article:tag" content="RK3288">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/MIQI-rk3288.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb5.jpg">
   
   
   
-  <title>记风火轮MIQI-RK3288开发板的踩坑过程 - PPXXXG22</title>
+  <title>levelDB源码剖析(5)--字符串Slice - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -322,13 +322,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/MIQI-rk3288.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/leveldb5.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="焯！"></span>
+            <span id="subtitle" data-typed-text="levelDB源码剖析，剖析源码，掌握技术"></span>
           
         </div>
 
@@ -339,8 +339,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-09-14 22:44" pubdate>
-          September 14, 2022 pm
+        <time datetime="2022-09-20 08:59" pubdate>
+          September 20, 2022 am
         </time>
       </span>
     
@@ -351,7 +351,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.4k words
+          2.8k words
         
       </span>
     
@@ -362,7 +362,7 @@ mjx-container[display="true"] + br {
         
         
         
-          15 mins
+          12 mins
         
       </span>
     
@@ -408,80 +408,38 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">焯！</h1>
+            <h1 style="display: none">levelDB源码剖析，剖析源码，掌握技术</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="记风火轮miqi-rk3288开发板的踩坑过程">记风火轮MIQI-RK3288开发板的踩坑过程</h2>
+                <h2 id="leveldb的字符串slice">levelDB的字符串Slice</h2>
 <span id="more"></span>
-<p>之前从某鱼上看到了价格比较合适的一块RK3288开发板，就顺便买下来了。记录一下烧录镜像过程中的踩坑记录。</p>
-<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
-<p>我买的就是上面这块板子，配置还是很不错的：RK3288四核处理器、2G
-DDR3、16G
-eMMC、4个USB2.0、HDMI、千兆网口、还有串口调试和一大票的GPIO。无论是当作家用服务器还是当超高配单片机或者是学习内核驱动开发感觉都不错，而且才100出头，这价格也不需要啥自行车。比我之前用的opi
-PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作vsc的远程环境来用，PC2完全是够了)。</p>
-<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic3.jpg" srcset="/img/loading.gif" lazyload class="">
-<p>上面这个就是我目前的小水管服务器。</p>
-<h3 id="镜像烧录">镜像烧录</h3>
-<p>这块板子到手后我上电发现是Android的系统，而我是要做一个小服务器的，所以我要做的第一步就是烧录一个linux的系统上去。</p>
-<p>由于这块板子自带了eMMC，所以不需要额外的内存卡用于烧写镜像，而是需要特殊的工具来完成烧写。</p>
+<hr>
+<p>上次我们分析编码解码的时候，注意到其中使用的参数有些是<code>Slice</code>类型，这个类型就是levelDB中自己封装的一个轻量级字符串类，其只包含了指向字符串的指针和字符串的长度。</p>
 <div class="note note-primary">
-            <p>有一说一，这款产品的网站做的是真垃圾捏。存的资料都是伯度网盘，好多资料都失效了；而且官方也没有详细的教程；wiki页面还全是英文的，里面的图还全都废了，真就不要国内用户了呗。</p><p>这个是<a target="_blank" rel="noopener" href="http://wiki.smartfire.cn/%E9%A6%96%E9%A1%B5"><font color="#0000ff"><u>板子的页面</u></font></a>，可以感受一下。</p>
+            <p>Slice可以理解成切片，因为其指向底层字符串的首地址，并且标定出长度。</p><p>但是需要注意的是，Slice中不涉及对字符串的销毁和创建，它只是<strong>指向</strong>。因此调用Slice对象时<strong>必须确保底层的字符串没有被销毁</strong>。</p>
           </div>
-<p>首先，我们需要<a target="_blank" rel="noopener" href="https://www.t-firefly.com/doc/download/4.html">下载瑞芯微提供的烧录工具和驱动</a>(RK3288就是瑞芯微的)。我们需要烧录到eMMC中，所以下载AndroidTools和对应的驱动并安装(现在这俩东西叫RKDevTool和RK驱动助手)。</p>
-<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic2.png" srcset="/img/loading.gif" lazyload class="">
-<p>然后还需要下载我们需要的镜像。可以在<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1qG8kNPaH1uARfxas7_CPvA">这里下载(提取码：4m0o)</a>，镜像在firmwares文件夹里。不过似乎<a target="_blank" rel="noopener" href="https://www.t-firefly.com/doc/download/4.html">这里</a>的也能用，后面的镜像更新，所以推荐去这里下。但是这个官网的下载速度和伯度网盘差不多，我以我就找个小的下，我选了RK3288_Server_Ubuntu这个镜像，毕竟平时我也是需要关闭掉图形化显示的，所以不如干脆选一个不带图形化的界面的版本。</p>
-<p>烧录前先把之前说的驱动装好，然后摁住板子后面的唯一一个按键不松手，把板子和电脑相连后等待几秒再松开那个按键，这样就进入了LOADER模式。打开那个AndroidTools，然后在升级固件的窗口中选择固件，然后点击烧录就完成了。</p>
-<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic4.png" srcset="/img/loading.gif" lazyload class="">
-<p>然后断电再重新上电，随便找个显示器装上，就能看到成功启动了。不过由于我们没有装图形化显示界面，所以全是黑框框。<strong>以及这个默认的账号和密码都是firefly，它官网说的都不对，不过这种一般都是拿自己的公司来作为账号和密码，还是很好猜的</strong>。</p>
-<img src="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/pic5.jpg" srcset="/img/loading.gif" lazyload class="">
-<h3 id="配置网络">配置网络</h3>
-<p>很显然我们不能每次使用这块板子就找来显示屏和鼠标键盘这种东西连上去，否则就显得太蠢了。</p>
-<p>我们首先需要找个好地方来放板子，这个好地方需要满足以下条件：</p>
+<h3 id="源码解析部分">源码解析部分</h3>
+<div class="note note-primary">
+            <p>源码位置： <code>utils/slice.h</code></p>
+          </div>
+<p>没错，Slice对象只有一个头文件，全部方法都是内联的。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> Slice<br>{<br><br><span class="hljs-keyword">private</span>:               <span class="hljs-comment">//只有两个私有成员</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *data_; <span class="hljs-comment">// 指向位于底层的字符串</span><br>    <span class="hljs-type">size_t</span> size_;      <span class="hljs-comment">// 标识出字符串的长度</span><br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">/****start一些构造函数start****/</span><br><br>    <span class="hljs-comment">// 空的构造函数</span><br>    <span class="hljs-built_in">Slice</span>() : <span class="hljs-built_in">data_</span>(<span class="hljs-string">""</span>), <span class="hljs-built_in">size_</span>(<span class="hljs-number">0</span>) {}<br>    <span class="hljs-comment">// 对字符串d进行0:n的切片，即d[:n]</span><br>    <span class="hljs-built_in">Slice</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *d, <span class="hljs-type">size_t</span> n) : <span class="hljs-built_in">data_</span>(d), <span class="hljs-built_in">size_</span>(n) {}<br>    <span class="hljs-comment">// 对string类型s进行0:n的切片，即s[:n]</span><br>    <span class="hljs-built_in">Slice</span>(<span class="hljs-type">const</span> std::string &amp;s) : <span class="hljs-built_in">data_</span>(s.<span class="hljs-built_in">data</span>()), <span class="hljs-built_in">size_</span>(s.<span class="hljs-built_in">size</span>()) {}<br>    <span class="hljs-comment">// 指向字符串s</span><br>    <span class="hljs-built_in">Slice</span>(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *s) : <span class="hljs-built_in">data_</span>(s), <span class="hljs-built_in">size_</span>(<span class="hljs-built_in">strlen</span>(s)) {}<br><br>    <span class="hljs-comment">// 拷贝构造函数和'='运算符使用的默认的即可</span><br>    <span class="hljs-built_in">Slice</span>(<span class="hljs-type">const</span> Slice &amp;) = <span class="hljs-keyword">default</span>;<br>    Slice &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Slice &amp;) = <span class="hljs-keyword">default</span>;<br><br>    <span class="hljs-comment">/****end一些构造函数end****/</span><br><br>    <span class="hljs-comment">/*下面是一些公有接口*/</span><br><br>    <span class="hljs-comment">// 指向切片字符串的起始位置</span><br>    <span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">data</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> data_; }<br>    <span class="hljs-comment">// 返回长度</span><br>    <span class="hljs-function"><span class="hljs-type">size_t</span> <span class="hljs-title">size</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> size_; }<br>    <span class="hljs-comment">// 判断是否为空</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">empty</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> size_ == <span class="hljs-number">0</span>; }<br>    <span class="hljs-comment">// 执行类似字符串的str[i]的访问</span><br>    <span class="hljs-type">char</span> <span class="hljs-keyword">operator</span>[](<span class="hljs-type">size_t</span> n) <span class="hljs-type">const</span><br>    {<br>        <span class="hljs-built_in">assert</span>(n &lt; <span class="hljs-built_in">size</span>());<br>        <span class="hljs-keyword">return</span> data_[n];<br>    }<br><br>    <span class="hljs-comment">// 清除切片</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">clear</span><span class="hljs-params">()</span></span><br><span class="hljs-function">    </span>{<br>        data_ = <span class="hljs-string">""</span>;<br>        size_ = <span class="hljs-number">0</span>;<br>    }<br><br>    <span class="hljs-comment">// 移除切片前n个字节</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">remove_prefix</span><span class="hljs-params">(<span class="hljs-type">size_t</span> n)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-built_in">assert</span>(n &lt;= <span class="hljs-built_in">size</span>());<br>        data_ += n;<br>        size_ -= n;<br>    }<br><br>    <span class="hljs-comment">// 将切片创建成string类</span><br>    <span class="hljs-function">std::string <span class="hljs-title">ToString</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> std::<span class="hljs-built_in">string</span>(data_, size_); }<br><br>    <span class="hljs-comment">// 与另一个切片比较</span><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">compare</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;b)</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// 此切片是否以切片x开头</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">starts_with</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;x)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> ((size_ &gt;= x.size_) &amp;&amp; (<span class="hljs-built_in">memcmp</span>(data_, x.data_, x.size_) == <span class="hljs-number">0</span>));<br>    }<br>};<br><br><span class="hljs-comment">// 判断x与y是否相等</span><br><span class="hljs-keyword">inline</span> <span class="hljs-type">bool</span> <span class="hljs-keyword">operator</span>==(<span class="hljs-type">const</span> Slice &amp;x, <span class="hljs-type">const</span> Slice &amp;y)<br>{<br>    <span class="hljs-built_in">return</span> ((x.<span class="hljs-built_in">size</span>() == y.<span class="hljs-built_in">size</span>()) &amp;&amp;<br>            (<span class="hljs-built_in">memcmp</span>(x.<span class="hljs-built_in">data</span>(), y.<span class="hljs-built_in">data</span>(), x.<span class="hljs-built_in">size</span>()) == <span class="hljs-number">0</span>));<br>}<br><br><span class="hljs-keyword">inline</span> <span class="hljs-type">bool</span> <span class="hljs-keyword">operator</span>!=(<span class="hljs-type">const</span> Slice &amp;x, <span class="hljs-type">const</span> Slice &amp;y) { <span class="hljs-keyword">return</span> !(x == y); }<br><br><span class="hljs-comment">// 比较字符串的函数</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">int</span> <span class="hljs-title">Slice::compare</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;b)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">size_t</span> min_len = (size_ &lt; b.size_) ? size_ : b.size_;<br>    <span class="hljs-type">int</span> r = <span class="hljs-built_in">memcmp</span>(data_, b.data_, min_len);<br>    <span class="hljs-keyword">if</span> (r == <span class="hljs-number">0</span>)<br>    {<br>        <span class="hljs-keyword">if</span> (size_ &lt; b.size_)<br>            r = <span class="hljs-number">-1</span>;<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (size_ &gt; b.size_)<br>            r = +<span class="hljs-number">1</span>;<br>    }<br>    <span class="hljs-keyword">return</span> r;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>Slice的实现还是非常简单的，而且它提供了非常丰富的接口。</p>
+<p>但是Slice的实现我们也能看到一些问题：</p>
 <ul>
-<li>离路由器或者交换机近，可以提供网线直连。因为板子的USB是2.0，就不要接一个愚蠢的usb网卡了，而且作为一台服务器，使用无线传输方式来接入互联网真是太掉价了。</li>
-<li>有足够的充电设备，因为后续扩展硬盘上去是需要额外供电设备的。</li>
-<li>比较阴凉，虽然本身散热还行，但是最好还是找个阴凉的地方。</li>
+<li>由于Slice类不涉及内存的分配和销毁，也不检查内存是否合法，因此在调用的时候需要特别注意。</li>
+<li>Slice类不涉及原子操作，虽然大部分都是const的读取，但是在多线程中将某一个Slice对象进行修改，则所有线程都需要执行同步。</li>
 </ul>
-<p>我选择把这台小服务器扔在宿舍里，虽然在实验室里可能会更好(宿舍限电，说不定啥时候就崩了)，但是实验室的交换机离我有点远，要拉一根很长的网线才行。</p>
-<p>配置网络的时候最好将其配置成局域网内的静态IP，而不要DHCP分配。因为前者在局域网内访问会很方便，而且我这个路由器又是捡垃圾捡来的，它那个地址续租好像有点问题(不是很确定，但是非静态地址过一段时间会断网)。</p>
-<p>首先输入<code>ifconfig</code>查看网卡和当前ip地址，然后通过修改<code>/etc/network/interfaces</code>文件来修改网卡配置信息。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>sudo vim /etc/network/interfaces<br><br><span class="hljs-comment"># 下面是interfaces文件中的内容</span><br><br>auto eth0<br>iface eth0 inet static<br>address 192.168.1.205<br>gateway 192.168.1.1<br>netmask 255.255.255.0<br><br></code></pre></td></tr></table></figure>
-<p>这样就配置好了静态IP。</p>
-<h3 id="配置frp内网穿透">配置frp内网穿透</h3>
-<p>由于这台服务器位于内网，我们要访问它就需要和它连接在一个子网内，但是这很明显不方便。而为了能够在外网访问它，我们需要使用内网穿透工具，此处选用了frp。</p>
-<p>使用frp时，要保证我们拥有一个公网ip，frp的配置分为客户端与服务器，客户端即为我们的板子，服务器是拥有公网ip的主机。</p>
-<p>我们首先进入frp的<a target="_blank" rel="noopener" href="https://github.com/fatedier/frp/releases">github页面</a>，下载我们需要的frp程序，注意，这个程序是同步需要在我们的板子和远程主机上下载并启动的，且需要对应架构。</p>
-<h4 id="客户端配置">客户端配置</h4>
-<p>由于我们的板子是32位arm架构的(你可以输入<code>arch</code>来查看架构)，所以我们需要下载arm版本的frp程序并解压。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>wget https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_arm.tar.gz<br><br>tar -zxvf frp_0.44.0_linux_arm.tar.gz<br><br><span class="hljs-built_in">cd</span> frp_0.44.0_linux_arm<br><br></code></pre></td></tr></table></figure>
-<p>然后开始配置frp客户端，我们先将ssh进行穿透。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>vim frpc.ini<br><br><span class="hljs-comment"># 下面是配置文件内容</span><br><br>[common]<br>server_addr = 127.0.0.1 <span class="hljs-comment"># 这个是服务器端的公网ip</span><br>server_port = 7000 <span class="hljs-comment"># 这个是服务器端开放的端口，可以参见服务器端配置</span><br><br>[ssh]<br><span class="hljs-built_in">type</span> = tcp<br>local_ip = 127.0.0.1<br>local_port = 22<br>remote_port = 6000<br><br></code></pre></td></tr></table></figure>
-<p>然后就可以输入<code>./frpc -c frpc.ini</code>启动一下看看效果，正常启动就没问题。</p>
-<h4 id="服务器端配置">服务器端配置</h4>
-<p>仅仅配置了客户端我们目前还是没有办法进行远程登录，还需要额外配置服务器端的frp程序。</p>
-<p>我手上的这台服务器是<code>x86_64</code>架构的，所以我们需要下载对应架构的frp程序。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>wget https://github.com/fatedier/frp/releases/download/v0.44.0/frp_0.44.0_linux_amd64.tar.gz<br><br>tar -zxvf frp_0.44.0_linux_amd64.tar.gz<br><br><span class="hljs-built_in">cd</span> frp_0.44.0_linux_amd64<br><br></code></pre></td></tr></table></figure>
-<p>然后类似的，我们也需要修改服务器端的配置文件。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>vim frps.ini<br><br><span class="hljs-comment"># 下面是配置文件内容</span><br><br>[common]<br>bind_port = 7000 <span class="hljs-comment"># 这个就是前面说的服务器端使用的ip地址</span><br>dashboard_port = 7500 <span class="hljs-comment"># 这个是提供统计信息的界面，在浏览器中输入http://{服务器ip}:7500就能看到</span><br>dashboard_user = admin <span class="hljs-comment"># 下面这俩是统计信息界面的账号密码，可以自己设置。</span><br>dashboard_pwd = admin<br><br></code></pre></td></tr></table></figure>
-<p>配置完成后我们输入<code>./frps -c frps.ini</code>来启动服务器端程序看看运行结果，正常运行就是ok的。</p>
-<h4 id="自启动与后台执行">自启动与后台执行</h4>
-<p>但是这样的话就会出现几个问题:</p>
-<ul>
-<li>板子每次重启都需要在内网内启动frpc程序</li>
-<li>远程服务器的ssh不能断开，否则frps程序会随着ssh断开而关闭</li>
-</ul>
-<p>我们先来解决第二个问题，因为可以通过screen来快速解决。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>screen -S frps <span class="hljs-comment"># 先创建一个screen窗口</span><br>./frps -c frps.ini <span class="hljs-comment"># 在窗口内执行</span><br><br>CTRL^A D <span class="hljs-comment"># 按下ctrl^a 再按下d，此时这个窗口连同执行的程序就会进入后台。</span><br><br></code></pre></td></tr></table></figure>
-<p>如果我们想重新连入这个窗口可以输入<code>screen -r frp</code>，这样可以很方便的查看日志，彻底关闭这个窗口可以按下ctrl^a
-再按下k。</p>
-<p>对于第一个问题，我们的解决方法是写一个bash脚本然后每次开机都自启动这个脚本。</p>
-<p>我们先写一个我们需要被自启动的脚本</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>vim start.sh<br><br><span class="hljs-comment"># 下面是脚本内容</span><br><br><span class="hljs-built_in">cd</span> /usr/local/frp_0.39.1_linux_arm64<br><span class="hljs-built_in">nohup</span> ./frpc -c frpc.ini &amp;<br><br></code></pre></td></tr></table></figure>
-<p>然后我们编辑<code>/etc/rc.local</code>，如果没有这个文件可以参考<a target="_blank" rel="noopener" href="https://www.linuxprobe.com/linux-rc-local.html">这里</a>。然后把我们的启动脚本添加进去。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash"><br>sudo vim /etc/rc.local<br><br><span class="hljs-comment"># 下面是添加的内容 在exit 0之前</span><br><br>bash /usr/local/start.sh &amp;<br><br></code></pre></td></tr></table></figure>
-<p>这样就完成了。</p>
+<p>关于第二点，源文件中也有说明</p>
+<div class="note note-info">
+            <p>Multiple threads can invoke const methods on a Slice without externalsynchronization, but if any of the threads may call a non-const method,all threads accessing the same Slice must use externalsynchronization.</p><p>多线程在调用const方法后可以不同步，但是如果调用非const方法，所有访问被修改的Slice的线程必须执行同步。</p>
+          </div>
+<h2 id="总结部分">总结部分</h2>
+<div class="note note-primary">
+            <h3 id="编程小技巧">编程小技巧</h3><ul><li>C++可以在类内或类外重载运算符，而在类内重载又可以分为'类内隐式重载'和在'类外显示重载'，这几种方式区别如下。当然，此处不考虑友元。</li></ul><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">x</span><br>{<br><span class="hljs-keyword">public</span>:<br>    ...<br>    <span class="hljs-type">int</span> <span class="hljs-keyword">operator</span>==(x&amp; other){}; <span class="hljs-comment">// 类内隐式</span><br>}<br><br><span class="hljs-type">int</span> <span class="hljs-keyword">inline</span> x::<span class="hljs-keyword">operator</span>==(x&amp; other){};<span class="hljs-comment">// 类外显示</span><br><br><span class="hljs-type">int</span> <span class="hljs-keyword">inline</span> <span class="hljs-keyword">operator</span>==(x&amp; <span class="hljs-keyword">this</span>, x&amp; other){};<span class="hljs-comment">//类外重载</span><br><br></code></pre></td></tr></table></figure>
+          </div>
 
                 
               </div>
@@ -500,7 +458,7 @@ PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作v
     
       <span class="category-chain">
         
-  <a href="/categories/%E5%B7%A5%E5%85%B7%E6%9D%82%E8%B0%88/" class="category-chain-item">工具杂谈</a>
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
   
   
 
@@ -515,9 +473,9 @@ PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作v
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%BC%80%E5%8F%91%E6%9D%BF%E4%BD%BF%E7%94%A8/">#开发板使用</a>
+        <a href="/tags/C/">#C++</a>
       
-        <a href="/tags/RK3288/">#RK3288</a>
+        <a href="/tags/levelDB/">#levelDB</a>
       
     </div>
   
@@ -531,18 +489,12 @@ PC2这种小水管强多了(其实我就跑跑bot挂个下载器，偶尔当作v
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/09/20/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-5/" title="levelDB源码剖析(5)--字符串Slice">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">levelDB源码剖析(5)--字符串Slice</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/09/14/CUDA%E9%AB%98%E6%80%A7%E8%83%BD%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-12/" title="CUDA高性能并行计算(12)--CUDA标准库与生态">
-                        <span class="hidden-mobile">CUDA高性能并行计算(12)--CUDA标准库与生态</span>
+                      <a href="/2022/09/14/%E8%AE%B0%E9%A3%8E%E7%81%AB%E8%BD%AEMIQI-RK3288%E5%BC%80%E5%8F%91%E6%9D%BF%E9%85%8D%E7%BD%AE/" title="记风火轮MIQI-RK3288开发板的踩坑过程">
+                        <span class="hidden-mobile">记风火轮MIQI-RK3288开发板的踩坑过程</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
