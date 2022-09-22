@@ -1,0 +1,808 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="levelDB的组件Comparator、Status、Env、Options">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(6)--levelDB组件">
+<meta property="og:url" content="http://example.com/2022/09/22/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-6/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="levelDB的组件Comparator、Status、Env、Options">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb6.jpg">
+<meta property="article:published_time" content="2022-09-22T02:03:30.000Z">
+<meta property="article:modified_time" content="2022-09-22T08:50:39.741Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb6.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(6)--levelDB组件 - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/leveldb6.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析(6)--levelDB组件"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-09-22 10:03" pubdate>
+          September 22, 2022 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.7k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析(6)--levelDB组件</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="leveldb的组件comparatorstatusenvoptions">levelDB的组件Comparator、Status、Env、Options</h2>
+<span id="more"></span>
+<p>levelDB中有很多常用的组件，下面我们来对其进行介绍。</p>
+<ul>
+<li>Comparator : 定义了比较的规则，是一个虚基类。</li>
+<li>Status : 定义函数执行的结果信息。</li>
+<li>Env : 封装系统相关的调用，比如文件操作，线程操作。</li>
+<li>Options : 指定数据库选项。</li>
+</ul>
+<h3 id="comparator">Comparator</h3>
+<div class="note note-primary">
+            <p>源码位置与说明：</p><p><code>utils/comparator.h</code> <code>utils/comparator.cc</code> :虚基类与BytewiseComparatorImpl类头文件与实现</p><p><code>db/dbformat.h</code> <code>db/format.cc</code> :InternalKeyComparator类头文件与实现</p>
+          </div>
+<p>Comparator定义了比较规则，这个是一个虚基类，所以如果想要实现自定义的接口需要实现自己的类。</p>
+<p>其中levelDB基于Comparator实现了一些内置比较类：<code>BytewiseComparatorImpl</code>和<code>InternalKeyComparator</code>，两者的作用是不同的。</p>
+<ul>
+<li>BytewiseComparatorImpl : 实现key的按二进制来进行比较。</li>
+<li>InternalKeyComparator :
+用于内部的key比较器，基于BytewiseComparatorImpl。</li>
+</ul>
+<div class="note note-primary">
+            <p>由于levelDB是key-value的结构，其中key就是Slice对象。所以BytewiseComparatorImpl用于key之间的比较，这个key称为usr-key。</p><p>但是levelDB内部的存储的key结构并不是usr-key，所以需要默认定义两种比较类。</p>
+          </div>
+<h4 id="comparator源码剖析">Comparator源码剖析</h4>
+<p>首先我们来看一下虚基类的定义。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> Comparator<br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 虚析构函数</span><br>    <span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">Comparator</span>();<br>    <span class="hljs-comment">// 进行比较的方法</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">int</span> <span class="hljs-title">Compare</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;a, <span class="hljs-type">const</span> Slice &amp;b)</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 返回comparator的名字，用于确认</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">Name</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 将start更改为一个位于[start, limit)里的最短的字符串。</span><br>    <span class="hljs-comment">// 也就是找到start和limit中的公共字符字串，并把这个字串最后一个字符ascii+1</span><br>    <span class="hljs-comment">// 这主要是为了优化SSTable里的Index Block里的索引项的长度，使得索引更短。</span><br>    <span class="hljs-comment">// 因为每一个Data Block对应的索引项大于等于这个Data Block的最后一个项，</span><br>    <span class="hljs-comment">// 而小于下一个Data Block的第一个项，通过这个函数可以减小索引项的长度；</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">FindShortestSeparator</span><span class="hljs-params">(std::string *start,</span></span><br><span class="hljs-params"><span class="hljs-function">                                       <span class="hljs-type">const</span> Slice &amp;limit)</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 将key更改为大于key的最短的key</span><br>    <span class="hljs-comment">// 也就是取出key的第一个字节，然后+1</span><br>    <span class="hljs-comment">// 这也是为了减小索引项的长度</span><br>    <span class="hljs-comment">// 不过这是优化一个SSTable里最后一个索引项的。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">FindShortSuccessor</span><span class="hljs-params">(std::string *key)</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>其中FindShortestSeparator和FindShortSuccessor可能会令人感到疑惑，这两个方法的作用是缩短索引。因为levelDB内部是有序的，假如有这样的两个索引"Aaaaa"和"Acccc"，其实我们只需要"Ab"就能将两者分开了；另外，假如一个表中的最后一项是"Yaaaa"，我们只需要"Z"就能确定这个项的上界了。这就是这两个函数能减短索引的原理。</p>
+<p>接下来我们来看一下BytewiseComparatorImpl类</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">BytewiseComparatorImpl</span> : <span class="hljs-keyword">public</span> Comparator<br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-built_in">BytewiseComparatorImpl</span>() = <span class="hljs-keyword">default</span>;<br>    <span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">Name</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"leveldb.BytewiseComparator"</span>; }<br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">Compare</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;a, <span class="hljs-type">const</span> Slice &amp;b)</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> a.<span class="hljs-built_in">compare</span>(b);<br>    }<br><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">FindShortestSeparator</span><span class="hljs-params">(std::string *start,</span></span><br><span class="hljs-params"><span class="hljs-function">                               <span class="hljs-type">const</span> Slice &amp;limit)</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-comment">// 先找到两者之间的最长子串</span><br>        <span class="hljs-type">size_t</span> min_length = std::<span class="hljs-built_in">min</span>(start-&gt;<span class="hljs-built_in">size</span>(), limit.<span class="hljs-built_in">size</span>());<br>        <span class="hljs-type">size_t</span> diff_index = <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">while</span> ((diff_index &lt; min_length) &amp;&amp;<br>               ((*start)[diff_index] == limit[diff_index]))<br>        {<br>            diff_index++;<br>        }<br><br>        <span class="hljs-keyword">if</span> (diff_index &gt;= min_length)<br>        {<br>            <span class="hljs-comment">// 如果一个串是另一个串的前缀就什么也不做</span><br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 否则把start的最后一个字节+1(如果没超过255的话)</span><br>            <span class="hljs-type">uint8_t</span> diff_byte = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;((*start)[diff_index]);<br>            <span class="hljs-keyword">if</span> (diff_byte &lt; <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(<span class="hljs-number">0xff</span>) &amp;&amp;<br>                diff_byte + <span class="hljs-number">1</span> &lt; <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(limit[diff_index]))<br>            {<br>                (*start)[diff_index]++;<br>                start-&gt;<span class="hljs-built_in">resize</span>(diff_index + <span class="hljs-number">1</span>);<br>                <span class="hljs-built_in">assert</span>(<span class="hljs-built_in">Compare</span>(*start, limit) &lt; <span class="hljs-number">0</span>);<br>            }<br>        }<br>    }<br><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">FindShortSuccessor</span><span class="hljs-params">(std::string *key)</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-comment">// 找到第一个能够+1的字节</span><br>        <span class="hljs-type">size_t</span> n = key-&gt;<span class="hljs-built_in">size</span>();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; n; i++)<br>        {<br>            <span class="hljs-type">const</span> <span class="hljs-type">uint8_t</span> byte = (*key)[i];<br>            <span class="hljs-keyword">if</span> (byte != <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint8_t</span>&gt;(<span class="hljs-number">0xff</span>))<br>            {<br>                (*key)[i] = byte + <span class="hljs-number">1</span>;<br>                key-&gt;<span class="hljs-built_in">resize</span>(i + <span class="hljs-number">1</span>);<br>                <span class="hljs-keyword">return</span>;<br>            }<br>        }<br>        <span class="hljs-comment">// 如果全是0xff，就不管了</span><br>    }<br>};<br><br><span class="hljs-comment">// 这个函数返回一个BytewiseComparatorImpl实例</span><br><span class="hljs-comment">// 之所以存在这个函数是为了保证线程安全</span><br><span class="hljs-comment">// 可以看https://www.zhihu.com/question/267013757</span><br><span class="hljs-function"><span class="hljs-type">const</span> Comparator *<span class="hljs-title">BytewiseComparator</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">static</span> NoDestructor&lt;BytewiseComparatorImpl&gt; singleton;<br>    <span class="hljs-keyword">return</span> singleton.<span class="hljs-built_in">get</span>();<br>}<br><br></code></pre></td></tr></table></figure>
+<p>这部分比较的规则其实就是我们前面看到的虚基类的具体化。需要注意它存在一个为了保证线程安全的方法，进一步了解可以看<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/267013757">此处</a>。</p>
+<p>接下来我们来看一下InternalKeyComparator的头文件和实现文件。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 头文件</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">InternalKeyComparator</span> : <span class="hljs-keyword">public</span> Comparator<br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-comment">// 多了一个私有成员，存放usr-key的比较函数</span><br>    <span class="hljs-type">const</span> Comparator *user_comparator_;<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 前面这些接口都非常简单</span><br>    <span class="hljs-function"><span class="hljs-keyword">explicit</span> <span class="hljs-title">InternalKeyComparator</span><span class="hljs-params">(<span class="hljs-type">const</span> Comparator *c)</span> : user_comparator_(c) {</span>}<br>    <span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">Name</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">Compare</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;a, <span class="hljs-type">const</span> Slice &amp;b)</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">FindShortestSeparator</span><span class="hljs-params">(std::string *start,</span></span><br><span class="hljs-params"><span class="hljs-function">                               <span class="hljs-type">const</span> Slice &amp;limit)</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">FindShortSuccessor</span><span class="hljs-params">(std::string *key)</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span>;<br><br>    <span class="hljs-comment">// 返回usr-key的比较器，应该是用于判断</span><br>    <span class="hljs-function"><span class="hljs-type">const</span> Comparator *<span class="hljs-title">user_comparator</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> user_comparator_; }<br>    <span class="hljs-comment">// 这个也是比较的，InternalKey就是内部的key类型</span><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">Compare</span><span class="hljs-params">(<span class="hljs-type">const</span> InternalKey &amp;a, <span class="hljs-type">const</span> InternalKey &amp;b)</span> <span class="hljs-type">const</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 实现文件</span><br><br><span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">InternalKeyComparator::Name</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">"leveldb.InternalKeyComparator"</span>;<br>}<br><br><span class="hljs-comment">// 比较key的类，调用的是usr-key的比较</span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">InternalKeyComparator::Compare</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;akey, <span class="hljs-type">const</span> Slice &amp;bkey)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">int</span> r = user_comparator_-&gt;<span class="hljs-built_in">Compare</span>(<span class="hljs-built_in">ExtractUserKey</span>(akey), <span class="hljs-built_in">ExtractUserKey</span>(bkey));<br>    <span class="hljs-keyword">if</span> (r == <span class="hljs-number">0</span>)<br>    {<br>        <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> anum = <span class="hljs-built_in">DecodeFixed64</span>(akey.<span class="hljs-built_in">data</span>() + akey.<span class="hljs-built_in">size</span>() - <span class="hljs-number">8</span>);<br>        <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> bnum = <span class="hljs-built_in">DecodeFixed64</span>(bkey.<span class="hljs-built_in">data</span>() + bkey.<span class="hljs-built_in">size</span>() - <span class="hljs-number">8</span>);<br>        <span class="hljs-keyword">if</span> (anum &gt; bnum)<br>        {<br>            r = <span class="hljs-number">-1</span>;<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (anum &lt; bnum)<br>        {<br>            r = +<span class="hljs-number">1</span>;<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> r;<br>}<br><br><span class="hljs-comment">// 找到最短的分割函数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">InternalKeyComparator::FindShortestSeparator</span><span class="hljs-params">(std::string *start,</span></span><br><span class="hljs-params"><span class="hljs-function">                                                  <span class="hljs-type">const</span> Slice &amp;limit)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    Slice user_start = <span class="hljs-built_in">ExtractUserKey</span>(*start);<br>    Slice user_limit = <span class="hljs-built_in">ExtractUserKey</span>(limit);<br>    <span class="hljs-function">std::string <span class="hljs-title">tmp</span><span class="hljs-params">(user_start.data(), user_start.size())</span></span>;<br>    user_comparator_-&gt;<span class="hljs-built_in">FindShortestSeparator</span>(&amp;tmp, user_limit);<br>    <span class="hljs-keyword">if</span> (tmp.<span class="hljs-built_in">size</span>() &lt; user_start.<span class="hljs-built_in">size</span>() &amp;&amp;<br>        user_comparator_-&gt;<span class="hljs-built_in">Compare</span>(user_start, tmp) &lt; <span class="hljs-number">0</span>)<br>    {<br>        <span class="hljs-built_in">PutFixed64</span>(&amp;tmp,<br>                   <span class="hljs-built_in">PackSequenceAndType</span>(kMaxSequenceNumber, kValueTypeForSeek));<br>        <span class="hljs-built_in">assert</span>(<span class="hljs-keyword">this</span>-&gt;<span class="hljs-built_in">Compare</span>(*start, tmp) &lt; <span class="hljs-number">0</span>);<br>        <span class="hljs-built_in">assert</span>(<span class="hljs-keyword">this</span>-&gt;<span class="hljs-built_in">Compare</span>(tmp, limit) &lt; <span class="hljs-number">0</span>);<br>        start-&gt;<span class="hljs-built_in">swap</span>(tmp);<br>    }<br>}<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">InternalKeyComparator::FindShortSuccessor</span><span class="hljs-params">(std::string *key)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    Slice user_key = <span class="hljs-built_in">ExtractUserKey</span>(*key);<br>    <span class="hljs-function">std::string <span class="hljs-title">tmp</span><span class="hljs-params">(user_key.data(), user_key.size())</span></span>;<br>    user_comparator_-&gt;<span class="hljs-built_in">FindShortSuccessor</span>(&amp;tmp);<br>    <span class="hljs-keyword">if</span> (tmp.<span class="hljs-built_in">size</span>() &lt; user_key.<span class="hljs-built_in">size</span>() &amp;&amp;<br>        user_comparator_-&gt;<span class="hljs-built_in">Compare</span>(user_key, tmp) &lt; <span class="hljs-number">0</span>)<br>    {<br>        <span class="hljs-built_in">PutFixed64</span>(&amp;tmp,<br>                   <span class="hljs-built_in">PackSequenceAndType</span>(kMaxSequenceNumber, kValueTypeForSeek));<br>        <span class="hljs-built_in">assert</span>(<span class="hljs-keyword">this</span>-&gt;<span class="hljs-built_in">Compare</span>(*key, tmp) &lt; <span class="hljs-number">0</span>);<br>        key-&gt;<span class="hljs-built_in">swap</span>(tmp);<br>    }<br>}<br><br><span class="hljs-comment">// 比较内部key的函数</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">int</span> <span class="hljs-title">InternalKeyComparator::Compare</span><span class="hljs-params">(<span class="hljs-type">const</span> InternalKey &amp;a,</span></span><br><span class="hljs-params"><span class="hljs-function">                                          <span class="hljs-type">const</span> InternalKey &amp;b)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">Compare</span>(a.<span class="hljs-built_in">Encode</span>(), b.<span class="hljs-built_in">Encode</span>());<br>}<br><br></code></pre></td></tr></table></figure>
+<p>我们可以看到InternalKeyComparator的比较其实也是基于usr-key的，不过由于内部key与usr-key存在差异，剩余的代码主要是处理差异的，具体我们先不展开。</p>
+<h3 id="status">Status</h3>
+<div class="note note-primary">
+            <p>源码位置： <code>leveldb/include/status.h</code><code>util/status.cc</code></p>
+          </div>
+<p>这个类主要定义了很多操作的返回码，很多操作需要通过返回的status来判断下一步的行为。</p>
+<h4 id="status源码剖析">Status源码剖析</h4>
+<p>我们接下来来看一下它的头文件。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> Status<br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-comment">//返回码</span><br>    <span class="hljs-keyword">enum</span> <span class="hljs-title class_">Code</span><br>    {<br>        kOk = <span class="hljs-number">0</span>,<br>        kNotFound = <span class="hljs-number">1</span>,<br>        kCorruption = <span class="hljs-number">2</span>,<br>        kNotSupported = <span class="hljs-number">3</span>,<br>        kInvalidArgument = <span class="hljs-number">4</span>,<br>        kIOError = <span class="hljs-number">5</span><br>    };<br><br>    <span class="hljs-function">Code <span class="hljs-title">code</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> (state_ == <span class="hljs-literal">nullptr</span>) ? kOk : <span class="hljs-built_in">static_cast</span>&lt;Code&gt;(state_[<span class="hljs-number">4</span>]);<br>    }<br>    <span class="hljs-built_in">Status</span>(Code code, <span class="hljs-type">const</span> Slice &amp;msg, <span class="hljs-type">const</span> Slice &amp;msg2);<br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">CopyState</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *s)</span></span>;<br><br>    <span class="hljs-comment">// 成功的时候state_为空指针，否则指向一个由new[]分配的数组</span><br>    <span class="hljs-comment">// 其中[0:3]为信息的长度</span><br>    <span class="hljs-comment">// [4]为错误码</span><br>    <span class="hljs-comment">// [5:]为信息</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *state_;<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 构造与析构函数等等一个类的必须的函数</span><br>    <span class="hljs-built_in">Status</span>() <span class="hljs-keyword">noexcept</span> : <span class="hljs-built_in">state_</span>(<span class="hljs-literal">nullptr</span>) {}<br>    ~<span class="hljs-built_in">Status</span>() { <span class="hljs-keyword">delete</span>[] state_; }<br>    <span class="hljs-built_in">Status</span>(<span class="hljs-type">const</span> Status &amp;rhs);<br>    Status &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Status &amp;rhs);<br>    <span class="hljs-built_in">Status</span>(Status &amp;&amp;rhs) <span class="hljs-keyword">noexcept</span> : <span class="hljs-built_in">state_</span>(rhs.state_) { rhs.state_ = <span class="hljs-literal">nullptr</span>; }<br>    Status &amp;<span class="hljs-keyword">operator</span>=(Status &amp;&amp;rhs) <span class="hljs-keyword">noexcept</span>;<br><br>    <span class="hljs-comment">// 返回成功或错误类型</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">OK</span><span class="hljs-params">()</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">Status</span>(); }<br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">NotFound</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;msg, <span class="hljs-type">const</span> Slice &amp;msg2 = Slice())</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Status</span>(kNotFound, msg, msg2);<br>    }<br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">Corruption</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;msg, <span class="hljs-type">const</span> Slice &amp;msg2 = Slice())</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Status</span>(kCorruption, msg, msg2);<br>    }<br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">NotSupported</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;msg, <span class="hljs-type">const</span> Slice &amp;msg2 = Slice())</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Status</span>(kNotSupported, msg, msg2);<br>    }<br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">InvalidArgument</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;msg, <span class="hljs-type">const</span> Slice &amp;msg2 = Slice())</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Status</span>(kInvalidArgument, msg, msg2);<br>    }<br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">IOError</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;msg, <span class="hljs-type">const</span> Slice &amp;msg2 = Slice())</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Status</span>(kIOError, msg, msg2);<br>    }<br><br>    <span class="hljs-comment">// state_为空就是成功</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">ok</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> (state_ == <span class="hljs-literal">nullptr</span>); }<br><br>    <span class="hljs-comment">// 否则根据code()返回值来判断错误类型</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsNotFound</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">code</span>() == kNotFound; }<br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsCorruption</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">code</span>() == kCorruption; }<br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsIOError</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">code</span>() == kIOError; }<br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsNotSupportedError</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">code</span>() == kNotSupported; }<br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsInvalidArgument</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">code</span>() == kInvalidArgument; }<br><br>    <span class="hljs-comment">// 根据错误类型返回一个字符串用于打印</span><br>    <span class="hljs-function">std::string <span class="hljs-title">ToString</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>由于这个类主要就是处理错误类型的，所以其实现也是非常简单的，此处就不展开了。</p>
+<p>不过实现内部有一个小技巧：<strong>用memcpy去进行赋值</strong>。这个似乎会更快一些，不过我觉得这个还是用于大数组会比较好吧，毕竟针对内存块有SIMD之类的优化。</p>
+<h3 id="env">Env</h3>
+<div class="note note-primary">
+            <p>源码位置：</p><p><code>include/leveldb/env.h</code> : env相关的接口定义</p><p><code>util/env_posix.cc</code> <code>util/posix_logger.h</code> :Posix系统相关的封装，包括文件操作，文件锁，后台线程创建,Posix写日志</p><p><code>util/env_windows.cc</code> <code>util/windows_logger.h</code> :Windows相关的实现</p>
+          </div>
+<p>LevelDB是一个数据库函数库，数据库总是需要操作文件和线程，这就需要做很多系统调用。各个操作系统的系统调用方式不一样，为了跨平台支持，LevelDB对这些系统调用做了一层封装，提供了统一的接口来操作，并且提供了Posix和Windows两种实现，如果需要实现其他的系统，只需要根据系统实现相应的Env即可。</p>
+<p>不过由于这些代码实在是太多，而且也就是一些系统调用，所以此处不展开了。</p>
+<p>里面感觉有用的就是关于多线程的一个锁的问题，但是也相对比较简单。</p>
+<h3 id="options">Options</h3>
+<div class="note note-primary">
+            <p>源码位置：<code>leveldb/include/options.h</code><code>util/options.cc</code></p>
+          </div>
+<p>Options定义了操作数据库的选项，定义了3个struct来操作：</p>
+<ul>
+<li>Options定义打开数据库的选项</li>
+<li>ReadOptions定义读操作相关的选项</li>
+<li>WriteOptions定义写操作相关的选项</li>
+</ul>
+<p>同样的，这部分源码也非常简单，也不展开了</p>
+<h2 id="总结">总结</h2>
+<h3 id="编程小技巧">编程小技巧</h3>
+<ul>
+<li>可以定义虚基类来规定接口。</li>
+<li>需要处理线程安全问题。</li>
+<li>memcpy进行数组赋值会更快。</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/09/21/linux%E4%B8%AD%E6%9B%B4%E6%96%B0python%E7%89%88%E6%9C%AC/" title="linux中更新python版本">
+                        <span class="hidden-mobile">linux中更新python版本</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
