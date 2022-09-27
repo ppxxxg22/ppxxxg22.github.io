@@ -1,0 +1,894 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="SSTable结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(7)--SSTable结构">
+<meta property="og:url" content="http://example.com/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="SSTable结构">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb7.jpg">
+<meta property="article:published_time" content="2022-09-23T11:51:58.000Z">
+<meta property="article:modified_time" content="2022-09-27T09:46:55.163Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb7.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(7)--SSTable结构 - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/leveldb7.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析(7)--SSTable结构"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-09-23 19:51" pubdate>
+          September 23, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          14k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          58 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析(7)--SSTable结构</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="sstable结构">SSTable结构</h2>
+<span id="more"></span>
+<p>之前我们也提到过，levelDB的存储单元是SSTable，就即Sorted String
+Table，是一个持久化的、有序的SortedMap，存储在磁盘上(除了一颗驻留在内存中)。</p>
+<p>但是每次进行写操作时，不是直接写入SSTable，而是先写入WAL，即Write
+Ahead
+Log。这样做的目的是保存日志，因为可能会短时间内写入多条数据，而由于内存中的表项都是有序的，所以写每条数据之前必须找到其对应位置，且假如此时发生掉电或宕机，那么内存中的数据都没有了。而WAL写入的是硬盘，且其是日志结构，所以只需要进行磁盘的顺序写即可，这样一方面做了持久化，一方面也因为是顺序写不会产生明显的耗时。</p>
+<p>SSTable是数据最终落盘的地方，而WAL保存了最近写入的数据，持久化到磁盘上，MemTable则是WAL里数据的内存表示，因为日志的格式不便于查询，在内存中才便于快速查询。</p>
+<p>LevelDB的键值对都持久化到扩展名为ldb的文件中，一个ldb文件存储了一定键范围内的键值对，一个ldb文件就是我们的SSTable。</p>
+<p>我们需要着重介绍一下这个SSTable。</p>
+<h3 id="sstable的组成结构">SSTable的组成结构</h3>
+<div class="note note-primary">
+            <p>源码位置与说明</p><p>table/format.h table/format.cc:编解码BlockHandler，编解码Footer，根据BlockHandler读取一个键的内容<br>table/block_builder.h table/block_builder.cc:不断添加键值对，逐渐构建一个Block，主要是添加键值对，然后生成Block的数据<br>table/block.h table/block.cc: 对一个Block进行读取相关的功能<br>table/filter_block.h table/filter_block.ccinclude/leveldb/filter_policy.h util/bloom.cc:构建布隆过滤器数据，判断键是否存在的<br>include/leveldb/table.htable/table.cc：读取一个Table的内容，产生迭代器，或者根据一个键读取一个值<br>include/leveldb/table_builder.htable/table_builder.cc：不断添加键值对，逐渐构建一个Table<br>db/build.h db/build.cc：根据一个Iterator生成一个SSTable文件</p>
+          </div>
+<p>SSTable由以下几部分组成：</p>
+<ul>
+<li><code>Data Block</code> : 存储数据。Data
+Block有多个，LevelDB将一个ldb文件里的键值对划分为多个Data
+Block进行存储，每个Data
+Block具有一定的大小，并且按照键的顺序进行排序，也就是后面一个Data
+Block的第一个键大于前面一个Data Block的最后一个键，Data
+Block可支持压缩。</li>
+<li><code>Filter Block</code> :
+用于过滤数据。也设计成为多个，目前只使用了一个，存储了布隆过滤器的二进制数据。目的是当查找一个键的时候，先查一下这个过滤器，如果不在，则去别处查，这样速度会快很多。</li>
+<li><code>Meta Index Block</code> : 存储了指向Filter
+Block的指针，根据这个指针可以找到某个Filter
+Block开始的位置，以及其所占用的空间，这个指针的键是Meta
+Block的名称，值是一个BlockHandler，是一个文件指针。</li>
+<li><code>Index Block</code> : 存储了指向每一个Data
+Block的指针的数组，这个指针的键大于等于对应的Data
+Block的最后一个键，并且小于下一个Data Block的第一个键，通过Index
+Block可以实现二分搜索，快速定位键属于哪个Data
+Block，而不需要扫描所有的Data Block。</li>
+<li><code>Footer</code> : 因为Meta Index Block和Index
+Block的大小是不固定的，没法直接定位到这两个Block，所以最后有一个大小固定的Footer，保存两个BlockHandler，分别指向Meta
+Index Block和Index Block。</li>
+</ul>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>下面我们就来分别介绍每一个组件。</p>
+<h4 id="footer">Footer</h4>
+<div class="note note-primary">
+            <p>源码位置 : <code>table/format.h</code><code>table/format.cc</code></p>
+          </div>
+<p>Footer的位置是固定的，在一个SSTable的结尾。但是由于Footer中使用了一些变长整数，为了确定Footer的位置，因此需要把Footer的大小固定下来，也就是对其做一些填充。所以Footer的格式如下所示</p>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic2.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>最后最后还存在一个Magic
+number，这个魔数的作用是用于校验，生成的方法如下所示</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// table/format.h</span><br><br><span class="hljs-comment">// kTableMagicNumber was picked by running</span><br><span class="hljs-comment">//    echo http://code.google.com/p/leveldb/ | sha1sum</span><br><span class="hljs-comment">// and taking the leading 64 bits.</span><br><span class="hljs-comment">// 即使用echo http://code.google.com/p/leveldb/ | sha1sum生成然后截取了一部分</span><br><span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> kTableMagicNumber = <span class="hljs-number">0xdb4775248b80fb57</span>ull;<br><br></code></pre></td></tr></table></figure>
+<p><strong>但是需要注意的是，这个只是文件中的存储格式，我们在Footer类中是看不到填充和魔数的</strong></p>
+<p>我们接下来看一下Footer类的源码，由于Footer类中出现了<code>BlockHandle</code>，我们顺便把BlockHandle的类也看一下。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">/*================BlockHandle================*/</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">BlockHandle</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-type">uint64_t</span> offset_; <span class="hljs-comment">// Block在文件中的偏移量</span><br>    <span class="hljs-type">uint64_t</span> size_;   <span class="hljs-comment">// Block的大小</span><br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// length of a BlockHandle最大长度</span><br>    <span class="hljs-comment">// 之所以存在最大长度是因为使用的变长整数编码</span><br>    <span class="hljs-keyword">enum</span><br>    {<br>        kMaxEncodedLength = <span class="hljs-number">10</span> + <span class="hljs-number">10</span><br>    };<br><br>    <span class="hljs-built_in">BlockHandle</span>();<br><br>    <span class="hljs-comment">// offset相关的一些方法</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">offset</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> offset_; }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_offset</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> offset)</span> </span>{ offset_ = offset; }<br><br>    <span class="hljs-comment">// size相关的一些方法</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">size</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> size_; }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_size</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> size)</span> </span>{ size_ = size; }<br><br>    <span class="hljs-comment">// 编码解码相关，把offset、size放入字符串或从字符串中解码</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">EncodeTo</span><span class="hljs-params">(std::string *dst)</span> <span class="hljs-type">const</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">DecodeFrom</span><span class="hljs-params">(Slice *input)</span></span>;<br>};<br><br><span class="hljs-comment">/*================Footer================*/</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Footer</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-comment">// 可以理解成广义指针，指向indexblock和metaindexblock</span><br>    BlockHandle metaindex_handle_;<br>    BlockHandle index_handle_;<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 长度，由于有两个BlockHandle，以及一个魔数，所以总共48字节</span><br>    <span class="hljs-comment">// Footer的长度始终是固定的，如果BlockHandle没有占满，会额外引入填充</span><br>    <span class="hljs-keyword">enum</span><br>    {<br>        kEncodedLength = <span class="hljs-number">2</span> * BlockHandle::kMaxEncodedLength + <span class="hljs-number">8</span><br>    };<br><br>    <span class="hljs-built_in">Footer</span>() = <span class="hljs-keyword">default</span>;<br><br>    <span class="hljs-comment">// 处理metaindex_handle相关函数</span><br>    <span class="hljs-function"><span class="hljs-type">const</span> BlockHandle &amp;<span class="hljs-title">metaindex_handle</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> metaindex_handle_; }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_metaindex_handle</span><span class="hljs-params">(<span class="hljs-type">const</span> BlockHandle &amp;h)</span> </span>{ metaindex_handle_ = h; }<br><br>    <span class="hljs-comment">// 处理index_handle相关函数</span><br>    <span class="hljs-function"><span class="hljs-type">const</span> BlockHandle &amp;<span class="hljs-title">index_handle</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> index_handle_; }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">set_index_handle</span><span class="hljs-params">(<span class="hljs-type">const</span> BlockHandle &amp;h)</span> </span>{ index_handle_ = h; }<br><br>    <span class="hljs-comment">// 编码解码函数，填充就是在这里引入的</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">EncodeTo</span><span class="hljs-params">(std::string *dst)</span> <span class="hljs-type">const</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">DecodeFrom</span><span class="hljs-params">(Slice *input)</span></span>;<br><br>};<br><br></code></pre></td></tr></table></figure>
+<p>我们可以看到，这个BlockHandle类其中就只有两个私有成员:
+offset_和size_，其中offset_表示当前的这个Block位于的位置，而size_则说明了这个块的长度，即通过起始位置+长度这两个坐标就指明了一个Block。</p>
+<p>而Footer这个类，其私有成员只有两个BlockHandle，分别指向了metaindex
+block和index
+block这两个block。但是我们之前说过在文件中的Footer部分是存在填充和魔数的，可我们在类的成员中并没有看到，这是因为填充和魔数是在将类编码到文件时才会被引入，其实就是<code>Footer::EncodeTo</code>和<code>Footer::DecodeFrom</code>这两个函数。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">/*================BlockHandle================*/</span><br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">BlockHandle::EncodeTo</span><span class="hljs-params">(std::string *dst)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// Sanity check that all fields have been set</span><br>    <span class="hljs-built_in">assert</span>(offset_ != ~<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(<span class="hljs-number">0</span>));<br>    <span class="hljs-built_in">assert</span>(size_ != ~<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(<span class="hljs-number">0</span>));<br>    <span class="hljs-comment">// 其实就是把offset和size变长整数编码后放入字符串中</span><br>    <span class="hljs-built_in">PutVarint64</span>(dst, offset_);<br>    <span class="hljs-built_in">PutVarint64</span>(dst, size_);<br>}<br><br><span class="hljs-function">Status <span class="hljs-title">BlockHandle::DecodeFrom</span><span class="hljs-params">(Slice *input)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 解码变长整数</span><br>    <span class="hljs-comment">// 还是要赞美一下这个GetVarint64中直接移动Slice的设计，太优雅了</span><br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">GetVarint64</span>(input, &amp;offset_) &amp;&amp; <span class="hljs-built_in">GetVarint64</span>(input, &amp;size_))<br>    {<br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">OK</span>();<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"bad block handle"</span>);<br>    }<br>}<br><br><span class="hljs-comment">/*================Footer================*/</span><br><br><span class="hljs-comment">// 这就是编码Footer到字符串的函数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Footer::EncodeTo</span><span class="hljs-params">(std::string *dst)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> <span class="hljs-type">size_t</span> original_size = dst-&gt;<span class="hljs-built_in">size</span>();<br>    <span class="hljs-comment">// 这里调用BlockHandle的编码函数</span><br>    metaindex_handle_.<span class="hljs-built_in">EncodeTo</span>(dst);<br>    index_handle_.<span class="hljs-built_in">EncodeTo</span>(dst);<br>    <span class="hljs-comment">// 填充是在这里引入的，就是调用了string.resize()函数</span><br>    dst-&gt;<span class="hljs-built_in">resize</span>(<span class="hljs-number">2</span> * BlockHandle::kMaxEncodedLength);<br>    <span class="hljs-comment">// 然后插入魔数，但是不是很清楚为什么要分两次插入而不用PutFixed64</span><br>    <span class="hljs-comment">// 也许是考虑了32位机器？</span><br>    <span class="hljs-built_in">PutFixed32</span>(dst, <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(kTableMagicNumber &amp; <span class="hljs-number">0xffffffff</span>u));<br>    <span class="hljs-built_in">PutFixed32</span>(dst, <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(kTableMagicNumber &gt;&gt; <span class="hljs-number">32</span>));<br>    <span class="hljs-built_in">assert</span>(dst-&gt;<span class="hljs-built_in">size</span>() == original_size + kEncodedLength);<br>    (<span class="hljs-type">void</span>)original_size; <span class="hljs-comment">// Disable unused variable warning.</span><br>}<br><br><span class="hljs-comment">// 从字符串中解码出Footer的函数</span><br><span class="hljs-function">Status <span class="hljs-title">Footer::DecodeFrom</span><span class="hljs-params">(Slice *input)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 获取魔数并校验</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *magic_ptr = input-&gt;<span class="hljs-built_in">data</span>() + kEncodedLength - <span class="hljs-number">8</span>;<br>    <span class="hljs-type">const</span> <span class="hljs-type">uint32_t</span> magic_lo = <span class="hljs-built_in">DecodeFixed32</span>(magic_ptr);<br>    <span class="hljs-type">const</span> <span class="hljs-type">uint32_t</span> magic_hi = <span class="hljs-built_in">DecodeFixed32</span>(magic_ptr + <span class="hljs-number">4</span>);<br>    <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> magic = ((<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(magic_hi) &lt;&lt; <span class="hljs-number">32</span>) |<br>                            (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint64_t</span>&gt;(magic_lo)));<br>    <span class="hljs-keyword">if</span> (magic != kTableMagicNumber)<br>    {<br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"not an sstable (bad magic number)"</span>);<br>    }<br><br>    <span class="hljs-comment">// 然后解码出两个handle，继续赞叹一下GetVarint64的那个设计(第三次了)</span><br>    Status result = metaindex_handle_.<span class="hljs-built_in">DecodeFrom</span>(input);<br>    <span class="hljs-keyword">if</span> (result.<span class="hljs-built_in">ok</span>())<br>    {<br>        result = index_handle_.<span class="hljs-built_in">DecodeFrom</span>(input);<br>    }<br>    <span class="hljs-keyword">if</span> (result.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-comment">// 这里需要让输入的字串跳过填充和魔数</span><br>        <span class="hljs-comment">// 从而保持了处理一部分丢弃一部分的良好的特征</span><br>        <span class="hljs-type">const</span> <span class="hljs-type">char</span> *end = magic_ptr + <span class="hljs-number">8</span>;<br>        *input = <span class="hljs-built_in">Slice</span>(end, input-&gt;<span class="hljs-built_in">data</span>() + input-&gt;<span class="hljs-built_in">size</span>() - end);<br>    }<br>    <span class="hljs-keyword">return</span> result;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>通过上述代码，我们就能很清晰地看到Footer和BlcokHandle是如何处理的了。</p>
+<h4 id="blcok">Blcok</h4>
+<p>其实其余的所有部分都可以看成是Block，其中BlockHandler可以看成是指向Block的指针，可以用其来读取出Blcok的内容。之前也阐述过BlockHandler的结构了，下面我们来看以下Block的结构。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Block</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">Iter</span>;                   <span class="hljs-comment">// 迭代器类</span><br>    <span class="hljs-function"><span class="hljs-type">uint32_t</span> <span class="hljs-title">NumRestarts</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>; <span class="hljs-comment">// 读取restarts的数量，这个值是放在Block块的尾部的</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *data_;            <span class="hljs-comment">// 存放数据的指针</span><br>    <span class="hljs-type">size_t</span> size_;                 <span class="hljs-comment">// 长度</span><br>    <span class="hljs-type">uint32_t</span> restart_offset_;     <span class="hljs-comment">// 是restart偏移的位置</span><br>    <span class="hljs-type">bool</span> owned_;                  <span class="hljs-comment">// 表示是否拥有这个数据，自己负责数据的申请和释放</span><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 构造函数等类基本函数</span><br>    <span class="hljs-function"><span class="hljs-keyword">explicit</span> <span class="hljs-title">Block</span><span class="hljs-params">(<span class="hljs-type">const</span> BlockContents &amp;contents)</span></span>;<br>    <span class="hljs-built_in">Block</span>(<span class="hljs-type">const</span> Block &amp;) = <span class="hljs-keyword">delete</span>;<br>    Block &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Block &amp;) = <span class="hljs-keyword">delete</span>;<br>    ~<span class="hljs-built_in">Block</span>();<br><br>    <span class="hljs-function"><span class="hljs-type">size_t</span> <span class="hljs-title">size</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> size_; }<br><br>    <span class="hljs-comment">// 迭代器接口</span><br>    <span class="hljs-function">Iterator *<span class="hljs-title">NewIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> Comparator *comparator)</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>我们发现这个Block的类内部还是十分简洁的，不过还是要关于其私有成员做一些说明。</p>
+<p>首先是<code>owned_</code>这个成员，之前我们说过，levelDB的内存管理是由Arena来管理的，当数据小于1kb时直接放入Arena分配的内存块中，否则就自己new一个内存出来存放。这里的owned_成员其实就说明了data中存放的数据是自己new出来的还是Arena分配出来的，如果是自己new出来的，则需要自己进行内存管理。</p>
+<p>然后还有一个<code>restart_offset_</code>成员，我们先不说这个成员是干什么的，我们先来看一下Block内部的存储结构(<strong>此处说的不是Data
+Block</strong>)。首先，所有的有效数据都存放在<code>data_</code>中，但是一个data_肯定存放不止一个数据，而且这些数据大小也未必相同，所以为了能够准确找到这些数据，我们还额外需要记录每条数据的头部的位置，或者成为每条数据头部距离起始位置的偏移，但是数据总数不知道，所以偏移的总数也不知道，因此还需要记录偏移的总数目。就构成了下图所示的结构。</p>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic3.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>上图可以看成是<code>data_</code>成员的结构(<strong>这是Block内部成员的关系，跟xxxhandler无关</strong>)，前面一部分是数据区，存放了各种数据；往下是偏移区，这部分分别指向了数据，但是我们实际上存放的有序的数据，所以没必要指向所有的数据区的内容(这里后面对Data
+Block继续详细说明)，<strong>最后一个是偏移区大小也称为NumRestarts</strong>。</p>
+<p>由于其他的xxx
+Block都是一个Block结构，所以都具有Block的成员，所以关于Block的具体实现我们放在后面。</p>
+<h4 id="data-block">Data Block</h4>
+<p>我们先来看看Data Block中的数据存放。Data
+Block的默认大小是4K，但这不是固定的，有可能会超过4K，每次插入一个键值对时都会判断是否超过了4KB，如果插入一个大一点的键值对，就会超过4KB，不过一个键值对只会保存在一个Data
+Block里面，不会横跨两个Data Block。</p>
+<p>由于相邻的键有可能存在相同的前缀，考虑到这一点，LevelDB设置了前缀压缩法，也就是后面的键只需要记录与前一个键不同的部分，以及跟前一个键相同部分的长度，这样通过前一个键就可以还原出后一个键的完整Key，为何要这么设计呢？之所以这样设计是为了节省存储空间，因为Keys之间有相同部分的概率是存在的(这也是之前compare类中的两个用于压缩的方法的用武之地)。</p>
+<p>一个KV的格式如下：共享key的长度+非共享key的长度+值value的长度+非共享key的内容+值value。</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs txt"><br>shared_length | non_shared_length | value_length | non_shared_contents | value<br><br></code></pre></td></tr></table></figure>
+<p>通过shared_length和前一个键可以得到当前键的前缀，然后根据这个KV里面的后缀non_shared_contents，便可以拼接得到这个完整的键Key。通过这种前缀压缩的方式将多个KV连续存放在Data
+Block里，但是这样会有一个问题，无论想查找哪一个键Key的值，都需要从Block的第一个键Key开始遍历，依次构造拼接出最终想要的key，那么搜索一个键Key就需要遍历整个Block，这样显然效率会比较低。那怎么办呢？怎么去优化？既然KV的格式已经定了（压缩共享key），要搜索一个Key就需要拼接，那能不能拼接不要无限长，把key一组一组的划分，同一组内key是可以共享的，每一组的第一个key作为起始key就不要共享，该组内后续的key与第一个key共享key，这样key的拼接就是有限次的，查找一个key不需要遍历整个Block，只需要遍历有限个Key，这样效率不会受影响。于是就引入一个叫restart
+point的概念，记录每个分组的第一个KV的位置，这个位置的KV的shared_length为0，non_shared_length就是整个Key的长度，non_shared_contents就是完整的Key。<strong>这个restart
+point其实就是之前的偏移区中的东西，这也是为什么上图中没有每个数据都被偏移区的指针指到；而我们之前说的data_中数据区，其中就是存放的多个kv。</strong>可以参考下面这张图，这里面还有一些crc校验和压缩类型之类的，我们先略过。</p>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic4.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>下面我们来看一下Block类的一些实现。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 读取numrestarts的函数，numrestarts放在data的最后</span><br><span class="hljs-function"><span class="hljs-keyword">inline</span> <span class="hljs-type">uint32_t</span> <span class="hljs-title">Block::NumRestarts</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-built_in">assert</span>(size_ &gt;= <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint32_t</span>));<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">DecodeFixed32</span>(data_ + size_ - <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint32_t</span>));<br>}<br><br><span class="hljs-comment">// 构造函数</span><br>Block::<span class="hljs-built_in">Block</span>(<span class="hljs-type">const</span> BlockContents &amp;contents)<br>    : <span class="hljs-built_in">data_</span>(contents.data.<span class="hljs-built_in">data</span>()),<br>      <span class="hljs-built_in">size_</span>(contents.data.<span class="hljs-built_in">size</span>()),<br>      <span class="hljs-built_in">owned_</span>(contents.heap_allocated)<br>{<br>    <span class="hljs-keyword">if</span> (size_ &lt; <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint32_t</span>))<br>    {<br>        size_ = <span class="hljs-number">0</span>; <span class="hljs-comment">// Error marker</span><br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-type">size_t</span> max_restarts_allowed = (size_ - <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint32_t</span>)) / <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint32_t</span>);<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">NumRestarts</span>() &gt; max_restarts_allowed)<br>        {<br>            <span class="hljs-comment">// The size is too small for NumRestarts()</span><br>            size_ = <span class="hljs-number">0</span>;<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            restart_offset_ = size_ - (<span class="hljs-number">1</span> + <span class="hljs-built_in">NumRestarts</span>()) * <span class="hljs-built_in">sizeof</span>(<span class="hljs-type">uint32_t</span>);<br>        }<br>    }<br>}<br><br><span class="hljs-comment">// 析构函数</span><br>Block::~<span class="hljs-built_in">Block</span>()<br>{<br>    <span class="hljs-keyword">if</span> (owned_)<br>    {<br>        <span class="hljs-keyword">delete</span>[] data_;<br>    }<br>}<br><br><span class="hljs-comment">// 辅助函数，用于提取从p内存位置开始的entry. 也就是内容块，即data_数据区各个条目</span><br><span class="hljs-comment">// 将长度分别记录到传进来的指针里面</span><br><span class="hljs-comment">// limit是不能超出的内存的长度</span><br><span class="hljs-comment">// 如果遇到什么错误，就返回空指针</span><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-keyword">inline</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">DecodeEntry</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *p, <span class="hljs-type">const</span> <span class="hljs-type">char</span> *limit,</span></span><br><span class="hljs-params"><span class="hljs-function">                                      <span class="hljs-type">uint32_t</span> *shared,</span></span><br><span class="hljs-params"><span class="hljs-function">                                      <span class="hljs-type">uint32_t</span> *non_shared,</span></span><br><span class="hljs-params"><span class="hljs-function">                                      <span class="hljs-type">uint32_t</span> *value_length)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 如果已经不足三个bytes，那么肯定是没有内容或者出错了。</span><br>    <span class="hljs-comment">// 为什么这里写明是3 bytes?</span><br>    <span class="hljs-comment">// 这是因为shared key length, non-shared key length</span><br>    <span class="hljs-comment">// value length三个长度即使是0,也会分别占用3 bytes.</span><br>    <span class="hljs-comment">// 这里相当于做了一个优化，如果三个值之和都小于128，那肯定是每个值只占一个字节</span><br>    <span class="hljs-keyword">if</span> (limit - p &lt; <span class="hljs-number">3</span>)<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>    <span class="hljs-comment">// 分虽取出三个长度</span><br>    *shared = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> *&gt;(p)[<span class="hljs-number">0</span>];<br>    *non_shared = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> *&gt;(p)[<span class="hljs-number">1</span>];<br>    *value_length = <span class="hljs-built_in">reinterpret_cast</span>&lt;<span class="hljs-type">const</span> <span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> *&gt;(p)[<span class="hljs-number">2</span>];<br>    <span class="hljs-comment">// 如查所有的长度都是小于128的。那么在压缩编码的时候，就是直接按照</span><br>    <span class="hljs-comment">// 一个byte来存放。不需要解码</span><br>    <span class="hljs-keyword">if</span> ((*shared | *non_shared | *value_length) &lt; <span class="hljs-number">128</span>)<br>    {<br>        <span class="hljs-comment">// Fast path: all three values are encoded in one byte each</span><br>        p += <span class="hljs-number">3</span>;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-comment">// 如果已经是整数压缩存放的，那么在编解码的时候，就需要用Varint来处理一下</span><br>        <span class="hljs-comment">// 注意每个的出错处理</span><br>        <span class="hljs-keyword">if</span> ((p = <span class="hljs-built_in">GetVarint32Ptr</span>(p, limit, shared)) == <span class="hljs-literal">nullptr</span>)<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>        <span class="hljs-keyword">if</span> ((p = <span class="hljs-built_in">GetVarint32Ptr</span>(p, limit, non_shared)) == <span class="hljs-literal">nullptr</span>)<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>        <span class="hljs-keyword">if</span> ((p = <span class="hljs-built_in">GetVarint32Ptr</span>(p, limit, value_length)) == <span class="hljs-literal">nullptr</span>)<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>    }<br>    <span class="hljs-comment">// 读出来的条目的长度肯定是non_shared_key_length + value_length</span><br>    <span class="hljs-comment">// 如果余下的空间没有这么多了</span><br>    <span class="hljs-comment">// 那么肯定是出错了</span><br>    <span class="hljs-keyword">if</span> (<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">uint32_t</span>&gt;(limit - p) &lt; (*non_shared + *value_length))<br>    {<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">nullptr</span>;<br>    }<br>    <span class="hljs-comment">// 返回non_shared_key + value 内容的超始点</span><br>    <span class="hljs-comment">// 后面在使用的时候</span><br>    <span class="hljs-comment">// (p, non_shared_key)就是非共享的key的内容</span><br>    <span class="hljs-comment">// (p+non_shared_key, value_length)就是value的内容。</span><br>    <span class="hljs-keyword">return</span> p;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>这里面的辅助函数就是用于辅助读取每个kv的key和value的，可以解析出shared、non_shared、value_length。</p>
+<p>我们来看一下Block与Data Block的关系</p>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic5.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>Block中还定义了自己的迭代器类，不过这个东西与Data
+Block结构无关，主要适用于遍历和构建的，我们后面再说他。</p>
+<p>另外需要注意的是，Block本身不涉及kv的插入与删除，其只涉及到Bolck的存储、查找。</p>
+<p>从Block的构造函数我们可以看到Block的构建来自于结构体BlockContents，这部分我们后面再说。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">BlockContents</span> {<br>  Slice data;           <span class="hljs-comment">// Actual contents of data</span><br>  <span class="hljs-type">bool</span> cachable;        <span class="hljs-comment">// True iff data can be cached</span><br>  <span class="hljs-type">bool</span> heap_allocated;  <span class="hljs-comment">// True iff caller should delete[] data.data()</span><br>};<br><br></code></pre></td></tr></table></figure>
+<h4 id="index-block">Index Block</h4>
+<p>知道Data Block的结构后，Index
+Block就非常简单了，它其实就是存储了一个Kv数组，每一个Kv对应一个Data
+Block，其中键大于等于对应的Data
+Block中最后一个键，值为一个BlockHandler，可以定位到一个Data Block。Index
+Block就是Data Block的索引，搜索时可以对Index
+Block二分搜索，找到键对应的Data Block。</p>
+<p>Index Block里面每一个Kv都是一个restart
+point，也就是没有采用前缀压缩，相当于restart
+point是一个稠密索引，每一个Kv都有一个restart point对应。</p>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic6.jpg" srcset="/img/loading.gif" lazyload class="">
+<h4 id="meta-index-block">Meta Index Block</h4>
+<p>和Index Block指向Data Block一样，Meta Index Block指向Filter
+Block，是Filter Block的索引。不过目前只有一个Filter
+Block，也就是里面只有一个Kv。键是Filter
+Block的名字，而值是一个BlockHandler，指向对应的Filter Block。</p>
+<p>对于目前存在的Bloom
+Filter而言，键是<code>filter.leveldb.BuiltinBloomFilter2</code>。</p>
+<img src="/2022/09/23/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-7/pic7.jpg" srcset="/img/loading.gif" lazyload class="">
+<h4 id="filter-block">Filter Block</h4>
+<p>Filter Block就是Meta Index Block中记录的布隆过滤器了。</p>
+<p>为什么要在SSTable文件中放置一个布隆过滤器？</p>
+<p>我们知道布隆过滤器是一种概率型的数据结构，特点是高效的插入和查询，它的作用是为了快速判定一个Key是否存在。这不是精确判断：如果一个Key判定存在，实际不一定存在；但是，如果判定一个Key不存在，那就一定不存在，其结果是假阳性的。利用这个特性，可以快速的判定一个Key是否存在，如果不存在，就不需要再去查找了，直接返回错误；如果判定存在，则需要进一步查到确定Key是否存在。</p>
+<p>在一个SSTable文件中，正常的查找流程如下：</p>
+<ol type="1">
+<li>对Index Block进行二分搜索，查到键所属的Data Block；</li>
+<li>读取Data Block，对restart
+point进行二分搜索，查找对应的键所属的restart point；</li>
+<li>定位到restart point处，再遍历16个Keys进行键的查找。</li>
+</ol>
+<p>理想情况下，Index Block可以缓存在内存中，但是Data
+Block数据量太大，可能不会缓存在内存中，这样就需要一次磁盘IO，查询效率必然不高。</p>
+<p>如何避免磁盘IO呢？怎么才能放到内存中来查找呢？布隆过滤器可以解决这个问题。布隆过滤器比较小，可以缓存在内存中，这样就可以通过布隆过滤器快速判断对应的键有没有在这个SSTable里。如果判断键在SSTable，那也只有很小的概率是键不在这个SSTable里。这是典型的用空间换时间的思想，选择布隆过滤器是因为布隆过滤器的空间占用非常小，可以加载到内存中，进行快速判定。</p>
+<p>LevelDB采用了多个布隆过滤器，默认情况下，每2KB的数据开启一个布隆过滤器（如下定义），因此，布隆过滤器也必然组成一个数组结构，last_word就是偏移数组的位置，数组的每个值指向一个布隆过滤器的位置。</p>
+<p>由于布隆过滤器不是重点，此处只给出头文件，实现就暂且略过了。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">FilterBlockReader</span><br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// REQUIRES: "contents" and *policy must stay live while *this is live.</span><br>    <span class="hljs-built_in">FilterBlockReader</span>(<span class="hljs-type">const</span> FilterPolicy *policy, <span class="hljs-type">const</span> Slice &amp;contents);<br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">KeyMayMatch</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> block_offset, <span class="hljs-type">const</span> Slice &amp;key)</span></span>;<br><br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-type">const</span> FilterPolicy *policy_;<br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *data_;   <span class="hljs-comment">// 过滤器的起始位置</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">char</span> *offset_; <span class="hljs-comment">// 偏移位置</span><br>    <span class="hljs-type">size_t</span> num_;         <span class="hljs-comment">// 偏移总数</span><br>    <span class="hljs-type">size_t</span> base_lg_;     <span class="hljs-comment">// Encoding parameter (see kFilterBaseLg in .cc file)</span><br>};<br><br></code></pre></td></tr></table></figure>
+<h3 id="读取一个键的步骤">读取一个键的步骤</h3>
+<p>过上面对SSTable的介绍，来总结一下在SSTable读取一个键的步骤。</p>
+<p>要读取一个SSTable，首先需要打开这个SSTable，打开会有以下步骤:</p>
+<ul>
+<li>读取Footer，根据里面的读取Meta Index Block和Index Block，将Index
+Block的内容缓存到内存中；</li>
+<li>根据Meta Index Block读取布隆过滤器的数据，缓存到内存中。</li>
+</ul>
+<p>至于具体的读取函数和构建函数我们后面会详细阐述。</p>
+<p>读取一个键的步骤如下：</p>
+<ul>
+<li>根据键对Index Block的restart point进行二分搜索，找到这个键对应的Data
+Block的BlockHandler；</li>
+<li>根据BlockHandler的偏移计算出布隆过滤器的编号，读取相应的布隆过滤器；</li>
+<li>通过布隆过滤器的数据判断键是否存在，不存在就结束，否则读取对应的Data
+Block；</li>
+<li>对Data Block里的restart point进行二分搜索，找到搜索键对应的restart
+point;</li>
+<li>对这个restart
+point对应的键进行搜索，最多搜索16个键，找到键或者找不到键。</li>
+</ul>
+<p>通过以上步骤可以看到Index
+Block和布隆过滤器的内容都是缓存在内存里的，所以当一个键在SSTable不存在时，99%的概率是不需要磁盘IO的。</p>
+<h2 id="总结">总结</h2>
+<p>SSTable的实现还是相当复杂的，而且这部分涉及到了很多个类，这部分的技巧主要在数据结构上。SSTable和B+树的思想很像，就好像一个3层的B+树，Footer是根节点，定位到Index
+Block，Index Block是第二层，可以定位到Data Block。</p>
+<p>SSTable的文件布局比较紧凑，查询效率也比较高，不需要像B+树这样复杂，因为SSTable只会整体生成，而不会增量修改，也就是SSTable是只读，这个结构就是利用了这个特性。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/09/22/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-6/" title="levelDB源码剖析(6)--levelDB组件">
+                        <span class="hidden-mobile">levelDB源码剖析(6)--levelDB组件</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
