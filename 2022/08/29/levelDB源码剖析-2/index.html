@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb2.jpg">
 <meta property="article:published_time" content="2022-08-29T11:35:23.000Z">
-<meta property="article:modified_time" content="2022-09-09T12:02:20.870Z">
+<meta property="article:modified_time" content="2022-09-30T11:18:48.568Z">
 <meta property="article:author" content="PPXXXG22">
 <meta property="article:tag" content="C++">
 <meta property="article:tag" content="levelDB">
@@ -418,7 +418,7 @@ mjx-container[display="true"] + br {
 <hr>
 <h3 id="leveldb的组件">levelDB的组件</h3>
 <p>levelDB由以下几个组件组成：<code>MemTable</code>，<code>Immutable MemTable</code>，<code>WAL</code>，<code>SSTable</code>，<code>Manifest</code>，<code>Current</code>，<code>Compaction</code></p>
-<img src="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-2/pic1.jpg" srcset="/img/loading.gif" lazyload class="" title="_">
+<img src="/2022/08/29/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-2/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
 <div class="note note-primary">
             <p><strong><em>MemTable</em></strong>：这个组件是操作的入口，是常驻内存的<span class="math inline"><mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: -0.375ex;" xmlns="http://www.w3.org/2000/svg" width="2.605ex" height="1.97ex" role="img" focusable="false" viewBox="0 -705 1151.6 870.6"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="msub"><g data-mml-node="mi"><path data-c="1D436" d="M50 252Q50 367 117 473T286 641T490 704Q580 704 633 653Q642 643 648 636T656 626L657 623Q660 623 684 649Q691 655 699 663T715 679T725 690L740 705H746Q760 705 760 698Q760 694 728 561Q692 422 692 421Q690 416 687 415T669 413H653Q647 419 647 422Q647 423 648 429T650 449T651 481Q651 552 619 605T510 659Q484 659 454 652T382 628T299 572T226 479Q194 422 175 346T156 222Q156 108 232 58Q280 24 350 24Q441 24 512 92T606 240Q610 253 612 255T628 257Q648 257 648 248Q648 243 647 239Q618 132 523 55T319 -22Q206 -22 128 53T50 252Z"></path></g><g data-mml-node="mn" transform="translate(748,-150) scale(0.707)"><path data-c="30" d="M96 585Q152 666 249 666Q297 666 345 640T423 548Q460 465 460 320Q460 165 417 83Q397 41 362 16T301 -15T250 -22Q224 -22 198 -16T137 16T82 83Q39 165 39 320Q39 494 96 585ZM321 597Q291 629 250 629Q208 629 178 597Q153 571 145 525T137 333Q137 175 145 125T181 46Q209 16 250 16Q290 16 318 46Q347 76 354 130T362 333Q362 478 354 524T321 597Z"></path></g></g></g></g></svg></mjx-container></span>树，所有的写入操作都将被直接写入到此树中。另外这棵树是有序的，可以对其进行快速查找和遍历，也支持数据库的操作。</p><p>它本身就可以看成是一个数据库，相当于levelDB内置的redis。</p><p>当其占用空间到达一个阈值时，就转换成一个<code>Immutable MemTable</code>供后续合并，同时生成一个新的<code>MemTable</code>来继续执行下去。</p>
           </div>
