@@ -1,0 +1,902 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="迭代器的实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(12)--迭代器的实现">
+<meta property="og:url" content="http://example.com/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="迭代器的实现">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb12.jpg">
+<meta property="article:published_time" content="2022-10-19T08:13:47.000Z">
+<meta property="article:modified_time" content="2022-10-19T13:48:31.617Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb12.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(12)--迭代器的实现 - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                Links
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/leveldb12.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析(12)--迭代器的实现"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-19 16:13" pubdate>
+          October 19, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.9k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          34 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析(12)--迭代器的实现</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="迭代器的实现">迭代器的实现</h2>
+<span id="more"></span>
+<div class="note note-primary">
+            <p>源码位置与说明</p><p>include/leveldb/iterator.h：定义Iterator的接口<br>table/iterator.cc: 实现CleanUp的功能以及Empty Iterator<br>table/block.h table/block.cc: 实现了Block Iterator<br>db/skiplist.h: 实现了skiplist的Iterator<br>table/two_level_iterator.h table/two_level_iterator.cc： 实现了Two LevelIterator<br>table/merger.h table/merger.cc: 实现了Merger Iterator<br>table/iterator_wrapper.cc:实现一个Iterator包装器，缓存valid()和key()的结果，避免虚函数调用和更好的cachelocality<br>db/db_iter.h db/db_iter.h：实现对整个数据库的迭代器</p>
+          </div>
+<p>迭代器在levelDB中，或者说在任何类型中的数据库的作用都是十分显著的。在C++的标准库中，也存在迭代器，两者在概念上是类似的，只是levelDB中的迭代器数目更多，作用也更加明确。主要有以下的作用：</p>
+<ul>
+<li>按顺序对所有的元素进行迭代</li>
+<li>处理某一范围内的元素，正序或者逆序</li>
+<li>定位到某一个特定的元素进行处理。</li>
+</ul>
+<p>LevelDB在以下部分使用了迭代器：</p>
+<ul>
+<li>对MemTable进行迭代</li>
+<li>对于SSTable的Block进行迭代</li>
+<li>对整个SSTable进行迭代</li>
+<li>Level File Num
+Iterator，因为LevelDB的SSTable是分层的，这个Iterator对某一个版本的某一层的SSTable的文件信息进行迭代</li>
+<li>Concatenating Iterator，Level &gt; 0的SSTable是有序的，Concatenating
+Iterator可以对这些有序的SSTable同时迭代</li>
+<li>对MemTable、Immutable MemTable和所有的SSTable同时迭代</li>
+<li>DB Iterator对整个数据库进行迭代</li>
+</ul>
+<p>以上迭代器的实现，有些是从零开始实现的，有些是组合其它迭代器实现的。为了组合其它迭代器，LevelDB实现了两种迭代器的组合方式：</p>
+<ul>
+<li>Two Level
+Iterator，可以组合两个迭代器A和B，其中A里面的每个元素可以产生一个迭代器B，可以迭代A，取出一个元素产生迭代器B，然后迭代B，然后再产生A的下一个元素，再产生一个迭代器B，如此往复</li>
+<li>Merger
+Iterator可以组合多个迭代器，同时对多个迭代器进行迭代，就好像对这些迭代器做了一次归并排序，产生结果</li>
+</ul>
+<p>虽然有很多的迭代器(如之前Block中出现的Iter)，但是这些迭代器基本上都是继承自一个虚基类--<code>Iterator</code>。所以重点先看一下这个虚基类。</p>
+<h2 id="虚基类iterator">虚基类Iterator</h2>
+<p>先来看一下其头文件。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> Iterator<br>{<br><br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-comment">// 这与注册函数有关，至于什么是注册函数，可以先看一下这个类中公有区域的最后一个函数</span><br>    <span class="hljs-comment">// 注册的清理函数会被存储在一个单向链表中，链表的头节点被内联在迭代器中</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">CleanupNode</span><br>    {<br>        <span class="hljs-comment">// 每个结点存储一个清理函数，会被逐个调用</span><br>        <span class="hljs-comment">// 链表中存储的节点是否被使用，只有头节点可能是未使用的</span><br>        <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">IsEmpty</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> function == <span class="hljs-literal">nullptr</span>; }<br>        <span class="hljs-comment">// 运行一个清理函数</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Run</span><span class="hljs-params">()</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-built_in">assert</span>(function != <span class="hljs-literal">nullptr</span>);<br>            (*function)(arg1, arg2);<br>        }<br><br>        <span class="hljs-comment">// 头节点如果被使用的话，则其函数指针不为空</span><br>        CleanupFunction function;<br>        <span class="hljs-type">void</span> *arg1;<br>        <span class="hljs-type">void</span> *arg2;<br>        CleanupNode *next;<br>    };<br>    CleanupNode cleanup_head_;<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">/// 构造析构函数相关</span><br>    <span class="hljs-built_in">Iterator</span>();<br>    <span class="hljs-built_in">Iterator</span>(<span class="hljs-type">const</span> Iterator &amp;) = <span class="hljs-keyword">delete</span>;<br>    Iterator &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Iterator &amp;) = <span class="hljs-keyword">delete</span>;<br>    <span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">Iterator</span>();<br><br>    <span class="hljs-comment">// 如果iterator是可用的，就返回true</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">Valid</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 将iterator定位到源的第一个key。如果源不为空，iterator就是有效的。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">SeekToFirst</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 将iterator定位到源的最后一个key。如果源不为空，iterator就是有效的。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">SeekToLast</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 定位到某个键，当键不存在时，定位到比这个键大的第一个键</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Seek</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;target)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 定位到下一项</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Next</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 定位到上一项</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Prev</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 返回当前项的key。返回的slice的底层存储只在下一次修改iterator之前有效。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Slice <span class="hljs-title">key</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 返回当前项的value。返回的slice的底层存储只在下一次修改iterator之前有效。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Slice <span class="hljs-title">value</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 如果发生了错误，返回错误信息。否则返回ok状态。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Status <span class="hljs-title">status</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 迭代器被销毁时的回调函数，注册后可在销毁时调用</span><br>    <span class="hljs-comment">// 这不是一个纯虚函数，所以不需要重写</span><br>    <span class="hljs-comment">// function(void* arg1, void* arg2)，即一个函数指针</span><br>    <span class="hljs-keyword">using</span> CleanupFunction = <span class="hljs-built_in">void</span> (*)(<span class="hljs-type">void</span> *arg1, <span class="hljs-type">void</span> *arg2);<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">RegisterCleanup</span><span class="hljs-params">(CleanupFunction function, <span class="hljs-type">void</span> *arg1, <span class="hljs-type">void</span> *arg2)</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p><code>Iterator</code>被设置成了纯虚基类，定义了其他种类的迭代器的接口。需要注意的是，<code>Iterator</code>存在清理函数，即在<code>Iterator</code>被销毁时调用这些函数。清理函数需要被注册，保存在一个单项链表中，最后会被统一调用。</p>
+<p>然后我们来看一下其具体的实现，由于大部分是纯虚函数，所以实现部分比较少。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 构造函数，将清理函数链表的头部指针置为NULL</span><br>Iterator::<span class="hljs-built_in">Iterator</span>()<br>{<br>    cleanup_head_.function = <span class="hljs-literal">nullptr</span>;<br>    cleanup_head_.next = <span class="hljs-literal">nullptr</span>;<br>}<br><br><span class="hljs-comment">// 析构函数</span><br><span class="hljs-comment">// 需要逐个调用链表中的清理函数</span><br>Iterator::~<span class="hljs-built_in">Iterator</span>()<br>{<br>    <span class="hljs-keyword">if</span> (!cleanup_head_.<span class="hljs-built_in">IsEmpty</span>())<br>    {<br>        cleanup_head_.<span class="hljs-built_in">Run</span>();<br>        <span class="hljs-keyword">for</span> (CleanupNode *node = cleanup_head_.next; node != <span class="hljs-literal">nullptr</span>;)<br>        {<br>            node-&gt;<span class="hljs-built_in">Run</span>();<br>            CleanupNode *next_node = node-&gt;next;<br>            <span class="hljs-comment">// 释放内存</span><br>            <span class="hljs-keyword">delete</span> node;<br>            node = next_node;<br>        }<br>    }<br>}<br><br><span class="hljs-comment">// 将清理函数加入到清理函数链表中</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Iterator::RegisterCleanup</span><span class="hljs-params">(CleanupFunction func, <span class="hljs-type">void</span> *arg1, <span class="hljs-type">void</span> *arg2)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-built_in">assert</span>(func != <span class="hljs-literal">nullptr</span>);<br>    CleanupNode *node;<br>    <span class="hljs-keyword">if</span> (cleanup_head_.<span class="hljs-built_in">IsEmpty</span>())<br>    {<br>        node = &amp;cleanup_head_;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        node = <span class="hljs-keyword">new</span> <span class="hljs-built_in">CleanupNode</span>();<br>        node-&gt;next = cleanup_head_.next;<br>        cleanup_head_.next = node;<br>    }<br>    node-&gt;function = func;<br>    node-&gt;arg1 = arg1;<br>    node-&gt;arg2 = arg2;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>迭代器由于受限于本身的逻辑，所以实现还是非常简单的。唯一需要注意的就是关于清理函数的链表结构。</p>
+<h3 id="空迭代器emptyiterator">空迭代器EmptyIterator</h3>
+<p>这里还有一个很有意思的东西，就是其还定义了<code>EmptyIterator</code>这个类，而这个类实际上位于一个匿名名称空间中，<strong>名称的作用域被限制在当前文件中</strong>，所以外部文件想要创建这个类必须通过<code>NewEmptyIterator</code>这个函数。</p>
+<p>我们来具体看一下这部分代码。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 注意这个匿名名称空间</span><br><span class="hljs-keyword">namespace</span><br>{<br><br>    <span class="hljs-comment">// 继承自Iterator</span><br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">EmptyIterator</span> : <span class="hljs-keyword">public</span> Iterator<br>    {<br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-built_in">EmptyIterator</span>(<span class="hljs-type">const</span> Status &amp;s) : <span class="hljs-built_in">status_</span>(s) {}<br>        ~<span class="hljs-built_in">EmptyIterator</span>() <span class="hljs-keyword">override</span> = <span class="hljs-keyword">default</span>;<br><br>        <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">Valid</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>; }<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Seek</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;target)</span> <span class="hljs-keyword">override</span> </span>{}<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SeekToFirst</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span> </span>{}<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SeekToLast</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span> </span>{}<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Next</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span> </span>{ <span class="hljs-built_in">assert</span>(<span class="hljs-literal">false</span>); }<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Prev</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span> </span>{ <span class="hljs-built_in">assert</span>(<span class="hljs-literal">false</span>); }<br>        <span class="hljs-function">Slice <span class="hljs-title">key</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-built_in">assert</span>(<span class="hljs-literal">false</span>);<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">Slice</span>();<br>        }<br>        <span class="hljs-function">Slice <span class="hljs-title">value</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-built_in">assert</span>(<span class="hljs-literal">false</span>);<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">Slice</span>();<br>        }<br>        <span class="hljs-function">Status <span class="hljs-title">status</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span> </span>{ <span class="hljs-keyword">return</span> status_; }<br><br>    <span class="hljs-keyword">private</span>:<br>        Status status_;<br>    };<br><br>} <span class="hljs-comment">// anonymous namespace</span><br><br><span class="hljs-comment">// 用于创建EmptyIterator</span><br><span class="hljs-function">Iterator *<span class="hljs-title">NewEmptyIterator</span><span class="hljs-params">()</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">EmptyIterator</span>(Status::<span class="hljs-built_in">OK</span>()); }<br><br><span class="hljs-function">Iterator *<span class="hljs-title">NewErrorIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> Status &amp;status)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">EmptyIterator</span>(status);<br>}<br><br></code></pre></td></tr></table></figure>
+<p>总体而言没有啥难度。</p>
+<h3 id="其他继承自iterator的迭代器">其他继承自Iterator的迭代器</h3>
+<p>有很多迭代器都是继承自Iterator，我们下面来逐一分析。</p>
+<h4 id="memtable-iterator">MemTable Iterator</h4>
+<div class="note note-primary">
+            <p>源码位于 db/memtable.h db/memtable.cc</p>
+          </div>
+<p>这个迭代器直接继承自Iterator，用于MemTable内部的迭代，即对Skiplist进行迭代操作。</p>
+<ul>
+<li>对于Seek操作，其实只需要调用Skiplist的查找操作即可</li>
+<li>对于Next操作，因为Skiplist的最低层是一个单链表，所以只需要取这个链表的Next即可定位到下一个元素</li>
+<li>对于Prev操作，稍微复杂一点，需要用查找函数找到当前元素的前一个元素</li>
+</ul>
+<h4 id="block-iterator">Block Iterator</h4>
+<div class="note note-primary">
+            <p>源码位于 table/block.h table/block.cc</p>
+          </div>
+<p>同样，这个迭代器也是继承自Iterator，用于Block内部的迭代，Block的数据部分是按照键的顺序排列的，所以Next的实现非常简单，只需要解析下一个Kv即可。</p>
+<p>不过因为每个Kv的长度是不同的，没法直接定位到具体的某一个Kv，但是对于Seek操作，可以使用restart
+point来进行快速定位。之前说过restart
+point指向了某一个键，是一个稀疏索引。可以先对restart
+point进行二分搜索，找到restart point
+对应的键小于等于target最大的那个restart
+point，如果键存在，则必在这个restart
+point开始的16个键中，再从这个位置开始搜索，就可以找到对应的键。</p>
+<h2 id="二级迭代器two-level-iterator">二级迭代器Two Level Iterator</h2>
+<div class="note note-primary">
+            <p>源码位于 table/two_level_iterator.h table/two_level_iterator.cc</p>
+          </div>
+<p>Two Level
+Iterator其实就是使用两个Iterator，第一个Iterator是第二个Iterator的索引。先在第一层的Iterator做迭代，每次拿出一个元素后，根据这个元素调用回调函数，生成第二层的一个Iterator，然后第二层的Iterator迭代完成后，再在第一层取下一个元素。</p>
+<img src="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>对使用Two Level Iterator有两个要求:
+第一层的Iterator的元素是有序排序的；
+根据第一层的Iterator生成的第二层的Iterator也是全局有序的，也就是第一层第n个元素生成的第二层Iterator的最大元素小于第一层第n
++
+1个元素生成的第二层Iterator的最小元素，并且第二层的每个Iterator内部也是有序的。</p>
+<p>这个两级Iterator在设计的时候，是设计得非常通用的。但是本质上来说，却是只为Table::Iterator服务。</p>
+<p>这个是由于Table的SST文件的格式带来的。因为SST文件关于key/value的内容分为两部分：</p>
+<ul>
+<li>data block</li>
+<li>data block index</li>
+</ul>
+<p>前者data block里面存放了所有的数据，而data block
+index里面存放了检索信息。</p>
+<p>所以，data block index是作为第一级iterator，而data
+block里面的key/value作为第二级iterator。</p>
+<p><strong>实际上Two Level
+Iterator也是继承自Iterator，但是由于其形式特殊，所以单独拿出来说</strong></p>
+<p>另外，由于篇幅原因，就不详细剖析其源码了。</p>
+<h3 id="其他使用two-level-iterator的迭代器">其他使用Two Level
+Iterator的迭代器</h3>
+<h4 id="sstable-iterator">SSTable Iterator</h4>
+<div class="note note-primary">
+            <p>源码位于 include/leveldb/table.h table/table.cc</p>
+          </div>
+<p>很明显Two Level Iterator就是为SSTable这种结构设计的。</p>
+<p>生成迭代器用的这句</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Iterator* <span class="hljs-title">Table::NewIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions&amp; options)</span> <span class="hljs-type">const</span> </span>{<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">NewTwoLevelIterator</span>(<br>        rep_-&gt;index_block-&gt;<span class="hljs-built_in">NewIterator</span>(rep_-&gt;options.comparator),<br>        &amp;Table::BlockReader, <span class="hljs-built_in">const_cast</span>&lt;Table*&gt;(<span class="hljs-keyword">this</span>), options);<br>}<br><br></code></pre></td></tr></table></figure>
+<h4 id="concatenating-iterator">Concatenating Iterator</h4>
+<div class="note note-primary">
+            <p>源码位置: db/version_set.cc</p>
+          </div>
+<p>除了Table的迭代，Two Level Iterator还用在Concatenating
+Iterator，这个迭代器可以对某一层（除了level
+0）的SSTable进行迭代。第一层是一个Level File Num
+Iterator，可以返回这一层的SSTable文件信息，而第二层则是SSTable
+Iterator，使用GetFileIterator可以获取第二层的SSTable
+Iterator。这样就可以对这一层的所有SSTable里的键从小到大迭代。</p>
+<h2 id="合并迭代器merging-iterator">合并迭代器Merging Iterator</h2>
+<div class="note note-primary">
+            <p>源码位置: table/merger.h table/merger.cc</p>
+          </div>
+<p>Merger
+Iterator可以用来组合多个Iterator，只需要保证每一个Iterator内部是有序，而不需要每一个Iterator都是全局有序的。Merger
+Iterator会对所有Iterator进行迭代，就好像归并排序一样。找到每个Iterator头部最小的元素，next时，将最小的元素所在的Iterator
+next，然后再次找到最小的元素。</p>
+<p><strong>看成一个用于归并的迭代器即可</strong></p>
+<p>由于这个和归并的过程很类似，也不详细叙述了。当然这个迭代器也是继承自Iterator的，毕竟接口都是一样的嘛。</p>
+<h2 id="iteator整体结构概览">Iteator整体结构概览</h2>
+<img src="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/pic2.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>从上图可以看到：</p>
+<ul>
+<li>Two Level Iterator可以将Index Block Iterator和Data Block
+Iterator组合成一个Table Iterator</li>
+<li>Two Level Iterator可以将Level File Num Iterator和Table
+Iterator组合成一个Concatenating
+Iterator，这个Iterator迭代某一Level（Level &gt; 0）的所有SSTable</li>
+<li>Merger Iteator可以组成一个Internal
+Iterator，对整个数据库里的数据进行迭代，包括MemTable Iterator、Table
+Iterator（Level 0）和Concatenating Iterator（Level &gt;
+0)，注意这个Iterator是不会区分版本的，所有版本的数据都能看到</li>
+<li>Internal Iterator做一定的处理后可以生成DBIter迭代整个数据库</li>
+<li>Merger Iterator也可以组成一个Compaction Iterator，包括Table
+Iterator（Level 0）和Concatenating Iterator（Level &gt;
+0)，这主要是Compaction时使用。</li>
+</ul>
+<p>Internal
+Iterator是会看到所有数据的，比如一个键覆盖了之前的值，这两个键值对都会看到。所以LevelDB里面还有一个DBIter，封装了对Internal
+Iterator的访问，根据当前的SequenceNumber，只会看到可见的那个键。DBIter会对Internal
+Iterator作封装，查找一个Key时会找到可见的SequenceNumber最大的那个Key，Next的话，会跳过所有User
+Key相同的Internal Key直到一个User Key不同的并且可见的Internal
+Key，这样迭代整个数据库不会出现重复的User Key。</p>
+<p>这里面有些迭代器之前没有涉及到，不过看名字就指导是干什么的了。</p>
+<h2 id="总结">总结</h2>
+<ul>
+<li>当想要在一个类中设置析构时的回调函数，可以使用函数指针并设置一个注册函数。<code>using CleanupFunction = void (*)(void *arg1, void *arg2);</code>这种别名的方式也很有效。且如果需要注册多个回调函数时，可以用单向链表来存储。</li>
+<li>使用匿名名称空间来对外部文件隐藏类。</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/10/14/%E5%B0%86python%E4%B8%AD%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%A4%9A%E7%BA%BF%E7%A8%8B%E9%9D%9E%E9%98%BB%E5%A1%9E%E5%87%BD%E6%95%B0/" title="将python中同步函数转换成多线程非阻塞函数">
+                        <span class="hidden-mobile">将python中同步函数转换成多线程非阻塞函数</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
