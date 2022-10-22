@@ -1,0 +1,867 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="缓存Cache">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(13)--缓存Cache">
+<meta property="og:url" content="http://example.com/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="缓存Cache">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb13.jpg">
+<meta property="article:published_time" content="2022-10-21T06:44:01.000Z">
+<meta property="article:modified_time" content="2022-10-22T04:30:53.068Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb13.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(13)--缓存Cache - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                Links
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/leveldb13.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析(13)--缓存Cache"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-21 14:44" pubdate>
+          October 21, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          22k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          92 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析(13)--缓存Cache</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="缓存cache">缓存Cache</h2>
+<span id="more"></span>
+<div class="note note-primary">
+            <p>源码位置</p><p>include/leveldb/cache.h: 定义Cache接口<br>util/cache.cc: 实现LRU缓存<br>table/table.cc: 读取Data Block时使用缓存<br>db/table_cache.cc：实现一个Table结构的缓存</p>
+          </div>
+<p>正如存储器山所描述的那样，各个存储器之间的速度差距非常显著。所以对访问速度较慢的部分使用缓存是非常有必要的。</p>
+<p>其中在levelDB中，主要有TableCache和BlockCache这两种缓存。TableCache主要是缓存SST文件里面的data
+block index，而BlockCache主要是缓存data block。</p>
+<p>LevelDB提供了一个Cache接口，用户可以实现自己的缓存方式。默认提供了一个LRU
+Cache，缓存最近使用的数据。</p>
+<h3 id="缓存的接口">缓存的接口</h3>
+<p>我们首先来看一下Cache的接口类，同样，这也是一个纯虚基类，官方默认提供了一个使用LRU策略的Cache。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 创建一个有固定容量的基于LRU策略的缓存并返回</span><br><span class="hljs-function">LEVELDB_EXPORT Cache *<span class="hljs-title">NewLRUCache</span><span class="hljs-params">(<span class="hljs-type">size_t</span> capacity)</span></span>;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> Cache<br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 构造析构函数...</span><br>    <span class="hljs-built_in">Cache</span>() = <span class="hljs-keyword">default</span>;<br>    <span class="hljs-built_in">Cache</span>(<span class="hljs-type">const</span> Cache &amp;) = <span class="hljs-keyword">delete</span>;<br>    Cache &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Cache &amp;) = <span class="hljs-keyword">delete</span>;<br>    <span class="hljs-comment">// Destroys all existing entries by calling the "deleter"</span><br>    <span class="hljs-comment">// function that was passed to the constructor.</span><br>    <span class="hljs-comment">// 析构函数需要调用deleter函数来销毁所有的entries</span><br>    <span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">Cache</span>();<br><br>    <span class="hljs-comment">// cache中的entry的句柄。</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Handle</span><br>    {<br>    };<br><br>    <span class="hljs-comment">// Insert a mapping from key-&gt;value into the cache and assign it</span><br>    <span class="hljs-comment">// the specified charge against the total cache capacity.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// Returns a handle that corresponds to the mapping.  The caller</span><br>    <span class="hljs-comment">// must call this-&gt;Release(handle) when the returned mapping is no</span><br>    <span class="hljs-comment">// longer needed.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// When the inserted entry is no longer needed, the key and</span><br>    <span class="hljs-comment">// value will be passed to "deleter".</span><br>    <span class="hljs-comment">// Insert将一个键值对映射插入到cache中，并赋予相应的“费用”charge.</span><br>    <span class="hljs-comment">// Insert返回该映射对应的handle.调用者不再使用时必须调用Release(handle)方法。</span><br>    <span class="hljs-comment">// 当不再需要此entry时，键值对会被传到deleter.</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Handle *<span class="hljs-title">Insert</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value, <span class="hljs-type">size_t</span> charge,</span></span><br><span class="hljs-params"><span class="hljs-function">                           <span class="hljs-type">void</span> (*deleter)(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value))</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// If the cache has no mapping for "key", returns nullptr.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// Else return a handle that corresponds to the mapping.  The caller</span><br>    <span class="hljs-comment">// must call this-&gt;Release(handle) when the returned mapping is no</span><br>    <span class="hljs-comment">// longer needed.</span><br>    <span class="hljs-comment">// Lookup返回对应key的handle，如果没有则返回nullptr.</span><br>    <span class="hljs-comment">// 调用者不再使用时必须调用Release(handle)方法。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Handle *<span class="hljs-title">Lookup</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// Release a mapping returned by a previous Lookup().</span><br>    <span class="hljs-comment">// REQUIRES: handle must not have been released yet.</span><br>    <span class="hljs-comment">// REQUIRES: handle must have been returned by a method on *this.</span><br>    <span class="hljs-comment">// Release释放一个mapping.</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Release</span><span class="hljs-params">(Handle *handle)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// Value封装Lookup()返回的handle中的值并返回之。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> *<span class="hljs-title">Value</span><span class="hljs-params">(Handle *handle)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// Erase将一个entry删去。只有在所有与之关联的handle释放后才会被真正删去。</span><br>    <span class="hljs-comment">// 即引用计数</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Erase</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// Return a new numeric id.  May be used by multiple clients who are</span><br>    <span class="hljs-comment">// sharing the same cache to partition the key space.  Typically the</span><br>    <span class="hljs-comment">// client will allocate a new id at startup and prepend the id to</span><br>    <span class="hljs-comment">// its cache keys.</span><br>    <span class="hljs-comment">// 返回一个ID，可能被多个共用相同缓存的客户端同时使用</span><br>    <span class="hljs-comment">// 他们共享同一个cache来划分key space.</span><br>    <span class="hljs-comment">// 通常client会在启动时分配一个新的id，并将其id放到缓存的键里。</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">uint64_t</span> <span class="hljs-title">NewId</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 移除掉所有没有被使用的缓存</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Prune</span><span class="hljs-params">()</span> </span>{}<br><br>    <span class="hljs-comment">// 返回当前缓存的大小</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">size_t</span> <span class="hljs-title">TotalCharge</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>这也是一个纯虚基类，定义了接口，下面来具体阐述其接口的含义。</p>
+<p>首先，Cache本身作为一个缓存容器，可以被多个客户端调用(或者说多个线程)，考虑到有些线程会把相同的数据放入缓存中，这些相同的数据本身也不需要缓存多分，所以采用引用计数的方式就能对其进行很好的引用和销毁。</p>
+<p>其次，作为一个容器，插入(Insert)，查找(Lookup)，销毁(Erase)这些对缓存进行操作的接口是必不可少的。</p>
+<p>其中，由于销毁一个缓存涉及到多线程中共享引用的问题，所以只有一个缓存中的引用计数为1(即只被缓存本身引用时)，才会真正销毁。</p>
+<p>另外，一般而言，多线程访问同一个数据空间时需要加锁，但是这样会降低效率，所以需要一种更巧妙的方法来实现不加锁的实现。为了区别多个线程所以需要为这些线程分配ID来进行标识(NewId)，至于具体怎么做后面在ShardedLRUCache中会具体阐述。</p>
+<p>但是，考虑到一些操作必须进行加锁处理，所以有了加锁后释放的方法(Release)。</p>
+<p>以及，缓存大小是有限的，不能无限充，所以扩需要及时检测缓存大小(TotalCharge)，并适时清理不必要的缓存项(Prune)。</p>
+<h3 id="默认的lrucache">默认的LRUCache</h3>
+<p>levelDB中默认提供的Cache就是LRUCache。不过由于其实现比较多，我们先不看其实现，而是大致描述一下其组成。</p>
+<p>LRUCache的实现有以下特点：</p>
+<ul>
+<li>每一个缓存项都保存在一个LRUHandler里</li>
+<li>每一个LRUHandler首先被保存在一个哈希表table_里面，支持根据键快速的查找</li>
+<li>LRUCache里面有两个双向循环链表lru_和in_use_，每一个LRUHandler可以在两个链表中的一个里，但是不会同时在两个里，也有可能有些LRUHandler被淘汰出缓存了，不在任何链表上</li>
+<li>in_use_保存当前正在被引用的LRUHandler，这个链表主要是为了检查</li>
+<li>lru_保存没有被使用的LRUHandler，按照访问顺序来保存，lru_.next保存最旧的，lru_.prev保存最新的，需要淘汰缓存时，会从lru_里的next开始淘汰</li>
+<li>当一个LRUHandler被使用时，会从lru_移动到in_use_，使用完成后，会从in_use_重新移动到lru_里</li>
+<li>每个LRUCache都有一个容量capacity_，表示这个缓存的大小，每次插入一个项时都会指定这个缓存项的大小，更新usage_字段，当usage_超过capacity_时，就淘汰最旧的缓存项，直到低于capacity_</li>
+</ul>
+<img src="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>另外，其使用引用计数来进行管理，具体流程如下：</p>
+<ul>
+<li>当一个LRUHandler被加入到缓存里面，并且没有被使用时，计数为1</li>
+<li>如果客户端需要访问一个缓存，就会找到这个LRUHandler，调用Ref，将计数加1，并且当此时缓存在lru_里，就移动到in_use里</li>
+<li>当客户端使用完一个缓存时，调用Unref里，将计数减1，当计数为0时，调用回调函数销毁缓存，当计数为1时，移动到in_use里面</li>
+<li>这样可以自动控制缓存的销毁，当一个LRUHandler被移出缓存时，如果还有其他的引用，也不会被销毁</li>
+</ul>
+<p>查找一个缓存的流程如下：</p>
+<ul>
+<li>通过哈希表查找对应的LRUHandler</li>
+<li>如果找到了，调用Ref，返回缓存项</li>
+<li>使用完缓存项后，调用Release释放缓存</li>
+</ul>
+<p>插入缓存需要将缓存项插入到哈希表以及链表中，并且更新容量，如果缓存容量过多，需要淘汰旧缓存。插入一个缓存项的步骤如下：</p>
+<ul>
+<li>生成一个LRUHandler保存缓存的内容，计数为1</li>
+<li>再将计数加1，表示当前缓存项被当前客户端引用，插入到in_use_链表中</li>
+<li>插入时会指定插入项的大小更新usage_字段</li>
+<li>插入到哈希表中</li>
+<li>如果有相同值旧的缓存项，释放旧项</li>
+<li>判断容量是否超标，如果超标，释放最旧的缓存项，直到容量不超标为止</li>
+</ul>
+<h4 id="lruhandle">LRUHandle</h4>
+<p>我们先来看一下LRUHandle，前面也说了，每一个缓存项都保存在LRUHandler中。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">namespace</span> <span class="hljs-comment">// 位于一个匿名名称空间中</span><br>{<br>    <span class="hljs-comment">// LRU cache implementation</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// Cache entries have an "in_cache" boolean indicating whether the cache has a</span><br>    <span class="hljs-comment">// reference on the entry.  The only ways that this can become false without the</span><br>    <span class="hljs-comment">// entry being passed to its "deleter" are via Erase(), via Insert() when</span><br>    <span class="hljs-comment">// an element with a duplicate key is inserted, or on destruction of the cache.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// The cache keeps two linked lists of items in the cache.  All items in the</span><br>    <span class="hljs-comment">// cache are in one list or the other, and never both.  Items still referenced</span><br>    <span class="hljs-comment">// by clients but erased from the cache are in neither list.  The lists are:</span><br>    <span class="hljs-comment">// - in-use:  contains the items currently referenced by clients, in no</span><br>    <span class="hljs-comment">//   particular order.  (This list is used for invariant checking.  If we</span><br>    <span class="hljs-comment">//   removed the check, elements that would otherwise be on this list could be</span><br>    <span class="hljs-comment">//   left as disconnected singleton lists.)</span><br>    <span class="hljs-comment">// - LRU:  contains the items not currently referenced by clients, in LRU order</span><br>    <span class="hljs-comment">// Elements are moved between these lists by the Ref() and Unref() methods,</span><br>    <span class="hljs-comment">// when they detect an element in the cache acquiring or losing its only</span><br>    <span class="hljs-comment">// external reference.</span><br><br>    <span class="hljs-comment">// An entry is a variable length heap-allocated structure.  Entries</span><br>    <span class="hljs-comment">// are kept in a circular doubly linked list ordered by access time.</span><br>    <span class="hljs-comment">// 每一个缓存项都保存在一个LRUHandler里</span><br>    <span class="hljs-comment">// 即每个资源都是一个handler</span><br>    <span class="hljs-comment">// 每个handler是变长的堆分配内存</span><br>    <span class="hljs-comment">// handlers会被放置在两个双向循环链表中</span><br><br><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">LRUHandle</span><br>    {<br>        <span class="hljs-type">void</span> *value;<br>        <span class="hljs-comment">// 数据项被移出缓存时的回调函数，这是一个函数指针</span><br>        <span class="hljs-built_in">void</span> (*deleter)(<span class="hljs-type">const</span> Slice &amp;, <span class="hljs-type">void</span> *value);<br>        LRUHandle *next_hash; <span class="hljs-comment">// hashtable中下一个handler</span><br>        LRUHandle *next;      <span class="hljs-comment">// 双向链表中下一个</span><br>        LRUHandle *prev;      <span class="hljs-comment">// 双向链表中前一个</span><br>        <span class="hljs-type">size_t</span> charge;        <span class="hljs-comment">// 缓存项的大小</span><br>        <span class="hljs-type">size_t</span> key_length;<br>        <span class="hljs-type">bool</span> in_cache;    <span class="hljs-comment">// 是否位于缓存中</span><br>        <span class="hljs-type">uint32_t</span> refs;    <span class="hljs-comment">// 引用计数</span><br>        <span class="hljs-type">uint32_t</span> hash;    <span class="hljs-comment">// key()的哈希值，用于快速查找</span><br>        <span class="hljs-type">char</span> key_data[<span class="hljs-number">1</span>]; <span class="hljs-comment">// key的开始位置</span><br><br>        <span class="hljs-function">Slice <span class="hljs-title">key</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-comment">// 只有当链表为空时头指针的next才会指向本身，这是毫无意义的</span><br>            <span class="hljs-built_in">assert</span>(next != <span class="hljs-keyword">this</span>);<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">Slice</span>(key_data, key_length);<br>        }<br>    };<br><br>}<br><br></code></pre></td></tr></table></figure>
+<p>其位于一个匿名名称空间中，而且这个结构体长得比较奇怪。还记得前面提到过，每个handler同时存在于一个循环双向链表中和一个哈希表中，所以在一个结构体内存在这么多指针就是为了标识当前handler在两个表中的位置。话说这个结构体是不是没有内存对齐...</p>
+<h4 id="handletable">HandleTable</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">namespace</span> <span class="hljs-comment">// 同样是匿名名称空间</span><br>{<br>    <span class="hljs-comment">// 这里定义HandleTable，其实就是hashtable，因为这会比自带的hashtable快</span><br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">HandleTable</span><br>    {<br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-built_in">HandleTable</span>() : <span class="hljs-built_in">length_</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">elems_</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">list_</span>(<span class="hljs-literal">nullptr</span>) { <span class="hljs-built_in">Resize</span>(); }<br>        ~<span class="hljs-built_in">HandleTable</span>() { <span class="hljs-keyword">delete</span>[] list_; }<br><br>        <span class="hljs-comment">// 查找一个key并返回其handler</span><br>        <span class="hljs-function">LRUHandle *<span class="hljs-title">Lookup</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-keyword">return</span> *<span class="hljs-built_in">FindPointer</span>(key, hash);<br>        }<br><br>        <span class="hljs-comment">// 插入一个handler到hashtable中，这部分如果看不懂建议去看看hashtable原理</span><br>        <span class="hljs-comment">// insert和remove不涉及内存管理！</span><br>        <span class="hljs-function">LRUHandle *<span class="hljs-title">Insert</span><span class="hljs-params">(LRUHandle *h)</span></span><br><span class="hljs-function">        </span>{<br>            LRUHandle **ptr = <span class="hljs-built_in">FindPointer</span>(h-&gt;<span class="hljs-built_in">key</span>(), h-&gt;hash);<br>            <span class="hljs-comment">// 头插法，快</span><br>            LRUHandle *old = *ptr;<br>            h-&gt;next_hash = (old == <span class="hljs-literal">nullptr</span> ? <span class="hljs-literal">nullptr</span> : old-&gt;next_hash);<br>            *ptr = h;<br>            <span class="hljs-keyword">if</span> (old == <span class="hljs-literal">nullptr</span>)<br>            {<br>                ++elems_;<br>                <span class="hljs-keyword">if</span> (elems_ &gt; length_)<br>                {<br>                    <span class="hljs-comment">// Since each cache entry is fairly large, we aim for a small</span><br>                    <span class="hljs-comment">// average linked list length (&lt;= 1).</span><br>                    <span class="hljs-comment">// 如果元素数目比hash长度还要大，就扩容，因为这样hash冲突比较显著</span><br>                    <span class="hljs-built_in">Resize</span>();<br>                }<br>            }<br>            <span class="hljs-keyword">return</span> old;<br>        }<br><br>        <span class="hljs-comment">// 移除一个handler</span><br>        <span class="hljs-function">LRUHandle *<span class="hljs-title">Remove</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span><br><span class="hljs-function">        </span>{<br>            LRUHandle **ptr = <span class="hljs-built_in">FindPointer</span>(key, hash);<br>            LRUHandle *result = *ptr;<br>            <span class="hljs-keyword">if</span> (result != <span class="hljs-literal">nullptr</span>)<br>            {<br>                *ptr = result-&gt;next_hash;<br>                --elems_;<br>            }<br>            <span class="hljs-keyword">return</span> result;<br>        }<br><br>    <span class="hljs-keyword">private</span>:<br>        <span class="hljs-type">uint32_t</span> length_;  <span class="hljs-comment">// hash长度</span><br>        <span class="hljs-type">uint32_t</span> elems_;   <span class="hljs-comment">// 数目</span><br>        LRUHandle **list_; <span class="hljs-comment">//指向存放handler*的数组 用于hash冲突</span><br><br>        <span class="hljs-comment">// Return a pointer to slot that points to a cache entry that</span><br>        <span class="hljs-comment">// matches key/hash.  If there is no such cache entry, return a</span><br>        <span class="hljs-comment">// pointer to the trailing slot in the corresponding linked list.</span><br>        <span class="hljs-comment">// 通过hash和key来查找handler，因为hash冲突存在，必须要保留key用于验证</span><br>        <span class="hljs-comment">// 如果key不存在，则返回对应的hashtable表项中的最后一个</span><br>        <span class="hljs-comment">// 但是我感觉返回的是null，即超尾元素</span><br>        <span class="hljs-function">LRUHandle **<span class="hljs-title">FindPointer</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span><br><span class="hljs-function">        </span>{<br>            LRUHandle **ptr = &amp;list_[hash &amp; (length_ - <span class="hljs-number">1</span>)];<br>            <span class="hljs-keyword">while</span> (*ptr != <span class="hljs-literal">nullptr</span> &amp;&amp; ((*ptr)-&gt;hash != hash || key != (*ptr)-&gt;<span class="hljs-built_in">key</span>()))<br>            {<br>                ptr = &amp;(*ptr)-&gt;next_hash;<br>            }<br>            <span class="hljs-keyword">return</span> ptr;<br>        }<br><br>        <span class="hljs-comment">// 重新调整长度，为了减弱hash冲突</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Resize</span><span class="hljs-params">()</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-type">uint32_t</span> new_length = <span class="hljs-number">4</span>;<br>            <span class="hljs-keyword">while</span> (new_length &lt; elems_)<br>            {<br>                new_length *= <span class="hljs-number">2</span>; <span class="hljs-comment">// 每次扩大2倍的方式移动</span><br>            }<br>            <span class="hljs-comment">// 然后新建一个list并把原来的各个表项进行重映射</span><br>            LRUHandle **new_list = <span class="hljs-keyword">new</span> LRUHandle *[new_length];<br>            <span class="hljs-built_in">memset</span>(new_list, <span class="hljs-number">0</span>, <span class="hljs-built_in">sizeof</span>(new_list[<span class="hljs-number">0</span>]) * new_length);<br>            <span class="hljs-type">uint32_t</span> count = <span class="hljs-number">0</span>;<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; length_; i++)<br>            {<br>                LRUHandle *h = list_[i];<br>                <span class="hljs-keyword">while</span> (h != <span class="hljs-literal">nullptr</span>)<br>                {<br>                    LRUHandle *next = h-&gt;next_hash;<br>                    <span class="hljs-type">uint32_t</span> hash = h-&gt;hash;<br>                    LRUHandle **ptr = &amp;new_list[hash &amp; (new_length - <span class="hljs-number">1</span>)];<br>                    h-&gt;next_hash = *ptr;<br>                    *ptr = h;<br>                    h = next;<br>                    count++;<br>                }<br>            }<br>            <span class="hljs-built_in">assert</span>(elems_ == count);<br>            <span class="hljs-comment">// 然后删除掉原来的list</span><br>            <span class="hljs-keyword">delete</span>[] list_;<br>            list_ = new_list;<br>            length_ = new_length;<br>        }<br>    };<br>}<br><br></code></pre></td></tr></table></figure>
+<p>这个HandleTable也是位于一个匿名的名称空间中。它其实就是一个HashTable，至于为什么要再实现一个HashTable，它也在注释中说了，因为新实现的这个会更快(gcc
+-O3相比提升5%左右)。</p>
+<p>由于其本身就是一个HashTable了，所以没有什么好说的，本质上还是很简单的。可能唯一要注意的就是元素数目和hash的桶数组长度相同时的扩容操作吧，总感觉这个扩容的函数有点暴力美学了，感觉应该还可以继续优化？</p>
+<p>另外，HandleTable不涉及内存管理的操作。</p>
+<h4 id="lrucache">LRUCache</h4>
+<p>这个LRUCache呢，就可以说是一个实现的比较完整的Cache了。它内部使用了HandleTable、LRUHandle，提供了完整的增删查缓存的能力。但是需要注意的是，这个类没有继承自Cache类，所以它不能使用Cache指针来实现多态。</p>
+<p>但实际上，我们没有办法创建一个LRUCache类，因为其位于一个匿名名称空间，且没有提供外部接口来访问它，所以它本质上仍然是不完全体的Cache。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">namespace</span> <span class="hljs-comment">// 位于匿名名称空间</span><br>{<br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">LRUCache</span><br>    {<br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-comment">// 构造析构函数</span><br>        <span class="hljs-built_in">LRUCache</span>();<br>        ~<span class="hljs-built_in">LRUCache</span>();<br><br>        <span class="hljs-comment">// 设置容量大小</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetCapacity</span><span class="hljs-params">(<span class="hljs-type">size_t</span> capacity)</span> </span>{ capacity_ = capacity; }<br><br>        <span class="hljs-comment">// 插入key/hash/value，并返回其handler指针，同时为其增加deleter回调函数</span><br>        <span class="hljs-comment">// 与Cache::Insert类似，只是多了一个hash</span><br>        <span class="hljs-function">Cache::Handle *<span class="hljs-title">Insert</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash, <span class="hljs-type">void</span> *value,</span></span><br><span class="hljs-params"><span class="hljs-function">                              <span class="hljs-type">size_t</span> charge,</span></span><br><span class="hljs-params"><span class="hljs-function">                              <span class="hljs-type">void</span> (*deleter)(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value))</span></span>;<br>        <span class="hljs-comment">// 查找一个key/hash是否在缓存中，如果在就返回其handler指针</span><br>        <span class="hljs-function">Cache::Handle *<span class="hljs-title">Lookup</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span>;<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Release</span><span class="hljs-params">(Cache::Handle *handle)</span></span>;         <span class="hljs-comment">// 调用完成后释放</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Erase</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span>; <span class="hljs-comment">// 当引用归零后移除</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Prune</span><span class="hljs-params">()</span></span>;                                <span class="hljs-comment">// 移除不使用的缓存以释放空间</span><br>        <span class="hljs-function"><span class="hljs-type">size_t</span> <span class="hljs-title">TotalCharge</span><span class="hljs-params">()</span> <span class="hljs-type">const</span>                   <span class="hljs-comment">// 总的使用空间</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br>            <span class="hljs-keyword">return</span> usage_;<br>        }<br><br>    <span class="hljs-keyword">private</span>:<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRU_Remove</span><span class="hljs-params">(LRUHandle *e)</span></span>;                  <span class="hljs-comment">// 移除handler</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRU_Append</span><span class="hljs-params">(LRUHandle *list, LRUHandle *e)</span></span>; <span class="hljs-comment">// 添加handler</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Ref</span><span class="hljs-params">(LRUHandle *e)</span></span>;                         <span class="hljs-comment">// 对handler进行引用计数的俩函数</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Unref</span><span class="hljs-params">(LRUHandle *e)</span></span>;<br>        <span class="hljs-comment">// 完成了移除的收尾工作的函数</span><br>        <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">FinishErase</span><span class="hljs-params">(LRUHandle *e)</span> <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>        <span class="hljs-type">size_t</span> capacity_; <span class="hljs-comment">// 容量</span><br><br>        <span class="hljs-comment">// mutex_ protects the following state.</span><br>        <span class="hljs-keyword">mutable</span> port::Mutex mutex_;<br>        <span class="hljs-function"><span class="hljs-type">size_t</span> usage_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>; <span class="hljs-comment">// 缓存项已占用的容量</span><br><br>        <span class="hljs-comment">// Dummy head of LRU list.</span><br>        <span class="hljs-comment">// lru.prev is newest entry, lru.next is oldest entry.</span><br>        <span class="hljs-comment">// Entries have refs==1 and in_cache==true.</span><br>        <span class="hljs-function">LRUHandle lru_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>; <span class="hljs-comment">// 在LRUCache中但未被引用的缓存项链表头哑结点</span><br><br>        <span class="hljs-comment">// Dummy head of in-use list.</span><br>        <span class="hljs-comment">// Entries are in use by clients, and have refs &gt;= 2 and in_cache==true.</span><br>        <span class="hljs-function">LRUHandle in_use_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>; <span class="hljs-comment">// 正在被使用的缓存项链表链表头哑结点</span><br><br>        <span class="hljs-function">HandleTable table_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>; <span class="hljs-comment">// 用于查找缓存项的哈希表</span><br>    };<br><br>    <span class="hljs-comment">// 构造函数</span><br>    LRUCache::<span class="hljs-built_in">LRUCache</span>() : <span class="hljs-built_in">capacity_</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">usage_</span>(<span class="hljs-number">0</span>)<br>    {<br>        <span class="hljs-comment">// 构造一个空的循环双向链表</span><br>        lru_.next = &amp;lru_;<br>        lru_.prev = &amp;lru_;<br>        in_use_.next = &amp;in_use_;<br>        in_use_.prev = &amp;in_use_;<br>    }<br><br>    <span class="hljs-comment">// 析构函数</span><br>    LRUCache::~<span class="hljs-built_in">LRUCache</span>()<br>    {<br>        <span class="hljs-comment">// 先判断一下本Cache中in_use中是否没有数据了，即保证所有的项都没有被使用中</span><br>        <span class="hljs-built_in">assert</span>(in_use_.next == &amp;in_use_);<br>        <span class="hljs-keyword">for</span> (LRUHandle *e = lru_.next; e != &amp;lru_;)<br>        {<br>            LRUHandle *next = e-&gt;next;<br>            <span class="hljs-built_in">assert</span>(e-&gt;in_cache);<br>            e-&gt;in_cache = <span class="hljs-literal">false</span>;<br>            <span class="hljs-built_in">assert</span>(e-&gt;refs == <span class="hljs-number">1</span>); <span class="hljs-comment">// 只有LURCache引用了它</span><br>            <span class="hljs-built_in">Unref</span>(e);             <span class="hljs-comment">// 释放掉</span><br>            e = next;<br>        }<br>    }<br><br>    <span class="hljs-comment">// 增加引用计数</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::Ref</span><span class="hljs-params">(LRUHandle *e)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">if</span> (e-&gt;refs == <span class="hljs-number">1</span> &amp;&amp; e-&gt;in_cache)<br>        {<br>            <span class="hljs-comment">// 如果在lru_list中，就移动到in_use中</span><br>            <span class="hljs-built_in">LRU_Remove</span>(e);<br>            <span class="hljs-built_in">LRU_Append</span>(&amp;in_use_, e);<br>        }<br>        e-&gt;refs++; <span class="hljs-comment">// 增加引用计数</span><br>    }<br><br>    <span class="hljs-comment">// 减少引用计数</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::Unref</span><span class="hljs-params">(LRUHandle *e)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-built_in">assert</span>(e-&gt;refs &gt; <span class="hljs-number">0</span>);<br>        e-&gt;refs--;<br>        <span class="hljs-keyword">if</span> (e-&gt;refs == <span class="hljs-number">0</span>)<br>        {<br>            <span class="hljs-comment">// 没有东西在引用他，就直接销毁，调用其deleter</span><br>            <span class="hljs-built_in">assert</span>(!e-&gt;in_cache);<br>            (*e-&gt;deleter)(e-&gt;<span class="hljs-built_in">key</span>(), e-&gt;value);<br>            <span class="hljs-built_in">free</span>(e);<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (e-&gt;in_cache &amp;&amp; e-&gt;refs == <span class="hljs-number">1</span>)<br>        {<br>            <span class="hljs-comment">// 不在使用就移动至lru_list中</span><br>            <span class="hljs-built_in">LRU_Remove</span>(e);<br>            <span class="hljs-built_in">LRU_Append</span>(&amp;lru_, e);<br>        }<br>    }<br><br>    <span class="hljs-comment">// 移除一个handler</span><br>    <span class="hljs-comment">// 并不是销毁，主要用于在两个链表之间移动handler</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::LRU_Remove</span><span class="hljs-params">(LRUHandle *e)</span></span><br><span class="hljs-function">    </span>{<br>        e-&gt;next-&gt;prev = e-&gt;prev;<br>        e-&gt;prev-&gt;next = e-&gt;next;<br>    }<br><br>    <span class="hljs-comment">// 添加到指定的链表中，同样是移动操作</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::LRU_Append</span><span class="hljs-params">(LRUHandle *list, LRUHandle *e)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-comment">// 按照头插入法进行插入</span><br>        <span class="hljs-comment">// 保证prev是最新的，next是最旧的</span><br>        e-&gt;next = list;<br>        e-&gt;prev = list-&gt;prev;<br>        e-&gt;prev-&gt;next = e;<br>        e-&gt;next-&gt;prev = e;<br>    }<br><br>    <span class="hljs-comment">// 查找操作</span><br>    <span class="hljs-function">Cache::Handle *<span class="hljs-title">LRUCache::Lookup</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>; <span class="hljs-comment">// 锁</span><br>        LRUHandle *e = table_.<span class="hljs-built_in">Lookup</span>(key, hash);<br>        <span class="hljs-keyword">if</span> (e != <span class="hljs-literal">nullptr</span>)<br>        {<br>            <span class="hljs-built_in">Ref</span>(e); <span class="hljs-comment">// 查找到就移动至in_usr并增加引用计数</span><br>        }<br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;Cache::Handle *&gt;(e);<br>    }<br><br>    <span class="hljs-comment">// 释放操作</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::Release</span><span class="hljs-params">(Cache::Handle *handle)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>; <span class="hljs-comment">// 释放锁</span><br>        <span class="hljs-built_in">Unref</span>(<span class="hljs-built_in">reinterpret_cast</span>&lt;LRUHandle *&gt;(handle));<br>    }<br><br>    <span class="hljs-comment">// 插入操作</span><br>    <span class="hljs-function">Cache::Handle *<span class="hljs-title">LRUCache::Insert</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash, <span class="hljs-type">void</span> *value,</span></span><br><span class="hljs-params"><span class="hljs-function">                                    <span class="hljs-type">size_t</span> charge,</span></span><br><span class="hljs-params"><span class="hljs-function">                                    <span class="hljs-type">void</span> (*deleter)(<span class="hljs-type">const</span> Slice &amp;key,</span></span><br><span class="hljs-params"><span class="hljs-function">                                                    <span class="hljs-type">void</span> *value))</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-comment">// 同样需要加锁</span><br>        <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br><br>        LRUHandle *e =<br>            <span class="hljs-built_in">reinterpret_cast</span>&lt;LRUHandle *&gt;(<span class="hljs-built_in">malloc</span>(<span class="hljs-built_in">sizeof</span>(LRUHandle) - <span class="hljs-number">1</span> + key.<span class="hljs-built_in">size</span>()));<br>        e-&gt;value = value;<br>        e-&gt;deleter = deleter;<br>        e-&gt;charge = charge;<br>        e-&gt;key_length = key.<span class="hljs-built_in">size</span>();<br>        e-&gt;hash = hash;<br>        e-&gt;in_cache = <span class="hljs-literal">false</span>;<br>        e-&gt;refs = <span class="hljs-number">1</span>; <span class="hljs-comment">// for the returned handle.</span><br>        std::<span class="hljs-built_in">memcpy</span>(e-&gt;key_data, key.<span class="hljs-built_in">data</span>(), key.<span class="hljs-built_in">size</span>());<br><br>        <span class="hljs-keyword">if</span> (capacity_ &gt; <span class="hljs-number">0</span>)<br>        {<br>            e-&gt;refs++; <span class="hljs-comment">// for the cache's reference.</span><br>            e-&gt;in_cache = <span class="hljs-literal">true</span>;<br>            <span class="hljs-built_in">LRU_Append</span>(&amp;in_use_, e);<br>            usage_ += charge;<br>            <span class="hljs-built_in">FinishErase</span>(table_.<span class="hljs-built_in">Insert</span>(e));<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 没有容量就表示不缓存，所以自然也不会位于缓存表中</span><br>            e-&gt;next = <span class="hljs-literal">nullptr</span>;<br>        }<br>        <span class="hljs-comment">// 如果超过使用空间就进行释放</span><br>        <span class="hljs-keyword">while</span> (usage_ &gt; capacity_ &amp;&amp; lru_.next != &amp;lru_)<br>        {<br>            LRUHandle *old = lru_.next;<br>            <span class="hljs-built_in">assert</span>(old-&gt;refs == <span class="hljs-number">1</span>);<br>            <span class="hljs-type">bool</span> erased = <span class="hljs-built_in">FinishErase</span>(table_.<span class="hljs-built_in">Remove</span>(old-&gt;<span class="hljs-built_in">key</span>(), old-&gt;hash));<br>            <span class="hljs-keyword">if</span> (!erased)<br>            { <span class="hljs-comment">// to avoid unused variable when compiled NDEBUG</span><br>                <span class="hljs-built_in">assert</span>(erased);<br>            }<br>        }<br><br>        <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;Cache::Handle *&gt;(e);<br>    }<br><br>    <span class="hljs-comment">// 完成了移除的收尾工作的函数</span><br>    <span class="hljs-comment">// 从lru中移除，并保证其引用计数归零</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">LRUCache::FinishErase</span><span class="hljs-params">(LRUHandle *e)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">if</span> (e != <span class="hljs-literal">nullptr</span>)<br>        {<br>            <span class="hljs-built_in">assert</span>(e-&gt;in_cache);<br>            <span class="hljs-built_in">LRU_Remove</span>(e);<br>            e-&gt;in_cache = <span class="hljs-literal">false</span>;<br>            usage_ -= e-&gt;charge;<br>            <span class="hljs-built_in">Unref</span>(e);<br>        }<br>        <span class="hljs-keyword">return</span> e != <span class="hljs-literal">nullptr</span>;<br>    }<br><br>    <span class="hljs-comment">// 其实就是加锁然后从hashtable中移除，并调用FinishErase彻底移除</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::Erase</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">uint32_t</span> hash)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br>        <span class="hljs-built_in">FinishErase</span>(table_.<span class="hljs-built_in">Remove</span>(key, hash));<br>    }<br><br>    <span class="hljs-comment">// 释放空间，跟Insert里面那个差不多</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">LRUCache::Prune</span><span class="hljs-params">()</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br>        <span class="hljs-keyword">while</span> (lru_.next != &amp;lru_)<br>        {<br>            LRUHandle *e = lru_.next;<br>            <span class="hljs-built_in">assert</span>(e-&gt;refs == <span class="hljs-number">1</span>);<br>            <span class="hljs-type">bool</span> erased = <span class="hljs-built_in">FinishErase</span>(table_.<span class="hljs-built_in">Remove</span>(e-&gt;<span class="hljs-built_in">key</span>(), e-&gt;hash));<br>            <span class="hljs-keyword">if</span> (!erased)<br>            { <span class="hljs-comment">// to avoid unused variable when compiled NDEBUG</span><br>                <span class="hljs-built_in">assert</span>(erased);<br>            }<br>        }<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
+<p>LRUCache类实现的已经比较完整了。需要注意的是，其使用两个双向链表存储handler，每个handler只会位于一个双向链表中。且由于双向链表始终是头插入，所以head-&gt;prev就是最新进入链表的，head-&gt;next就是最老进入链表的。当缓存空间占用超过限制时，可以从head-&gt;next开始清理空间。</p>
+<p>另外，这个类中还涉及到了很多锁的概念，因为我不是特别清楚，只是大致了解锁的作用，所以就浅浅掠过吧。</p>
+<h4 id="shardedlrucache">ShardedLRUCache</h4>
+<p>如果说LRUCache是一个相对完整的半成品Cache，那么ShardedLRUCache就是完成品了。虽然它也位于一个匿名名称空间中，但是其对外提供了创建接口。</p>
+<p>它相对于LRUCache的主要改进是：由于LRUCache使用锁导致多线程时性能下降，所以ShardedLRUCache采用一些方案来弥补锁带来的阻塞。方法是将一个大的Cache分成若干个小的Cache，然后每个线程固定访问一个Cache，这样就算有锁，也只会在每个小Cache上阻塞，大大提升了并发能力。</p>
+<img src="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/pic2.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>这个ShardedLRUCache继承自Cache，所以有Cache的全部接口。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">namespace</span> <span class="hljs-comment">// 匿名空间</span><br>{<br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">ShardedLRUCache</span> : <span class="hljs-keyword">public</span> Cache<br>    {<br>    <span class="hljs-keyword">private</span>:<br>        LRUCache shard_[kNumShards];<br>        port::Mutex id_mutex_;<br>        <span class="hljs-type">uint64_t</span> last_id_;<br><br>        <span class="hljs-comment">// 计算hash值的函数</span><br>        <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-keyword">inline</span> <span class="hljs-type">uint32_t</span> <span class="hljs-title">HashSlice</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;s)</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">Hash</span>(s.<span class="hljs-built_in">data</span>(), s.<span class="hljs-built_in">size</span>(), <span class="hljs-number">0</span>);<br>        }<br><br>        <span class="hljs-comment">// 截取分片</span><br>        <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">uint32_t</span> <span class="hljs-title">Shard</span><span class="hljs-params">(<span class="hljs-type">uint32_t</span> hash)</span> </span>{ <span class="hljs-keyword">return</span> hash &gt;&gt; (<span class="hljs-number">32</span> - kNumShardBits); }<br><br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-comment">// 构造函数，为每个Cache设置大小</span><br>        <span class="hljs-function"><span class="hljs-keyword">explicit</span> <span class="hljs-title">ShardedLRUCache</span><span class="hljs-params">(<span class="hljs-type">size_t</span> capacity)</span> : last_id_(<span class="hljs-number">0</span>)</span><br><span class="hljs-function">        {</span><br>            <span class="hljs-type">const</span> <span class="hljs-type">size_t</span> per_shard = (capacity + (kNumShards - <span class="hljs-number">1</span>)) / kNumShards;<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> s = <span class="hljs-number">0</span>; s &lt; kNumShards; s++)<br>            {<br>                shard_[s].<span class="hljs-built_in">SetCapacity</span>(per_shard);<br>            }<br>        }<br>        <span class="hljs-comment">// 析构函数，为空</span><br>        ~<span class="hljs-built_in">ShardedLRUCache</span>() <span class="hljs-keyword">override</span> {}<br>        <span class="hljs-comment">// 插入一个key到缓存中</span><br>        <span class="hljs-function">Handle *<span class="hljs-title">Insert</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value, <span class="hljs-type">size_t</span> charge,</span></span><br><span class="hljs-params"><span class="hljs-function">                       <span class="hljs-type">void</span> (*deleter)(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value))</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-type">const</span> <span class="hljs-type">uint32_t</span> hash = <span class="hljs-built_in">HashSlice</span>(key);<br>            <span class="hljs-keyword">return</span> shard_[<span class="hljs-built_in">Shard</span>(hash)].<span class="hljs-built_in">Insert</span>(key, hash, value, charge, deleter);<br>        }<br>        <span class="hljs-comment">// 查找一个缓存</span><br>        <span class="hljs-function">Handle *<span class="hljs-title">Lookup</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-type">const</span> <span class="hljs-type">uint32_t</span> hash = <span class="hljs-built_in">HashSlice</span>(key);<br>            <span class="hljs-keyword">return</span> shard_[<span class="hljs-built_in">Shard</span>(hash)].<span class="hljs-built_in">Lookup</span>(key, hash);<br>        }<br>        <span class="hljs-comment">// 释放handler</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Release</span><span class="hljs-params">(Handle *handle)</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            LRUHandle *h = <span class="hljs-built_in">reinterpret_cast</span>&lt;LRUHandle *&gt;(handle);<br>            shard_[<span class="hljs-built_in">Shard</span>(h-&gt;hash)].<span class="hljs-built_in">Release</span>(handle);<br>        }<br>        <span class="hljs-comment">// 移除</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Erase</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-type">const</span> <span class="hljs-type">uint32_t</span> hash = <span class="hljs-built_in">HashSlice</span>(key);<br>            shard_[<span class="hljs-built_in">Shard</span>(hash)].<span class="hljs-built_in">Erase</span>(key, hash);<br>        }<br>        <span class="hljs-comment">// 返回值</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> *<span class="hljs-title">Value</span><span class="hljs-params">(Handle *handle)</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">reinterpret_cast</span>&lt;LRUHandle *&gt;(handle)-&gt;value;<br>        }<br>        <span class="hljs-comment">// 创建一个id</span><br>        <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">NewId</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;id_mutex_)</span></span>;<br>            <span class="hljs-keyword">return</span> ++(last_id_);<br>        }<br>        <span class="hljs-comment">// 清理空间</span><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Prune</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> s = <span class="hljs-number">0</span>; s &lt; kNumShards; s++)<br>            {<br>                shard_[s].<span class="hljs-built_in">Prune</span>();<br>            }<br>        }<br>        <span class="hljs-comment">// 总占用</span><br>        <span class="hljs-function"><span class="hljs-type">size_t</span> <span class="hljs-title">TotalCharge</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-type">size_t</span> total = <span class="hljs-number">0</span>;<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> s = <span class="hljs-number">0</span>; s &lt; kNumShards; s++)<br>            {<br>                total += shard_[s].<span class="hljs-built_in">TotalCharge</span>();<br>            }<br>            <span class="hljs-keyword">return</span> total;<br>        }<br>    };<br><br>} <span class="hljs-comment">// end anonymous namespace</span><br><br><span class="hljs-comment">// 外部接口</span><br><span class="hljs-function">Cache *<span class="hljs-title">NewLRUCache</span><span class="hljs-params">(<span class="hljs-type">size_t</span> capacity)</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">ShardedLRUCache</span>(capacity); }<br><br></code></pre></td></tr></table></figure>
+<p>这个类主要就是使用LRUCache，由于LRUCache中实现已经很完善了，所以这个类就相对简单一些，主要特性就是上面描述的那些。</p>
+<h2 id="缓存的使用">缓存的使用</h2>
+<h3 id="tablecache">TableCache</h3>
+<p>LevelDB里SSTable在内存中是以Table结构存在的，要使用一个SSTable，必须先进行Open操作，会将Index
+Block和Filter Data都读取到内存里，保存在Table里，但是Data
+Block依然保存在磁盘上。在缓存的时候也只会缓存索引，和指向数据的迭代器，在TableCache中不会缓存数据本身。</p>
+<ul>
+<li>每个Table结构都要占据一定的内存，被打开的Table放在一个缓存中，缓存一定数量的Table，当数量太多时，有一些Table需要被驱逐出内存，这样当需要再次访问这些Table时需要再次被打开</li>
+<li>每个Table的Data
+Block可以被缓存，这样再次访问相同的数据时，不需要读磁盘</li>
+</ul>
+<p>我们只关注一下TableCache类的关键的几个函数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">TableAndFile</span><br>{<br>    RandomAccessFile *file;<br>    Table *table;<br>};<br><br><span class="hljs-comment">// 删除一个handler时的回调函数</span><br><span class="hljs-comment">// 用于管理内存的</span><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">DeleteEntry</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    TableAndFile *tf = <span class="hljs-built_in">reinterpret_cast</span>&lt;TableAndFile *&gt;(value);<br>    <span class="hljs-keyword">delete</span> tf-&gt;table;<br>    <span class="hljs-keyword">delete</span> tf-&gt;file;<br>    <span class="hljs-keyword">delete</span> tf;<br>}<br><br><span class="hljs-comment">// 从TableCache中查找Table缓存的函数</span><br><span class="hljs-function">Status <span class="hljs-title">TableCache::FindTable</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> file_number, <span class="hljs-type">uint64_t</span> file_size,</span></span><br><span class="hljs-params"><span class="hljs-function">                             Cache::Handle **handle)</span></span><br><span class="hljs-function"></span>{<br>    Status s;<br>    <span class="hljs-type">char</span> buf[<span class="hljs-built_in">sizeof</span>(file_number)];<br>    <span class="hljs-built_in">EncodeFixed64</span>(buf, file_number);<br>    <span class="hljs-function">Slice <span class="hljs-title">key</span><span class="hljs-params">(buf, <span class="hljs-keyword">sizeof</span>(buf))</span></span>; <span class="hljs-comment">// 查找时的key为filenumber的编码</span><br>    *handle = cache_-&gt;<span class="hljs-built_in">Lookup</span>(key);<br>    <span class="hljs-keyword">if</span> (*handle == <span class="hljs-literal">nullptr</span>)<br>    {<br>        std::string fname = <span class="hljs-built_in">TableFileName</span>(dbname_, file_number);<br>        RandomAccessFile *file = <span class="hljs-literal">nullptr</span>;<br>        Table *table = <span class="hljs-literal">nullptr</span>;<br>        s = env_-&gt;<span class="hljs-built_in">NewRandomAccessFile</span>(fname, &amp;file);<br>        <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>        {<br>            std::string old_fname = <span class="hljs-built_in">SSTTableFileName</span>(dbname_, file_number);<br>            <span class="hljs-keyword">if</span> (env_-&gt;<span class="hljs-built_in">NewRandomAccessFile</span>(old_fname, &amp;file).<span class="hljs-built_in">ok</span>())<br>            {<br>                s = Status::<span class="hljs-built_in">OK</span>();<br>            }<br>        }<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            s = Table::<span class="hljs-built_in">Open</span>(options_, file, file_size, &amp;table);<br>        }<br><br>        <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>        {<br>            <span class="hljs-built_in">assert</span>(table == <span class="hljs-literal">nullptr</span>);<br>            <span class="hljs-keyword">delete</span> file;<br>            <span class="hljs-comment">// We do not cache error results so that if the error is transient,</span><br>            <span class="hljs-comment">// or somebody repairs the file, we recover automatically.</span><br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            TableAndFile *tf = <span class="hljs-keyword">new</span> TableAndFile;<br>            tf-&gt;file = file;<br>            tf-&gt;table = table;<br>            *handle = cache_-&gt;<span class="hljs-built_in">Insert</span>(key, tf, <span class="hljs-number">1</span>, &amp;DeleteEntry);<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>这个函数的作用是查找一个Table，我们注意到，查找的时候使用的是Table的file_number。即Table就是用这个file_number作为键来缓存的。用一个结构体缓存了Table类和一个文件读取迭代器，并把这个结构体插入到TableCache类中的hardedLRUCache对象中。</p>
+<h3 id="blockcache">BlockCache</h3>
+<p>之前也提到过，TableCache是不会缓存具体的数据而是缓存索引，而BlcokCache的存在就是为了缓存数据，即缓存DataBlock。</p>
+<p>每个Table打开的时候，都会指定一个cache_id，这是一个单调递增的整数，每个Table都有一个唯一的cache_id。在每一个SSTable里面，每一个Data
+Block都有一个固定的文件偏移offset。所以每一个Data
+Block都可以由cache_id和offset来唯一标识，也就是根据这两个值生成一个键，来插入和查找缓存。</p>
+<p>BlockCache被Table调用，当读取block时会优先从缓存中读取，如果缓存中没有就需要从文件中读取，然后将其放到缓存上。其中BlockCache的缓存的key是由cache_id和block的offset共同组成。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 删除BlcokCache的回调函数</span><br><span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">DeleteCachedBlock</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">void</span> *value)</span></span><br><span class="hljs-function"></span>{<br>    Block *block = <span class="hljs-built_in">reinterpret_cast</span>&lt;Block *&gt;(value);<br>    <span class="hljs-keyword">delete</span> block;<br>}<br><br><span class="hljs-comment">// Convert an index iterator value (i.e., an encoded BlockHandle)</span><br><span class="hljs-comment">// into an iterator over the contents of the corresponding block.</span><br><span class="hljs-function">Iterator *<span class="hljs-title">Table::BlockReader</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg, <span class="hljs-type">const</span> ReadOptions &amp;options,</span></span><br><span class="hljs-params"><span class="hljs-function">                             <span class="hljs-type">const</span> Slice &amp;index_value)</span></span><br><span class="hljs-function"></span>{<br>    Table *table = <span class="hljs-built_in">reinterpret_cast</span>&lt;Table *&gt;(arg);<br>    Cache *block_cache = table-&gt;rep_-&gt;options.block_cache;<br>    Block *block = <span class="hljs-literal">nullptr</span>;<br>    Cache::Handle *cache_handle = <span class="hljs-literal">nullptr</span>;<br><br>    BlockHandle handle;<br>    Slice input = index_value;<br>    Status s = handle.<span class="hljs-built_in">DecodeFrom</span>(&amp;input);<br>    <span class="hljs-comment">// We intentionally allow extra stuff in index_value so that we</span><br>    <span class="hljs-comment">// can add more features in the future.</span><br><br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        BlockContents contents;<br>        <span class="hljs-comment">// BlockCache在这里</span><br>        <span class="hljs-comment">// 根据block handle，首先尝试从blockcache中直接取出block，不在blockcache中则</span><br>        <span class="hljs-comment">// 调用ReadBlock从文件读取，读取成功后，根据option尝试将block加入到blockcache中。</span><br>        <span class="hljs-comment">// 并在Insert的时候注册了释放函数DeleteCachedBlock。</span><br>        <span class="hljs-keyword">if</span> (block_cache != <span class="hljs-literal">nullptr</span>)<br>        {<br>            <span class="hljs-type">char</span> cache_key_buffer[<span class="hljs-number">16</span>];<br>            <span class="hljs-built_in">EncodeFixed64</span>(cache_key_buffer, table-&gt;rep_-&gt;cache_id);<br>            <span class="hljs-built_in">EncodeFixed64</span>(cache_key_buffer + <span class="hljs-number">8</span>, handle.<span class="hljs-built_in">offset</span>());<br>            <span class="hljs-function">Slice <span class="hljs-title">key</span><span class="hljs-params">(cache_key_buffer, <span class="hljs-keyword">sizeof</span>(cache_key_buffer))</span></span>;<br>            <span class="hljs-comment">// 先查一下缓存，key是由cache_id和handler的偏移值共同组成</span><br>            cache_handle = block_cache-&gt;<span class="hljs-built_in">Lookup</span>(key);<br>            <span class="hljs-keyword">if</span> (cache_handle != <span class="hljs-literal">nullptr</span>)<br>            {<br>                <span class="hljs-comment">// 查找到就优先从缓存中返回</span><br>                block = <span class="hljs-built_in">reinterpret_cast</span>&lt;Block *&gt;(block_cache-&gt;<span class="hljs-built_in">Value</span>(cache_handle));<br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-comment">// 否则就添加到缓存</span><br>                s = <span class="hljs-built_in">ReadBlock</span>(table-&gt;rep_-&gt;file, options, handle, &amp;contents);<br>                <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>                {<br>                    block = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Block</span>(contents);<br>                    <span class="hljs-keyword">if</span> (contents.cachable &amp;&amp; options.fill_cache)<br>                    {<br>                        cache_handle = block_cache-&gt;<span class="hljs-built_in">Insert</span>(key, block, block-&gt;<span class="hljs-built_in">size</span>(),<br>                                                           &amp;DeleteCachedBlock);<br>                    }<br>                }<br>            }<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            s = <span class="hljs-built_in">ReadBlock</span>(table-&gt;rep_-&gt;file, options, handle, &amp;contents);<br>            <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>            {<br>                block = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Block</span>(contents);<br>            }<br>        }<br>    }<br><br>    <span class="hljs-comment">// 返回block的迭代器</span><br>    Iterator *iter;<br>    <span class="hljs-keyword">if</span> (block != <span class="hljs-literal">nullptr</span>)<br>    {<br>        iter = block-&gt;<span class="hljs-built_in">NewIterator</span>(table-&gt;rep_-&gt;options.comparator);<br>        <span class="hljs-keyword">if</span> (cache_handle == <span class="hljs-literal">nullptr</span>)<br>        {<br>            iter-&gt;<span class="hljs-built_in">RegisterCleanup</span>(&amp;DeleteBlock, block, <span class="hljs-literal">nullptr</span>);<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            iter-&gt;<span class="hljs-built_in">RegisterCleanup</span>(&amp;ReleaseBlock, block_cache, cache_handle);<br>        }<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        iter = <span class="hljs-built_in">NewErrorIterator</span>(s);<br>    }<br>    <span class="hljs-keyword">return</span> iter;<br>}<br><br></code></pre></td></tr></table></figure>
+<h3 id="缓存使用上的总结">缓存使用上的总结</h3>
+<p>levelDB默认提供了一个完整的可用缓存为ShardedLRUCache，后续所有的缓存使用都是基于此类来实现的。这个类继承自Cache类，拥有所有的接口。</p>
+<p>TableCache类缓存索引项，是Table类的一个友元。而Table类用于读取一个被持久到文件的sstable，所以Table类存在xxxblock和footer等。Table在不缓存的条件下必须经过磁盘来读取DataBlock</p>
+<p>BlockCache实际上是Table内部的组成，用于缓存DataBlock。</p>
+<p>查找某个Table中的某一条数据的流程如下：</p>
+<ul>
+<li>将Table的file_number作为键，通过TableCache类来查找这个Table。如果存在就返回，否则就需要调用Table::Open()函数来从文件中读取它，并放入缓存。</li>
+<li>拿到Table后，先通过其索引来确定这条数据位于哪个Block。使用cache_id和offset来构造键，通过全局的一个BlockCache(定义在options中)，来查找这个Block，如果找到就返回，否则就从文件打开并添加到缓存中。</li>
+</ul>
+<div class="note note-info">
+            <p>TableCache被定义成了Table的友元类是因为索引项比较多，且索引都存储在Table中。</p><p>BlockCache甚至都不存在这样一个类，是因为Block比较简单，本质上就是一个数组，能够直接用于Cache。</p><p>另外一方面的原因就是，xxx类的缓存会包含很多个xxx类。Table与Block刚好构成这样一个关系。</p>
+          </div>
+<h2 id="总结">总结</h2>
+<ul>
+<li>使用匿名名称空间来隐藏类</li>
+<li>使用override来显示指示出函数需要重写</li>
+<li>使用回调函数来管理内存</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/10/19/%E5%8F%8C%E7%9B%AE%E6%91%84%E5%83%8F%E5%A4%B4%E6%A0%87%E5%AE%9A%E3%80%81%E8%A7%86%E5%B7%AE%E5%9B%BE%E4%B8%8E%E6%B5%8B%E8%B7%9D/" title="双目摄像头标定、视差图与测距的实现--玩具级别">
+                        <span class="hidden-mobile">双目摄像头标定、视差图与测距的实现--玩具级别</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
