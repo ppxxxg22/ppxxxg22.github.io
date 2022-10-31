@@ -1,0 +1,1001 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="数据库功能部分">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(14)--数据库功能部分">
+<meta property="og:url" content="http://example.com/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="数据库功能部分">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb14.jpg">
+<meta property="article:published_time" content="2022-10-24T01:53:08.000Z">
+<meta property="article:modified_time" content="2022-10-31T06:54:53.255Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb14.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(14)--数据库功能部分 - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                Links
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/leveldb14.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析(14)--数据库功能部分"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-24 09:53" pubdate>
+          October 24, 2022 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          47k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          197 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析(14)--数据库功能部分</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="数据库功能部分">数据库功能部分</h2>
+<span id="more"></span>
+<p>前面已经对levelDB中的各个组件进行了详细的源码剖析，下面我们就开始把这些左键全部串起来，在数据库的层面对其进行理解。</p>
+<p>我们人为将LevelDB分为了数据库层和存储引擎层，在前面部分介绍了存储引擎相关的组件，包括：</p>
+<ul>
+<li>SSTable存储结构实现，提供了在一个磁盘文件里读取一个键的功能，并且可以迭代一个SSTable的所有键</li>
+<li>MemTable内存结构的实现，提供了读取一个键和写入一个键的功能，迭代MemTable里所有的键，以及可以将一个MemTable转换为一个SSTable</li>
+<li>Log将写入持久化到磁盘上面，将随机写入转换为顺序写入</li>
+<li>迭代器对各种存储组件迭代，以及定位某一个键</li>
+</ul>
+<p>利用这些组件提供的功能，就可以实现数据库层。可以将数据库层的功能分为两个部分：</p>
+<ul>
+<li>Get、Put和Delete接口实现，这里是LevelDB对外提供的操作接口，分别实现键值对的查找、插入和删除</li>
+<li>版本管理和Compaction，随着数据的写入，不断的有MemTable转换为SSTable，当有些键不断的更新删除，有些Level的文件太多时，影响了读性能，需要进行Compaction，将低Level的SSTable
+Compaction到高Level的SSTable里去，提高读的效率。而Compaction是通过版本来管理的，当一次Compaction完成时，就会生成一个新版本</li>
+</ul>
+<p>本文主要针对数据库的接口部分进行阐述。</p>
+<h2 id="接口管理">接口管理</h2>
+<div class="note note-primary">
+            <p>源码位置与说明</p><p>include/leveldb/db.h db/db_impl.h db/db_impl.cc:实现了GET/PUT/DELETE<br>db/version_set.h db/version_set.cc:实现从一个version的SSTable里读取一个键<br>db/memtable.h db/memtable.cc: 实现从MemTable读取一个键<br>inlclude/leveldb/table.h db/table_cache.h db/table_cache.cc db/table.cc:定义从一个SSTable读取一个键<br>include/leveldb/write_batch.h db/write_batch.cc：writebatch相关函数<br>db/write_batch_internal.h ： WriteBatchInternal类</p>
+          </div>
+<p>我们先来看一下数据库的接口部分，很明显，作为一个库，增删查是必不可少的，这也是数据库的核心功能。</p>
+<h3 id="db接口和接口相关的类">DB接口和接口相关的类</h3>
+<h4 id="db类">DB类</h4>
+<p>首先先来看一下DB类的头文件，这个DB类也是一个纯虚基类，是负责定义数据库的接口的。一个DB类(及其派生类)就可以看成是永久有序的kv存储的数据库，且其需要保证线程安全。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// A DB is a persistent ordered map from keys to values.</span><br><span class="hljs-comment">// A DB is safe for concurrent access from multiple threads without</span><br><span class="hljs-comment">// any external synchronization.</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> DB<br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 打开一个数据库，把其保存在一个堆分配的指针上，并返回状态</span><br>    <span class="hljs-comment">// 这个指针需要用户手动管理</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">Open</span><span class="hljs-params">(<span class="hljs-type">const</span> Options &amp;options, <span class="hljs-type">const</span> std::string &amp;name,</span></span><br><span class="hljs-params"><span class="hljs-function">                       DB **dbptr)</span></span>;<br><br>    <span class="hljs-comment">// 构造析构函数等</span><br>    <span class="hljs-built_in">DB</span>() = <span class="hljs-keyword">default</span>;<br>    <span class="hljs-built_in">DB</span>(<span class="hljs-type">const</span> DB &amp;) = <span class="hljs-keyword">delete</span>;<br>    DB &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> DB &amp;) = <span class="hljs-keyword">delete</span>;<br>    <span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">DB</span>();<br><br>    <span class="hljs-comment">// 插入一条数据，这个options中会定义是否同步(即每次都是否写入磁盘)</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Status <span class="hljs-title">Put</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;options, <span class="hljs-type">const</span> Slice &amp;key,</span></span><br><span class="hljs-params"><span class="hljs-function">                       <span class="hljs-type">const</span> Slice &amp;value)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 删除一条数据，如果key不存在不会报错</span><br>    <span class="hljs-comment">// 因为删除其实也是'插入'</span><br>    <span class="hljs-comment">// 同样可以定义是否同步到磁盘中</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Status <span class="hljs-title">Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;options, <span class="hljs-type">const</span> Slice &amp;key)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 真正的写入函数，会被插入删除调用</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Status <span class="hljs-title">Write</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;options, WriteBatch *updates)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 从数据库中获取一个key</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Status <span class="hljs-title">Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">const</span> Slice &amp;key,</span></span><br><span class="hljs-params"><span class="hljs-function">                       std::string *value)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 返回一个堆分配的迭代器，用于迭代整个数据库</span><br>    <span class="hljs-comment">// 同样需要用户手动管理内存</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> Iterator *<span class="hljs-title">NewIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 返回当前数据库状态的句柄</span><br>    <span class="hljs-comment">// 使用此句柄创建的迭代器都将观察当前数据库状态的稳定快照</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">const</span> Snapshot *<span class="hljs-title">GetSnapshot</span><span class="hljs-params">()</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 释放快照</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">ReleaseSnapshot</span><span class="hljs-params">(<span class="hljs-type">const</span> Snapshot *snapshot)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// DB implementations can export properties about their state</span><br>    <span class="hljs-comment">// via this method.  If "property" is a valid property understood by this</span><br>    <span class="hljs-comment">// DB implementation, fills "*value" with its current value and returns</span><br>    <span class="hljs-comment">// true.  Otherwise returns false.</span><br>    <span class="hljs-comment">// 通过这个函数，数据库能向外传递他们自身的状态信息</span><br>    <span class="hljs-comment">// 前提是给定的属性(propertiy)是合法的</span><br>    <span class="hljs-comment">// 有以下合法的property</span><br>    <span class="hljs-comment">//  "leveldb.num-files-at-level&lt;N&gt;" - return the number of files at level &lt;N&gt;,</span><br>    <span class="hljs-comment">//     where &lt;N&gt; is an ASCII representation of a level number (e.g. "0").</span><br>    <span class="hljs-comment">//  "leveldb.stats" - returns a multi-line string that describes statistics</span><br>    <span class="hljs-comment">//     about the internal operation of the DB.</span><br>    <span class="hljs-comment">//  "leveldb.sstables" - returns a multi-line string that describes all</span><br>    <span class="hljs-comment">//     of the sstables that make up the db contents.</span><br>    <span class="hljs-comment">//  "leveldb.approximate-memory-usage" - returns the approximate number of</span><br>    <span class="hljs-comment">//     bytes of memory in use by the DB.</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">bool</span> <span class="hljs-title">GetProperty</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;property, std::string *value)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// 获取大小估计，其中range是key的范围</span><br>    <span class="hljs-comment">// 即获取某个范围内的key-value占用系统的空间</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">GetApproximateSizes</span><span class="hljs-params">(<span class="hljs-type">const</span> Range *range, <span class="hljs-type">int</span> n,</span></span><br><span class="hljs-params"><span class="hljs-function">                                     <span class="hljs-type">uint64_t</span> *sizes)</span> </span>= <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">// Compact the underlying storage for the key range [*begin,*end].</span><br>    <span class="hljs-comment">// In particular, deleted and overwritten versions are discarded,</span><br>    <span class="hljs-comment">// and the data is rearranged to reduce the cost of operations</span><br>    <span class="hljs-comment">// needed to access the data.  This operation should typically only</span><br>    <span class="hljs-comment">// be invoked by users who understand the underlying implementation.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// begin==nullptr is treated as a key before all keys in the database.</span><br>    <span class="hljs-comment">// end==nullptr is treated as a key after all keys in the database.</span><br>    <span class="hljs-comment">// Therefore the following call will compact the entire database:</span><br>    <span class="hljs-comment">//    db-&gt;CompactRange(nullptr, nullptr);</span><br>    <span class="hljs-comment">// 将某个范围内的数据压缩，如果不是很清楚底层是怎么实现的，就不要管它</span><br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">CompactRange</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice *begin, <span class="hljs-type">const</span> Slice *end)</span> </span>= <span class="hljs-number">0</span>;<br>};<br><br><span class="hljs-comment">// Destroy the contents of the specified database.</span><br><span class="hljs-comment">// Be very careful using this method.</span><br><span class="hljs-comment">//</span><br><span class="hljs-comment">// Note: For backwards compatibility, if DestroyDB is unable to list the</span><br><span class="hljs-comment">// database files, Status::OK() will still be returned masking this failure.</span><br><span class="hljs-comment">// 删除一个db</span><br><span class="hljs-function">LEVELDB_EXPORT Status <span class="hljs-title">DestroyDB</span><span class="hljs-params">(<span class="hljs-type">const</span> std::string &amp;name,</span></span><br><span class="hljs-params"><span class="hljs-function">                                <span class="hljs-type">const</span> Options &amp;options)</span></span>;<br><br><span class="hljs-comment">// If a DB cannot be opened, you may attempt to call this method to</span><br><span class="hljs-comment">// resurrect as much of the contents of the database as possible.</span><br><span class="hljs-comment">// Some data may be lost, so be careful when calling this function</span><br><span class="hljs-comment">// on a database that contains important information.</span><br><span class="hljs-comment">// 尝试修复一个db，有些数据可能会丢失</span><br><span class="hljs-function">LEVELDB_EXPORT Status <span class="hljs-title">RepairDB</span><span class="hljs-params">(<span class="hljs-type">const</span> std::string &amp;dbname,</span></span><br><span class="hljs-params"><span class="hljs-function">                               <span class="hljs-type">const</span> Options &amp;options)</span></span>;<br><br></code></pre></td></tr></table></figure>
+<p>我们可以看，DB基类除了提供了基本的数据接口外，还提供了一些跟底层结构相关的接口。在DB类中，插入和删除其实都是"插入"，需要通过插入数据的标志来区分。此外，我们还能创建快照，即将数据库"锁定"在某个时刻，当然不是真正的锁定，锁定之后所有的操作均不会对查询产生影响，(这个也是比较好理解的，因为levelDB中没有删除的概念，所以只需要过滤掉所有在快照之后的操作即可)</p>
+<p>实际上，DB这个类中，有几个函数是有定义的。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">DB::Put</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;opt, <span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">const</span> Slice &amp;value)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatch batch;<br>    batch.<span class="hljs-built_in">Put</span>(key, value);<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">Write</span>(opt, &amp;batch);<br>}<br><br><span class="hljs-function">Status <span class="hljs-title">DB::Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;opt, <span class="hljs-type">const</span> Slice &amp;key)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatch batch;<br>    batch.<span class="hljs-built_in">Delete</span>(key);<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">Write</span>(opt, &amp;batch);<br>}<br><br>DB::~<span class="hljs-built_in">DB</span>() = <span class="hljs-keyword">default</span>;<br><br><span class="hljs-function">Status <span class="hljs-title">DB::Open</span><span class="hljs-params">(<span class="hljs-type">const</span> Options &amp;options, <span class="hljs-type">const</span> std::string &amp;dbname, DB **dbptr)</span></span><br><span class="hljs-function"></span>{<br>    *dbptr = <span class="hljs-literal">nullptr</span>;<br><br>    <span class="hljs-comment">// DBImpl是真正的数据库类，继承自DB</span><br>    DBImpl *impl = <span class="hljs-keyword">new</span> <span class="hljs-built_in">DBImpl</span>(options, dbname);<br>    <span class="hljs-comment">// 先获取锁</span><br>    impl-&gt;mutex_.<span class="hljs-built_in">Lock</span>();<br>    VersionEdit edit;<br>    <span class="hljs-comment">// Recover handles create_if_missing, error_if_exists</span><br>    <span class="hljs-type">bool</span> save_manifest = <span class="hljs-literal">false</span>;<br>    <span class="hljs-comment">// 调用DBImpl::Recover完成MANIFEST的加载和故障恢复</span><br>    Status s = impl-&gt;<span class="hljs-built_in">Recover</span>(&amp;edit, &amp;save_manifest);<br>    <span class="hljs-comment">// 创建日志和相应的MemTable</span><br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>() &amp;&amp; impl-&gt;mem_ == <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-comment">// Create new log and a corresponding memtable.</span><br>        <span class="hljs-type">uint64_t</span> new_log_number = impl-&gt;versions_-&gt;<span class="hljs-built_in">NewFileNumber</span>();<br>        WritableFile *lfile;<br>        s = options.env-&gt;<span class="hljs-built_in">NewWritableFile</span>(<span class="hljs-built_in">LogFileName</span>(dbname, new_log_number),<br>                                         &amp;lfile);<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            edit.<span class="hljs-built_in">SetLogNumber</span>(new_log_number);<br>            impl-&gt;logfile_ = lfile;<br>            impl-&gt;logfile_number_ = new_log_number;<br>            impl-&gt;log_ = <span class="hljs-keyword">new</span> log::<span class="hljs-built_in">Writer</span>(lfile);<br>            impl-&gt;mem_ = <span class="hljs-keyword">new</span> <span class="hljs-built_in">MemTable</span>(impl-&gt;internal_comparator_);<br>            impl-&gt;mem_-&gt;<span class="hljs-built_in">Ref</span>();<br>        }<br>    }<br>    <span class="hljs-comment">// 如果需要重写MANIFEST文件，那么做一个版本变更，这里面会创建一个新的MANIFEST</span><br>    <span class="hljs-comment">// 将当前的版本信息写入，然后将edit的内容写入。</span><br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>() &amp;&amp; save_manifest)<br>    {<br>        edit.<span class="hljs-built_in">SetPrevLogNumber</span>(<span class="hljs-number">0</span>); <span class="hljs-comment">// No older logs needed after recovery.</span><br>        edit.<span class="hljs-built_in">SetLogNumber</span>(impl-&gt;logfile_number_);<br>        s = impl-&gt;versions_-&gt;<span class="hljs-built_in">LogAndApply</span>(&amp;edit, &amp;impl-&gt;mutex_);<br>    }<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        impl-&gt;<span class="hljs-built_in">RemoveObsoleteFiles</span>();<br>        impl-&gt;<span class="hljs-built_in">MaybeScheduleCompaction</span>();<br>    }<br>    <span class="hljs-comment">// 解锁</span><br>    impl-&gt;mutex_.<span class="hljs-built_in">Unlock</span>();<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-built_in">assert</span>(impl-&gt;mem_ != <span class="hljs-literal">nullptr</span>);<br>        *dbptr = impl;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">delete</span> impl;<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br><span class="hljs-function">Status <span class="hljs-title">DestroyDB</span><span class="hljs-params">(<span class="hljs-type">const</span> std::string &amp;dbname, <span class="hljs-type">const</span> Options &amp;options)</span></span><br><span class="hljs-function"></span>{<br>    Env *env = options.env;<br>    std::vector&lt;std::string&gt; filenames;<br>    Status result = env-&gt;<span class="hljs-built_in">GetChildren</span>(dbname, &amp;filenames);<br>    <span class="hljs-keyword">if</span> (!result.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-comment">// Ignore error in case directory does not exist</span><br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">OK</span>();<br>    }<br><br>    FileLock *lock;<br>    <span class="hljs-type">const</span> std::string lockname = <span class="hljs-built_in">LockFileName</span>(dbname);<br>    result = env-&gt;<span class="hljs-built_in">LockFile</span>(lockname, &amp;lock);<br>    <span class="hljs-keyword">if</span> (result.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-type">uint64_t</span> number;<br>        FileType type;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; filenames.<span class="hljs-built_in">size</span>(); i++)<br>        {<br>            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">ParseFileName</span>(filenames[i], &amp;number, &amp;type) &amp;&amp;<br>                type != kDBLockFile)<br>            { <span class="hljs-comment">// Lock file will be deleted at end</span><br>                Status del = env-&gt;<span class="hljs-built_in">RemoveFile</span>(dbname + <span class="hljs-string">"/"</span> + filenames[i]);<br>                <span class="hljs-keyword">if</span> (result.<span class="hljs-built_in">ok</span>() &amp;&amp; !del.<span class="hljs-built_in">ok</span>())<br>                {<br>                    result = del;<br>                }<br>            }<br>        }<br>        env-&gt;<span class="hljs-built_in">UnlockFile</span>(lock); <span class="hljs-comment">// Ignore error since state is already gone</span><br>        env-&gt;<span class="hljs-built_in">RemoveFile</span>(lockname);<br>        env-&gt;<span class="hljs-built_in">RemoveDir</span>(dbname); <span class="hljs-comment">// Ignore error in case dir contains other files</span><br>    }<br>    <span class="hljs-keyword">return</span> result;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>我们通过这几个函数可以看到，在打开数据库时，调用DBImpl::Recover来完成主要的工作，如果调用成功，则创建MemTable和WAL相关的数据结构，重写MANIFEST文件。关于打开数据库的操作，由于涉及到了版本管理之类的东西，具体内容留到后面再讲。而插入和删除的时候都是先定义了一个WriteBatch，然后调用Write函数来把这个WriteBatch写入。</p>
+<h4 id="writebatch类头文件">WriteBatch类头文件</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> WriteBatch<br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 一个handler</span><br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">LEVELDB_EXPORT</span> Handler<br>    {<br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">Handler</span>();<br>        <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Put</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">const</span> Slice &amp;value)</span> </span>= <span class="hljs-number">0</span>;<br>        <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">void</span> <span class="hljs-title">Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span> </span>= <span class="hljs-number">0</span>;<br>    };<br><br>    <span class="hljs-comment">// 构造析构函数</span><br>    <span class="hljs-built_in">WriteBatch</span>();<br>    ~<span class="hljs-built_in">WriteBatch</span>();<br>    <span class="hljs-built_in">WriteBatch</span>(<span class="hljs-type">const</span> WriteBatch &amp;) = <span class="hljs-keyword">default</span>;<br>    WriteBatch &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> WriteBatch &amp;) = <span class="hljs-keyword">default</span>;<br><br>    <span class="hljs-comment">// 插入kv</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Put</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">const</span> Slice &amp;value)</span></span>;<br><br>    <span class="hljs-comment">// 移除kv</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span></span>;<br><br>    <span class="hljs-comment">// 清空缓存</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Clear</span><span class="hljs-params">()</span></span>;<br><br>    <span class="hljs-comment">// 估计大小</span><br>    <span class="hljs-function"><span class="hljs-type">size_t</span> <span class="hljs-title">ApproximateSize</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// Copies the operations in "source" to this batch.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// This runs in O(source size) time. However, the constant factor is better</span><br>    <span class="hljs-comment">// than calling Iterate() over the source batch with a Handler that replicates</span><br>    <span class="hljs-comment">// the operations into this batch.</span><br>    <span class="hljs-comment">// 把另一个WriteBatch添加到自身中</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Append</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch &amp;source)</span></span>;<br><br>    <span class="hljs-comment">// Support for iterating over the contents of a batch.</span><br>    <span class="hljs-comment">// 对每个元素进行解码然后执行对应的删除与插入操作</span><br>    <span class="hljs-comment">// 这个是用于批量执行时的接口</span><br>    <span class="hljs-function">Status <span class="hljs-title">Iterate</span><span class="hljs-params">(Handler *handler)</span> <span class="hljs-type">const</span></span>;<br><br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">WriteBatchInternal</span>; <span class="hljs-comment">// 友元类</span><br><br>    <span class="hljs-comment">// 所有的记录都会存储在这里</span><br>    std::string rep_; <span class="hljs-comment">// See comment in write_batch.cc for the format of rep_</span><br>};<br><br></code></pre></td></tr></table></figure>
+<p>WriteBatch只是一个辅助结构，可以将多个Kv的写入按顺序累积起来，然后一次性写入提高效率(<strong>单次删除和插入调用delete/put，但是并没有真正执行，而是存储起来；而将一批数据完成相关操作时调用Iterate</strong>)。其所有的kv都会被存储在其中的字符串中，这个字符串的格式是这样的。</p>
+<img src="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/pic1.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>开头是12字节的头部，由fixed64的序列号和fixed32的总数组成。然后下面是变长的record，每个record由类型和前缀码编码的字符串组成(即一个变长的长度在数据之前)</p>
+<p>其中sequence序列号是整个WriteBatch写入时当前的SequenceNumber，按顺序逐个赋予record，比如第一个record的SequenceNumber是sequence，第二个是sequence
++ 1，以此类推。</p>
+<p>实际上，WriteBatch类本身也有两个辅助类，分别是WriteBatchInternal和MemTableInserter。其中</p>
+<ul>
+<li>WriteBatchInternal：定义了一些静态方法，主要用于操作WriteBatch中的那个字符串，涉及到序列号和数目，因为这两个东西被编码在一个字符串中。同时其中的InsertInto函数也负责调用WriteBatch的Iterate把当前batch的更新记录插入到memtable中。</li>
+<li>MemTableInserter：这个辅助类继承自WriteBatch::Handler(内部只有put和delete方法)，负责通过WriteBatchInternal生成序列号并在操作时管理序列号，并保存memtable的指针用于插入。</li>
+</ul>
+<p>我们来看一下这两个辅助类</p>
+<h4 id="writebatchinternal和memtableinserter类">WriteBatchInternal和MemTableInserter类</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// WriteBatchInternal类只定义了静态函数</span><br><span class="hljs-comment">// 主要用于操作序列号相关</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">WriteBatchInternal</span><br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 返回count数目</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">int</span> <span class="hljs-title">Count</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch *batch)</span></span>;<br><br>    <span class="hljs-comment">// 设置count</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">SetCount</span><span class="hljs-params">(WriteBatch *batch, <span class="hljs-type">int</span> n)</span></span>;<br><br>    <span class="hljs-comment">// 返回WriteBatch中序列号</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> SequenceNumber <span class="hljs-title">Sequence</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch *batch)</span></span>;<br><br>    <span class="hljs-comment">// 设置WriteBatch的序列号</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">SetSequence</span><span class="hljs-params">(WriteBatch *batch, SequenceNumber seq)</span></span>;<br><br>    <span class="hljs-comment">// 返回编码后的字符串</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> Slice <span class="hljs-title">Contents</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch *batch)</span> </span>{ <span class="hljs-keyword">return</span> <span class="hljs-built_in">Slice</span>(batch-&gt;rep_); }<br><br>    <span class="hljs-comment">// 返回编码后字符串的大小</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">size_t</span> <span class="hljs-title">ByteSize</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch *batch)</span> </span>{ <span class="hljs-keyword">return</span> batch-&gt;rep_.<span class="hljs-built_in">size</span>(); }<br><br>    <span class="hljs-comment">// 设置字符串为指定的值</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">SetContents</span><span class="hljs-params">(WriteBatch *batch, <span class="hljs-type">const</span> Slice &amp;contents)</span></span>;<br><br>    <span class="hljs-comment">// 调用batch的Iterate，从而把所有的record插入到memtable中</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> Status <span class="hljs-title">InsertInto</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch *batch, MemTable *memtable)</span></span>;<br><br>    <span class="hljs-comment">// 把一个添加到另一个</span><br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">Append</span><span class="hljs-params">(WriteBatch *dst, <span class="hljs-type">const</span> WriteBatch *src)</span></span>;<br>};<br><br><span class="hljs-keyword">namespace</span> <span class="hljs-comment">// 又是匿名空间</span><br>{<br>    <span class="hljs-comment">// 继承自WriteBatch::Handler，重写它的put和delete方法</span><br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">MemTableInserter</span> : <span class="hljs-keyword">public</span> WriteBatch::Handler<br>    {<br>    <span class="hljs-keyword">public</span>:<br>        SequenceNumber sequence_; <span class="hljs-comment">// 管理序列号</span><br>        MemTable *mem_;           <span class="hljs-comment">// memtable指针</span><br><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Put</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">const</span> Slice &amp;value)</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            mem_-&gt;<span class="hljs-built_in">Add</span>(sequence_, kTypeValue, key, value);<br>            sequence_++;<br>        }<br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">        </span>{<br>            mem_-&gt;<span class="hljs-built_in">Add</span>(sequence_, kTypeDeletion, key, <span class="hljs-built_in">Slice</span>());<br>            sequence_++;<br>        }<br>    };<br>} <span class="hljs-comment">// namespace</span><br><br></code></pre></td></tr></table></figure>
+<p>这两个辅助类还是很简单的，WriteBatchInternal是WriteBatch和其内部的rep_这个编码字符串的桥梁(其实感觉有点怪，明明rep_已经在其内部了，还额外需要一个外部的类来管理...)，MemTableInserter是memtable与WriteBatch的桥梁</p>
+<p>理解了这两个类，我们就能愉快地看一下WriteBatch的实现了。</p>
+<h4 id="writebatch的实现">WriteBatch的实现</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// writebatch的头部，由8字节序列号和4字节的计数组成</span><br><span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">size_t</span> kHeader = <span class="hljs-number">12</span>;<br><br><span class="hljs-comment">// 一些构造析构函数</span><br>WriteBatch::<span class="hljs-built_in">WriteBatch</span>() { <span class="hljs-built_in">Clear</span>(); }<br>WriteBatch::~<span class="hljs-built_in">WriteBatch</span>() = <span class="hljs-keyword">default</span>;<br>WriteBatch::Handler::~<span class="hljs-built_in">Handler</span>() = <span class="hljs-keyword">default</span>;<br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">WriteBatch::Clear</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>{<br>    rep_.<span class="hljs-built_in">clear</span>();<br>    rep_.<span class="hljs-built_in">resize</span>(kHeader);<br>}<br><br><span class="hljs-comment">// 估计大小的函数</span><br><span class="hljs-function"><span class="hljs-type">size_t</span> <span class="hljs-title">WriteBatch::ApproximateSize</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> rep_.<span class="hljs-built_in">size</span>(); }<br><br><span class="hljs-comment">// 把编码后的条目中一个一个，并通过handler的put/delete(这个handler是MemTableInserter)</span><br><span class="hljs-comment">// 来把存储再条目中的项一个一个真正地插入到memtable中</span><br><span class="hljs-function">Status <span class="hljs-title">WriteBatch::Iterate</span><span class="hljs-params">(Handler *handler)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-function">Slice <span class="hljs-title">input</span><span class="hljs-params">(rep_)</span></span>;<br>    <span class="hljs-keyword">if</span> (input.<span class="hljs-built_in">size</span>() &lt; kHeader)<br>    {<br>        <span class="hljs-comment">// 至少都需要12字节</span><br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"malformed WriteBatch (too small)"</span>);<br>    }<br><br>    <span class="hljs-comment">// 把头部去掉</span><br>    input.<span class="hljs-built_in">remove_prefix</span>(kHeader);<br>    Slice key, value;<br>    <span class="hljs-type">int</span> found = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">while</span> (!input.<span class="hljs-built_in">empty</span>())<br>    {<br>        found++;<br>        <span class="hljs-type">char</span> tag = input[<span class="hljs-number">0</span>];<br>        input.<span class="hljs-built_in">remove_prefix</span>(<span class="hljs-number">1</span>);<br>        <span class="hljs-keyword">switch</span> (tag)<br>        {<br>        <span class="hljs-keyword">case</span> kTypeValue:<br>            <span class="hljs-comment">// put方法</span><br>            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">GetLengthPrefixedSlice</span>(&amp;input, &amp;key) &amp;&amp;<br>                <span class="hljs-built_in">GetLengthPrefixedSlice</span>(&amp;input, &amp;value))<br>            {<br>                handler-&gt;<span class="hljs-built_in">Put</span>(key, value);<br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"bad WriteBatch Put"</span>);<br>            }<br>            <span class="hljs-keyword">break</span>;<br>        <span class="hljs-keyword">case</span> kTypeDeletion:<br>            <span class="hljs-comment">// delete方法</span><br>            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">GetLengthPrefixedSlice</span>(&amp;input, &amp;key))<br>            {<br>                handler-&gt;<span class="hljs-built_in">Delete</span>(key);<br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"bad WriteBatch Delete"</span>);<br>            }<br>            <span class="hljs-keyword">break</span>;<br>        <span class="hljs-keyword">default</span>:<br>            <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"unknown WriteBatch tag"</span>);<br>        }<br>    }<br>    <span class="hljs-comment">// 插入到memtable中的条目数目是否跟记录的条目数目相同</span><br>    <span class="hljs-keyword">if</span> (found != WriteBatchInternal::<span class="hljs-built_in">Count</span>(<span class="hljs-keyword">this</span>))<br>    {<br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"WriteBatch has wrong count"</span>);<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">return</span> Status::<span class="hljs-built_in">OK</span>();<br>    }<br>}<br><br><span class="hljs-comment">// put函数，把kv编码成前缀码再插入</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">WriteBatch::Put</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">const</span> Slice &amp;value)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatchInternal::<span class="hljs-built_in">SetCount</span>(<span class="hljs-keyword">this</span>, WriteBatchInternal::<span class="hljs-built_in">Count</span>(<span class="hljs-keyword">this</span>) + <span class="hljs-number">1</span>);<br>    rep_.<span class="hljs-built_in">push_back</span>(<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">char</span>&gt;(kTypeValue));<br>    <span class="hljs-built_in">PutLengthPrefixedSlice</span>(&amp;rep_, key);<br>    <span class="hljs-built_in">PutLengthPrefixedSlice</span>(&amp;rep_, value);<br>}<br><br><span class="hljs-comment">// delete函数，类似put，只是插入的类型不一样</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">WriteBatch::Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;key)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatchInternal::<span class="hljs-built_in">SetCount</span>(<span class="hljs-keyword">this</span>, WriteBatchInternal::<span class="hljs-built_in">Count</span>(<span class="hljs-keyword">this</span>) + <span class="hljs-number">1</span>);<br>    rep_.<span class="hljs-built_in">push_back</span>(<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">char</span>&gt;(kTypeDeletion));<br>    <span class="hljs-built_in">PutLengthPrefixedSlice</span>(&amp;rep_, key);<br>}<br><br><span class="hljs-comment">// 把另一个writebatch弄到这个batch里来</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">WriteBatch::Append</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteBatch &amp;source)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatchInternal::<span class="hljs-built_in">Append</span>(<span class="hljs-keyword">this</span>, &amp;source);<br>}<br><br></code></pre></td></tr></table></figure>
+<p>WriteBatch可能比较令人困惑的点就是其中的Handler类和Iterate方法了，弄懂Iterate方法中的参数就是MemTableInserter其实就不难理解了。</p>
+<p>注意这里面涉及了很多的put、delete函数，我们来好好捋一捋。</p>
+<table>
+
+<thead>
+<tr class="header">
+<th style="text-align: center;">什么类的put/delete(或指定函数)</th>
+<th style="text-align: center;">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">DB及其派生类</td>
+<td style="text-align: center;">将一个kv插入到writebatch中，并返回writebatch</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">writebatch</td>
+<td style="text-align: center;">将一个kv编码成前缀码作为一条record插入到其条目中储存起来</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">MemTableInserter(继承自WriteBatch::Handler)</td>
+<td style="text-align: center;">把一kv插入到memtable中(同时负责管理序列号相关)</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">MemTableInserter::InsertInto</td>
+<td style="text-align: center;">把一个writebatch中所有数据插入到memtable中</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">writebatch::Iterate</td>
+<td style="text-align: center;">调用WriteBatch::Handler的put/delete来把writebatch的条目中的所有数据插入到WriteBatch中</td>
+</tr>
+</tbody>
+</table>
+<p><strong>到现在，我们弄清楚了怎么把一个WriteBatch插入到MemTable中，但是如何通过DB类构建出一个WriteBatch，以及，多线程之间是怎么插入的、如何调度管理WriteBatch，我们还没有弄清</strong></p>
+<p>其实，这些与另外一个类有密切关系，这个类也是非常重量级的一个类，代码足足有上千行，这个类就是DBImpl，继承自DB，是数据库的真正实现。</p>
+<h3 id="dbimpl类">DBImpl类</h3>
+<p>这个类继承自DB类，所以可以通过DB指针来操作DBImpl类，它实现了数据库的所有功能，我们真正使用数据库时实际上也是通过这个类来实现的。它的内容非常多，主要可以分为这几类：</p>
+<ul>
+<li>接口管理，如PUT、DELETE等等用于提供数据库接口</li>
+<li>多线程写入转换成单线程写入</li>
+<li>对多个sstable进行压缩操作</li>
+<li>从之前的旧版本中进行数据恢复</li>
+<li>测试功能，包括对数据库进行测试的函数，一般我们不管他</li>
+</ul>
+<p>其中接口部分相对比较简单，但是将用于写入的数据持久化这部分的代码涉及到多线程写入，为了效能提升，需要将多线程写入转换成单线程写入。</p>
+<p>我们来看一下其头文件</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">DBImpl</span> : <span class="hljs-keyword">public</span> DB<br>{<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 构造析构函数相关</span><br>    <span class="hljs-built_in">DBImpl</span>(<span class="hljs-type">const</span> Options &amp;options, <span class="hljs-type">const</span> std::string &amp;dbname);<br>    <span class="hljs-built_in">DBImpl</span>(<span class="hljs-type">const</span> DBImpl &amp;) = <span class="hljs-keyword">delete</span>;<br>    DBImpl &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> DBImpl &amp;) = <span class="hljs-keyword">delete</span>;<br>    ~<span class="hljs-built_in">DBImpl</span>() <span class="hljs-keyword">override</span>;<br><br>    <span class="hljs-comment">// DB类的接口</span><br>    <span class="hljs-function">Status <span class="hljs-title">Put</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;, <span class="hljs-type">const</span> Slice &amp;key,</span></span><br><span class="hljs-params"><span class="hljs-function">               <span class="hljs-type">const</span> Slice &amp;value)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;, <span class="hljs-type">const</span> Slice &amp;key)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">Write</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;options, WriteBatch *updates)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">const</span> Slice &amp;key,</span></span><br><span class="hljs-params"><span class="hljs-function">               std::string *value)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function">Iterator *<span class="hljs-title">NewIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">const</span> Snapshot *<span class="hljs-title">GetSnapshot</span><span class="hljs-params">()</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">ReleaseSnapshot</span><span class="hljs-params">(<span class="hljs-type">const</span> Snapshot *snapshot)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">GetProperty</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;property, std::string *value)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">GetApproximateSizes</span><span class="hljs-params">(<span class="hljs-type">const</span> Range *range, <span class="hljs-type">int</span> n, <span class="hljs-type">uint64_t</span> *sizes)</span> <span class="hljs-keyword">override</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">CompactRange</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice *begin, <span class="hljs-type">const</span> Slice *end)</span> <span class="hljs-keyword">override</span></span>;<br><br>    <span class="hljs-comment">// 其他的功能，用于测试，我们就不管这些了</span><br>    <span class="hljs-comment">// Compact any files in the named level that overlap [*begin,*end]</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">TEST_CompactRange</span><span class="hljs-params">(<span class="hljs-type">int</span> level, <span class="hljs-type">const</span> Slice *begin, <span class="hljs-type">const</span> Slice *end)</span></span>;<br>    <span class="hljs-comment">// Force current memtable contents to be compacted.</span><br>    <span class="hljs-function">Status <span class="hljs-title">TEST_CompactMemTable</span><span class="hljs-params">()</span></span>;<br>    <span class="hljs-comment">// Return an internal iterator over the current state of the database.</span><br>    <span class="hljs-comment">// The keys of this iterator are internal keys (see format.h).</span><br>    <span class="hljs-comment">// The returned iterator should be deleted when no longer needed.</span><br>    <span class="hljs-function">Iterator *<span class="hljs-title">TEST_NewInternalIterator</span><span class="hljs-params">()</span></span>;<br>    <span class="hljs-comment">// Return the maximum overlapping data (in bytes) at next level for any</span><br>    <span class="hljs-comment">// file at a level &gt;= 1.</span><br>    <span class="hljs-function"><span class="hljs-type">int64_t</span> <span class="hljs-title">TEST_MaxNextLevelOverlappingBytes</span><span class="hljs-params">()</span></span>;<br>    <span class="hljs-comment">// Record a sample of bytes read at the specified internal key.</span><br>    <span class="hljs-comment">// Samples are taken approximately once every config::kReadBytesPeriod</span><br>    <span class="hljs-comment">// bytes.</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">RecordReadSample</span><span class="hljs-params">(Slice key)</span></span>;<br><br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DB</span>;        <span class="hljs-comment">// 有点怪，继承自DB，但是把DB作为友元</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">CompactionState</span>; <span class="hljs-comment">// 压缩状态</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Writer</span>;          <span class="hljs-comment">// Writer结构体</span><br><br>    <span class="hljs-comment">// 提供手动压缩时的信息</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ManualCompaction</span><br>    {<br>        <span class="hljs-type">int</span> level;<br>        <span class="hljs-type">bool</span> done;<br>        <span class="hljs-type">const</span> InternalKey *begin; <span class="hljs-comment">// null means beginning of key range</span><br>        <span class="hljs-type">const</span> InternalKey *end;   <span class="hljs-comment">// null means end of key range</span><br>        InternalKey tmp_storage;  <span class="hljs-comment">// Used to keep track of compaction progress</span><br>    };<br><br>    <span class="hljs-comment">// Per level compaction stats.  stats_[level] stores the stats for</span><br>    <span class="hljs-comment">// compactions that produced data for the specified "level".</span><br>    <span class="hljs-comment">// 每一层的压缩状态，stats_[level]存储对应层的压缩信息</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">CompactionStats</span><br>    {<br>        <span class="hljs-built_in">CompactionStats</span>() : <span class="hljs-built_in">micros</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">bytes_read</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">bytes_written</span>(<span class="hljs-number">0</span>) {}<br><br>        <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Add</span><span class="hljs-params">(<span class="hljs-type">const</span> CompactionStats &amp;c)</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-keyword">this</span>-&gt;micros += c.micros;<br>            <span class="hljs-keyword">this</span>-&gt;bytes_read += c.bytes_read;<br>            <span class="hljs-keyword">this</span>-&gt;bytes_written += c.bytes_written;<br>        }<br><br>        <span class="hljs-type">int64_t</span> micros;<br>        <span class="hljs-type">int64_t</span> bytes_read;<br>        <span class="hljs-type">int64_t</span> bytes_written;<br>    };<br><br>    <span class="hljs-comment">// 创建InternalIterator，是一个Merger Iteator</span><br>    <span class="hljs-comment">// 包含mem一个迭代器、imm一个迭代器</span><br>    <span class="hljs-comment">// 同时返回了快照序列号</span><br>    <span class="hljs-comment">// 是完整的db迭代器的一部分</span><br>    <span class="hljs-comment">// 被this-&gt;NewIterator调用</span><br>    <span class="hljs-function">Iterator *<span class="hljs-title">NewInternalIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;,</span></span><br><span class="hljs-params"><span class="hljs-function">                                  SequenceNumber *latest_snapshot,</span></span><br><span class="hljs-params"><span class="hljs-function">                                  <span class="hljs-type">uint32_t</span> *seed)</span></span>;<br><br>    <span class="hljs-comment">// 创建一个新DB对象</span><br>    <span class="hljs-comment">// 由于这个方法是私有方法，也不是静态方法，它的作用是被this-&gt;Recover调用</span><br>    <span class="hljs-comment">// 调用的条件是需要恢复的数据库不存在(所以创建一个新的)</span><br>    <span class="hljs-function">Status <span class="hljs-title">NewDB</span><span class="hljs-params">()</span></span>;<br><br>    <span class="hljs-comment">// Recover the descriptor from persistent storage.  May do a significant</span><br>    <span class="hljs-comment">// amount of work to recover recently logged updates.  Any changes to</span><br>    <span class="hljs-comment">// be made to the descriptor are added to *edit.</span><br>    <span class="hljs-comment">// 恢复一个数据库，会尝试各种方式</span><br>    <span class="hljs-comment">// 实际上这个函数被DB::Open调用</span><br>    <span class="hljs-function">Status <span class="hljs-title">Recover</span><span class="hljs-params">(VersionEdit *edit, <span class="hljs-type">bool</span> *save_manifest)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 根据options中的设置来是否忽略掉一部分错误</span><br>    <span class="hljs-comment">// 即s中的错误如果在options中被忽略就把它设置为ok</span><br>    <span class="hljs-comment">// 被this-&gt;RecoverLogFile调用</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">MaybeIgnoreError</span><span class="hljs-params">(Status *s)</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// 删除不再需要的文件</span><br>    <span class="hljs-comment">// 被DB::Open调用</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">RemoveObsoleteFiles</span><span class="hljs-params">()</span> <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// Compact the in-memory write buffer to disk.  Switches to a new</span><br>    <span class="hljs-comment">// log-file/memtable and writes a new descriptor iff successful.</span><br>    <span class="hljs-comment">// Errors are recorded in bg_error_.</span><br>    <span class="hljs-comment">// 合并内存中的memtable并持久化到磁盘中，同时创建一个新的memtable</span><br>    <span class="hljs-comment">// 被this-&gt;DoCompactionWork和this-&gt;BackgroundCompaction调用</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">CompactMemTable</span><span class="hljs-params">()</span> <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 从log中恢复数据</span><br>    <span class="hljs-comment">// 被this-&gt;Recover调用</span><br>    <span class="hljs-function">Status <span class="hljs-title">RecoverLogFile</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> log_number, <span class="hljs-type">bool</span> last_log, <span class="hljs-type">bool</span> *save_manifest,</span></span><br><span class="hljs-params"><span class="hljs-function">                          VersionEdit *edit, SequenceNumber *max_sequence)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 把imm持久化到第0层</span><br>    <span class="hljs-comment">// 被this-&gt;CompactMemTable和this-&gt;RecoverLogFile调用</span><br>    <span class="hljs-function">Status <span class="hljs-title">WriteLevel0Table</span><span class="hljs-params">(MemTable *mem, VersionEdit *edit, Version *base)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 确保mem_有空间可以写入(memtable默认4mb就要被持久化了)</span><br>    <span class="hljs-comment">// 被this-&gt;Write调用，保证在写入之前有足够的空间</span><br>    <span class="hljs-function">Status <span class="hljs-title">MakeRoomForWrite</span><span class="hljs-params">(<span class="hljs-type">bool</span> force <span class="hljs-comment">/* compact even if there is room? */</span>)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br>    <span class="hljs-comment">// 这个函数目的是将多个线程写入转化成单个线程写入时用到的(后面具体讲)</span><br>    <span class="hljs-comment">// 会将多个writebatch拼接成一个writebatch</span><br>    <span class="hljs-comment">// 被this-&gt;Write调用</span><br>    <span class="hljs-function">WriteBatch *<span class="hljs-title">BuildBatchGroup</span><span class="hljs-params">(Writer **last_writer)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 唤醒所有的线程报错</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">RecordBackgroundError</span><span class="hljs-params">(<span class="hljs-type">const</span> Status &amp;s)</span></span>;<br><br>    <span class="hljs-comment">// 它会进行一些检测，在有background compaction正在进行的过程中，</span><br>    <span class="hljs-comment">// db已经关闭时以及immutable MemTable不存在，</span><br>    <span class="hljs-comment">// 没有manual触发compaction和当前不需要compaction的情况下不会触发compaction，</span><br>    <span class="hljs-comment">// 在不满足上述条件时触发compaction。</span><br>    <span class="hljs-comment">// 其中当前是否需要compaction的判断条件是compaction score是否大于1以及有没有需要被compact的SSTable</span><br>    <span class="hljs-comment">// 与compaction过程有关，读写时都会触发要不要compaction</span><br>    <span class="hljs-comment">// 这几个函数都是压缩相关的，并且都是逐级调用的。</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">MaybeScheduleCompaction</span><span class="hljs-params">()</span> <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">BGWork</span><span class="hljs-params">(<span class="hljs-type">void</span> *db)</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">BackgroundCall</span><span class="hljs-params">()</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">BackgroundCompaction</span><span class="hljs-params">()</span> <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">CleanupCompaction</span><span class="hljs-params">(CompactionState *compact)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">DoCompactionWork</span><span class="hljs-params">(CompactionState *compact)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 也是压缩相关的，涉及到打开压缩文件、完成压缩过程、应用压缩到versionEdit</span><br>    <span class="hljs-function">Status <span class="hljs-title">OpenCompactionOutputFile</span><span class="hljs-params">(CompactionState *compact)</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">FinishCompactionOutputFile</span><span class="hljs-params">(CompactionState *compact, Iterator *input)</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">InstallCompactionResults</span><span class="hljs-params">(CompactionState *compact)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 返回一个internal比较器</span><br>    <span class="hljs-function"><span class="hljs-type">const</span> Comparator *<span class="hljs-title">user_comparator</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">return</span> internal_comparator_.<span class="hljs-built_in">user_comparator</span>();<br>    }<br><br>    <span class="hljs-comment">// Constant after construction</span><br>    <span class="hljs-comment">// 私有成员</span><br><br>    <span class="hljs-comment">// 环境配置对象</span><br>    Env *<span class="hljs-type">const</span> env_;<br>    <span class="hljs-comment">// InternalKey比较器和过滤策略</span><br>    <span class="hljs-type">const</span> InternalKeyComparator internal_comparator_;<br>    <span class="hljs-type">const</span> InternalFilterPolicy internal_filter_policy_;<br>    <span class="hljs-type">const</span> Options options_; <span class="hljs-comment">// options_.comparator == &amp;internal_comparator_</span><br>    <span class="hljs-comment">// 两个标志位，从options_中初始化，用于析构时是否需要释放某些内存</span><br>    <span class="hljs-type">const</span> <span class="hljs-type">bool</span> owns_info_log_;<br>    <span class="hljs-type">const</span> <span class="hljs-type">bool</span> owns_cache_;<br>    <span class="hljs-comment">// 名字</span><br>    <span class="hljs-type">const</span> std::string dbname_;<br><br>    <span class="hljs-comment">// TableCache</span><br>    TableCache *<span class="hljs-type">const</span> table_cache_;<br><br>    <span class="hljs-comment">// 锁</span><br>    FileLock *db_lock_;<br><br>    <span class="hljs-comment">// 用mutex_保护的状态信息</span><br>    <span class="hljs-comment">// 包含memtable、immtable、log和相关的状态信息</span><br>    port::Mutex mutex_;<br>    std::atomic&lt;<span class="hljs-type">bool</span>&gt; shutting_down_;<br>    <span class="hljs-function">port::CondVar background_work_finished_signal_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br>    MemTable *mem_;<br>    <span class="hljs-function">MemTable *imm_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>; <span class="hljs-comment">// Memtable being compacted</span><br>    std::atomic&lt;<span class="hljs-type">bool</span>&gt; has_imm_;        <span class="hljs-comment">// So bg thread can detect non-null imm_</span><br>    WritableFile *logfile_;<br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> logfile_number_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br>    log::Writer *log_;<br>    <span class="hljs-function"><span class="hljs-type">uint32_t</span> seed_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>; <span class="hljs-comment">// For sampling.</span><br><br>    <span class="hljs-comment">// 写入队列，这个涉及到写入相关</span><br>    <span class="hljs-comment">// 会将多线程写入转换成单线程写入(后面细锁)</span><br>    <span class="hljs-function">std::deque&lt;Writer *&gt; writers_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br>    <span class="hljs-function">WriteBatch *tmp_batch_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 快照列表</span><br>    <span class="hljs-function">SnapshotList snapshots_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 待compact的文件列表，保护以防误删</span><br>    <span class="hljs-function">std::set&lt;<span class="hljs-type">uint64_t</span>&gt; pending_outputs_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 后台压缩是否正在被调度或者运行的一个标志位</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> background_compaction_scheduled_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 手动压缩结构体</span><br>    <span class="hljs-comment">// 这个结构体也是位于本类private中</span><br>    <span class="hljs-function">ManualCompaction *manual_compaction_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 版本集合，是一个双向链表，用于版本管理</span><br>    <span class="hljs-function">VersionSet *<span class="hljs-type">const</span> versions_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 是否后台出错</span><br>    <span class="hljs-function">Status bg_error_ <span class="hljs-title">GUARDED_BY</span><span class="hljs-params">(mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 压缩信息，这个结构体也是位于本类的private中</span><br>    <span class="hljs-comment">// 每一层的压缩状态，stats_[level]存储对应层的压缩信息</span><br>    CompactionStats stats_[config::kNumLevels] <span class="hljs-built_in">GUARDED_BY</span>(mutex_);<br>};<br><br></code></pre></td></tr></table></figure>
+<p>头文件可以说是相当的长，不过从头文件中我们也能看出一个数据库的大致功能了。能够给我们使用的一些接口其实并不算多，主要就是数据的写入和删除，其他的东西levelDB会自动帮我们管理。剩下一些接口主要是迭代、快照、压缩管理之类一些比较高级的操作。</p>
+<p>我们先来关注一下写入部分</p>
+<h3 id="db_impl的写入">DB_Impl的写入</h3>
+<p>向数据的写入在levelDB中包含两个部分，涉及到插入一个kv的写入和删除一个kv的写入。通过查看Put和Delete的源码可知，DB_Impl调用的是DB的Put和Delete函数。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">DB::Put</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;opt, <span class="hljs-type">const</span> Slice &amp;key, <span class="hljs-type">const</span> Slice &amp;value)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatch batch;<br>    batch.<span class="hljs-built_in">Put</span>(key, value);<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">Write</span>(opt, &amp;batch);<br>}<br><br><span class="hljs-function">Status <span class="hljs-title">DB::Delete</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;opt, <span class="hljs-type">const</span> Slice &amp;key)</span></span><br><span class="hljs-function"></span>{<br>    WriteBatch batch;<br>    batch.<span class="hljs-built_in">Delete</span>(key);<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">Write</span>(opt, &amp;batch);<br>}<br><br></code></pre></td></tr></table></figure>
+<p>都是先生成一个WriteBatch，然后再调用this-&gt;Write函数，并且这个Write函数也是一个公有接口，所以我们主要来关注一下这个Write函数。</p>
+<p>我们回想一下之前讲述的写入过程：先写入wal，然后写入memtable。并且写入过程中，如果MemTable太大会触发MemTable写入到SSTable，当然还涉及到一些具体的实现细节，我们看完源码后再说。</p>
+<p>Write函数也是按照这个步骤来实现的。不过，由于levelDB是多线程的，为了实现线程安全，每个线程在写入时，都需要获取锁，但是这样会阻塞其它的线程，降低并发度。针对这个问题LevelDB做了一个优化，写入时当获取锁后，会将WriteBatch放入到一个<code>std::deque&lt;Writer\*&gt; DBImpl::writers_</code>里，然后会检查writers_里的第一个元素是不是自己，如果不是的话，就会释放锁。当一个线程检查到writers_头元素是自己时，会再次获取锁，然后将writers_里的数据尽可能多的写入。一次写入会涉及到写日志，占时间比较长，一个线程的数据可能被其它线程批量写入进去了，减少了等待。</p>
+<p>总结来说，一个线程的写入有两种情况：一种是恰好自己是头结点，自己写入，另外一种是别的线程帮助自己写入了，自己会检查到写入，然后就可以返回了。</p>
+<p>我们来详细看一下Write函数的实现。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 用来封装一个WriteBatch，用来标识状态</span><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">DBImpl</span>::Writer<br>{<br>    <span class="hljs-function"><span class="hljs-keyword">explicit</span> <span class="hljs-title">Writer</span><span class="hljs-params">(port::Mutex *mu)</span></span><br><span class="hljs-function">        : batch(nullptr), sync(false), done(false), cv(mu) {</span>}<br><br>    Status status;<br>    WriteBatch *batch;<br>    <span class="hljs-type">bool</span> sync;<br>    <span class="hljs-type">bool</span> done;<br>    port::CondVar cv;<br>};<br><br><span class="hljs-function">Status <span class="hljs-title">DBImpl::Write</span><span class="hljs-params">(<span class="hljs-type">const</span> WriteOptions &amp;options, WriteBatch *updates)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 构造一个writer结构体，插入到wrtiers_里，注意插入前需要先获取锁</span><br>    <span class="hljs-function">Writer <span class="hljs-title">w</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br>    w.batch = updates;<br>    w.sync = options.sync;<br>    w.done = <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br>    writers_.<span class="hljs-built_in">push_back</span>(&amp;w);<br>    <span class="hljs-comment">// 检查done判断是否完成，或者自己是否是writers_队列里的第一个成员。</span><br>    <span class="hljs-comment">// 有可能其它线程写入时把自己的内容也写入了，</span><br>    <span class="hljs-comment">// 这样自己就是done，或者当自己是头元素了，表示轮到自己写入了</span><br>    <span class="hljs-keyword">while</span> (!w.done &amp;&amp; &amp;w != writers_.<span class="hljs-built_in">front</span>())<br>    {<br>        w.cv.<span class="hljs-built_in">Wait</span>();<br>    }<br>    <span class="hljs-keyword">if</span> (w.done)<br>    {<br>        <span class="hljs-keyword">return</span> w.status;<br>    }<br>    <span class="hljs-comment">// 如果是非头结点，则至此，其内容已经被头结点写入了</span><br>    <span class="hljs-comment">// 下面的所有函数都是针对头结点而言的</span><br><br>    <span class="hljs-comment">// May temporarily unlock and wait.</span><br><br>    <span class="hljs-comment">// 先检查一下memtable中是否有足够的空间</span><br>    <span class="hljs-comment">// 同时获取到最新的序列号</span><br>    <span class="hljs-comment">// 注意MakeRoomForWrite函数中如果发现写入太快，会进行休眠限流</span><br>    Status status = <span class="hljs-built_in">MakeRoomForWrite</span>(updates == <span class="hljs-literal">nullptr</span>);<br>    <span class="hljs-type">uint64_t</span> last_sequence = versions_-&gt;<span class="hljs-built_in">LastSequence</span>();<br>    Writer *last_writer = &amp;w;<br>    <span class="hljs-comment">// 已经完成写入的准备工作</span><br>    <span class="hljs-keyword">if</span> (status.<span class="hljs-built_in">ok</span>() &amp;&amp; updates != <span class="hljs-literal">nullptr</span>)<br>    { <span class="hljs-comment">// nullptr batch is for compactions</span><br>        <span class="hljs-comment">// 调用这个函数来将队列中的多个batch组合成一个batch</span><br>        <span class="hljs-comment">// 并为这个batch设置好序列号</span><br>        WriteBatch *write_batch = <span class="hljs-built_in">BuildBatchGroup</span>(&amp;last_writer);<br>        WriteBatchInternal::<span class="hljs-built_in">SetSequence</span>(write_batch, last_sequence + <span class="hljs-number">1</span>);<br>        last_sequence += WriteBatchInternal::<span class="hljs-built_in">Count</span>(write_batch);<br><br>        <span class="hljs-comment">// 下面是正式的写入，会写入log和memtable</span><br>        <span class="hljs-comment">//</span><br>        {<br>            <span class="hljs-comment">// 注意这一步解锁，很关键，因为接下来的写入可能是一个费时的过程</span><br>            <span class="hljs-comment">// 解锁后，其它线程可以Get，其它线程也可以继续将writer</span><br>            <span class="hljs-comment">// 插入到writers_里面，但是插入后，因为不是头元素，会等待，所以不会冲突</span><br>            mutex_.<span class="hljs-built_in">Unlock</span>();<br>            status = log_-&gt;<span class="hljs-built_in">AddRecord</span>(WriteBatchInternal::<span class="hljs-built_in">Contents</span>(write_batch));<br>            <span class="hljs-type">bool</span> sync_error = <span class="hljs-literal">false</span>;<br>            <span class="hljs-keyword">if</span> (status.<span class="hljs-built_in">ok</span>() &amp;&amp; options.sync)<br>            {<br>                status = logfile_-&gt;<span class="hljs-built_in">Sync</span>();<br>                <span class="hljs-keyword">if</span> (!status.<span class="hljs-built_in">ok</span>())<br>                {<br>                    sync_error = <span class="hljs-literal">true</span>;<br>                }<br>            }<br>            <span class="hljs-comment">// 然后写入到memtable中</span><br>            <span class="hljs-keyword">if</span> (status.<span class="hljs-built_in">ok</span>())<br>            {<br>                status = WriteBatchInternal::<span class="hljs-built_in">InsertInto</span>(write_batch, mem_);<br>            }<br><br>            <span class="hljs-comment">// 加锁需要修改全局的SequenceNumber以及writers_</span><br>            mutex_.<span class="hljs-built_in">Lock</span>();<br>            <span class="hljs-keyword">if</span> (sync_error)<br>            {<br>                <span class="hljs-comment">// The state of the log file is indeterminate: the log record we</span><br>                <span class="hljs-comment">// just added may or may not show up when the DB is re-opened.</span><br>                <span class="hljs-comment">// So we force the DB into a mode where all future writes fail.</span><br>                <span class="hljs-comment">// RecordBackgroundError会将错误记录到 bg_error_ 字段中</span><br>                <span class="hljs-comment">// 并唤醒 background_work_finished_signal_ 用于向后台任务周知此错误</span><br>                <span class="hljs-comment">// 想说明的是：刚才写入到log中的数据在下一次db重新打开时可能不会出现</span><br>                <span class="hljs-comment">// 所以让数据库所有的后续写入都失败</span><br>                <span class="hljs-built_in">RecordBackgroundError</span>(status);<br>            }<br>        }<br>        <span class="hljs-comment">// 正常情况下tmp_batch_就是write_batch</span><br>        <span class="hljs-comment">// 因为BuildBatchGroup中tmp_batch_被设置成result，同时返回值也是result(这是指针)</span><br>        <span class="hljs-keyword">if</span> (write_batch == tmp_batch_)<br>            tmp_batch_-&gt;<span class="hljs-built_in">Clear</span>();<br><br>        <span class="hljs-comment">// 更新序列号</span><br>        versions_-&gt;<span class="hljs-built_in">SetLastSequence</span>(last_sequence);<br>    }<br><br>    <span class="hljs-comment">// 从writers_队列从头开始，将写入完成的writer标识成done，并且弹出，通知这些writer</span><br>    <span class="hljs-comment">// 这样这些writer的线程会被唤醒，发现自己的写入已经完成了，就会返回</span><br>    <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>)<br>    {<br>        Writer *ready = writers_.<span class="hljs-built_in">front</span>();<br>        writers_.<span class="hljs-built_in">pop_front</span>();<br>        <span class="hljs-keyword">if</span> (ready != &amp;w)<br>        {<br>            ready-&gt;status = status;<br>            ready-&gt;done = <span class="hljs-literal">true</span>;<br>            ready-&gt;cv.<span class="hljs-built_in">Signal</span>();<br>        }<br>        <span class="hljs-keyword">if</span> (ready == last_writer)<br>            <span class="hljs-keyword">break</span>;<br>    }<br><br>    <span class="hljs-comment">// 如果writers_里还有元素，就通知头元素，让它可以进来开始写入</span><br>    <span class="hljs-keyword">if</span> (!writers_.<span class="hljs-built_in">empty</span>())<br>    {<br>        writers_.<span class="hljs-built_in">front</span>()-&gt;cv.<span class="hljs-built_in">Signal</span>();<br>    }<br><br>    <span class="hljs-keyword">return</span> status;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>Write函数的过程为：先获取锁，同时把batch插入到write_中，检测头结点是不是自己以及队列中的batch是否插入完成了，如果都没有则进入等待中并释放锁。反之，则先将若干个batch打包成一个大的batch，然后按照先写入wal再写入memtable的顺序完成写入。在写入期间锁会被解开，其他线程可以往write_中插入batch。写入完成后重新上锁，更新序列号并从write_中删除写入的部分。随后唤醒新的write_中的头线程(如果有的话)。同样的来看一下这个函数的流程图。</p>
+<img src="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/pic2.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>多个线程想要写入的时候，先把需要写入的batch加入到队列中，但是这些线程之间会相互竞争<strong>需要注意的是，仅有某个线程正在写入或没有线程获取锁的时候，才能有线程插入到write_中</strong>。</p>
+<p>假设线程是t1-t5，然后write_队列中的竞争结果为t2、t1、t3，那么此时只有t2线程会执行，剩余的线程会被锁住，t2线程会把t2、t1、t3这几个batch一起打包成一个大的batch，然后插入到log和memtable中，在持久化过程中，t4、t5又会把对应的batch插入到write_中，那么此时的write_为t2、t1、t3、t4、t5，等到t2持久化完成后，会把t2、t1、t3标记为已插入并从队列中移除，随后通知t4进行插入。这样就利用了磁盘写的长IO耗时，有效地增加了效率。过程如图。</p>
+<img src="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/pic3.png" srcset="/img/loading.gif" lazyload class="">
+<h4 id="写入过程中的限流策略">写入过程中的限流策略</h4>
+<p>我们上述对write的描述其实忽略了一部分细节。比如：memtable达到了最大的空间限制怎么办？immemtable仍然存在的时候memtable写满了怎么办？level0层块太多怎么办？</p>
+<p>这部分问题在Write函数中具体的体现其实就是MakeRoomForWrite和BuildBatchGroup这两个函数。我们来看一下这两个函数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// REQUIRES: mutex_ is held</span><br><span class="hljs-comment">// REQUIRES: this thread is currently at the front of the writer queue</span><br><span class="hljs-comment">// 需要保证锁住，且此函数需要被write_中第一个结点对用的线程调用</span><br><span class="hljs-comment">// 作用是为写入提供准备，包括限流等策略</span><br><span class="hljs-function">Status <span class="hljs-title">DBImpl::MakeRoomForWrite</span><span class="hljs-params">(<span class="hljs-type">bool</span> force)</span></span><br><span class="hljs-function"></span>{<br>    mutex_.<span class="hljs-built_in">AssertHeld</span>();<br>    <span class="hljs-built_in">assert</span>(!writers_.<span class="hljs-built_in">empty</span>());<br>    <span class="hljs-type">bool</span> allow_delay = !force;<br>    Status s;<br>    <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>)<br>    {<br>        <span class="hljs-keyword">if</span> (!bg_error_.<span class="hljs-built_in">ok</span>())<br>        {<br>            <span class="hljs-comment">// Yield previous error</span><br>            s = bg_error_;<br>            <span class="hljs-keyword">break</span>;<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (allow_delay &amp;&amp; versions_-&gt;<span class="hljs-built_in">NumLevelFiles</span>(<span class="hljs-number">0</span>) &gt;=<br>                                    config::kL0_SlowdownWritesTrigger)<br>        {<br>            <span class="hljs-comment">// We are getting close to hitting a hard limit on the number of</span><br>            <span class="hljs-comment">// L0 files.  Rather than delaying a single write by several</span><br>            <span class="hljs-comment">// seconds when we hit the hard limit, start delaying each</span><br>            <span class="hljs-comment">// individual write by 1ms to reduce latency variance.  Also,</span><br>            <span class="hljs-comment">// this delay hands over some CPU to the compaction thread in</span><br>            <span class="hljs-comment">// case it is sharing the same core as the writer.</span><br>            <span class="hljs-comment">// 如果第0层数目超过限制(默认8)，就会sleep 1ms，并在此期间解开锁</span><br>            <span class="hljs-comment">// 这有助于压缩线程工作</span><br>            <span class="hljs-comment">// 并且此限流策略只会执行一次</span><br>            mutex_.<span class="hljs-built_in">Unlock</span>();<br>            env_-&gt;<span class="hljs-built_in">SleepForMicroseconds</span>(<span class="hljs-number">1000</span>);<br>            allow_delay = <span class="hljs-literal">false</span>; <span class="hljs-comment">// Do not delay a single write more than once</span><br>            mutex_.<span class="hljs-built_in">Lock</span>();<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!force &amp;&amp;<br>                 (mem_-&gt;<span class="hljs-built_in">ApproximateMemoryUsage</span>() &lt;= options_.write_buffer_size))<br>        {<br>            <span class="hljs-comment">// There is room in current memtable</span><br>            <span class="hljs-comment">// 如果memtable有空间，就直接返回，此时保证了memtable有空间可以写入</span><br>            <span class="hljs-keyword">break</span>;<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (imm_ != <span class="hljs-literal">nullptr</span>)<br>        {<br>            <span class="hljs-comment">// We have filled up the current memtable, but the previous</span><br>            <span class="hljs-comment">// one is still being compacted, so we wait.</span><br>            <span class="hljs-comment">// 如果memtable没有空间，且immemtable存在</span><br>            <span class="hljs-comment">// 即之前转换的immemtable存在，就一直等，直到上一次的immemtable被持久化</span><br>            <span class="hljs-built_in">Log</span>(options_.info_log, <span class="hljs-string">"Current memtable full; waiting...\n"</span>);<br>            background_work_finished_signal_.<span class="hljs-built_in">Wait</span>();<br>        }<br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (versions_-&gt;<span class="hljs-built_in">NumLevelFiles</span>(<span class="hljs-number">0</span>) &gt;= config::kL0_StopWritesTrigger)<br>        {<br>            <span class="hljs-comment">// There are too many level-0 files.</span><br>            <span class="hljs-comment">// 如果第0层数目太多(默认12)，就一直等待，直到满足条件</span><br>            <span class="hljs-built_in">Log</span>(options_.info_log, <span class="hljs-string">"Too many L0 files; waiting...\n"</span>);<br>            background_work_finished_signal_.<span class="hljs-built_in">Wait</span>();<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 否则就尝试将一个memtable转换成immemtable来写入</span><br>            <span class="hljs-comment">// 同时还需要创建一个新的memtable</span><br>            <span class="hljs-comment">// 还要触发压缩线程</span><br>            <span class="hljs-comment">// Attempt to switch to a new memtable and trigger compaction of old</span><br>            <span class="hljs-built_in">assert</span>(versions_-&gt;<span class="hljs-built_in">PrevLogNumber</span>() == <span class="hljs-number">0</span>);<br>            <span class="hljs-type">uint64_t</span> new_log_number = versions_-&gt;<span class="hljs-built_in">NewFileNumber</span>();<br>            WritableFile *lfile = <span class="hljs-literal">nullptr</span>;<br>            s = env_-&gt;<span class="hljs-built_in">NewWritableFile</span>(<span class="hljs-built_in">LogFileName</span>(dbname_, new_log_number), &amp;lfile);<br>            <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>            {<br>                <span class="hljs-comment">// Avoid chewing through file number space in a tight loop.</span><br>                versions_-&gt;<span class="hljs-built_in">ReuseFileNumber</span>(new_log_number);<br>                <span class="hljs-keyword">break</span>;<br>            }<br>            <span class="hljs-keyword">delete</span> log_;<br>            <span class="hljs-keyword">delete</span> logfile_;<br>            logfile_ = lfile;<br>            logfile_number_ = new_log_number;<br>            log_ = <span class="hljs-keyword">new</span> log::<span class="hljs-built_in">Writer</span>(lfile);<br>            imm_ = mem_;<br>            has_imm_.<span class="hljs-built_in">store</span>(<span class="hljs-literal">true</span>, std::memory_order_release);<br>            mem_ = <span class="hljs-keyword">new</span> <span class="hljs-built_in">MemTable</span>(internal_comparator_);<br>            mem_-&gt;<span class="hljs-built_in">Ref</span>();<br>            force = <span class="hljs-literal">false</span>; <span class="hljs-comment">// Do not force another compaction if have room</span><br>            <span class="hljs-built_in">MaybeScheduleCompaction</span>();<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br><span class="hljs-comment">// REQUIRES: Writer list must be non-empty</span><br><span class="hljs-comment">// REQUIRES: First writer must have a non-null batch</span><br><span class="hljs-comment">// 需要保证write_队列非空，且队列中第一个batch也是非空的</span><br><span class="hljs-function">WriteBatch *<span class="hljs-title">DBImpl::BuildBatchGroup</span><span class="hljs-params">(Writer **last_writer)</span></span><br><span class="hljs-function"></span>{<br>    mutex_.<span class="hljs-built_in">AssertHeld</span>();<br>    <span class="hljs-built_in">assert</span>(!writers_.<span class="hljs-built_in">empty</span>());<br>    Writer *first = writers_.<span class="hljs-built_in">front</span>();<br>    WriteBatch *result = first-&gt;batch;<br>    <span class="hljs-built_in">assert</span>(result != <span class="hljs-literal">nullptr</span>);<br><br>    <span class="hljs-comment">// 首先计算出一个max_size，表示构造的WriterBatch的最大尺寸</span><br>    <span class="hljs-type">size_t</span> size = WriteBatchInternal::<span class="hljs-built_in">ByteSize</span>(first-&gt;batch);<br><br>    <span class="hljs-comment">// Allow the group to grow up to a maximum size, but if the</span><br>    <span class="hljs-comment">// original write is small, limit the growth so we do not slow</span><br>    <span class="hljs-comment">// down the small write too much.</span><br>    <span class="hljs-type">size_t</span> max_size = <span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">20</span>;<br>    <span class="hljs-keyword">if</span> (size &lt;= (<span class="hljs-number">128</span> &lt;&lt; <span class="hljs-number">10</span>))<br>    {<br>        max_size = size + (<span class="hljs-number">128</span> &lt;&lt; <span class="hljs-number">10</span>);<br>    }<br><br>    <span class="hljs-comment">// 然后开始扫描writers_数组，直到满足WriterBatch超过max_size</span><br>    <span class="hljs-comment">// 或者碰到一个与当前batch的sync不匹配的就结束</span><br>    *last_writer = first;<br>    std::deque&lt;Writer *&gt;::iterator iter = writers_.<span class="hljs-built_in">begin</span>();<br>    ++iter; <span class="hljs-comment">// Advance past "first"</span><br>    <span class="hljs-keyword">for</span> (; iter != writers_.<span class="hljs-built_in">end</span>(); ++iter)<br>    {<br>        Writer *w = *iter;<br>        <span class="hljs-keyword">if</span> (w-&gt;sync &amp;&amp; !first-&gt;sync)<br>        {<br>            <span class="hljs-comment">// Do not include a sync write into a batch handled by a non-sync write.</span><br>            <span class="hljs-keyword">break</span>;<br>        }<br><br>        <span class="hljs-keyword">if</span> (w-&gt;batch != <span class="hljs-literal">nullptr</span>)<br>        {<br>            size += WriteBatchInternal::<span class="hljs-built_in">ByteSize</span>(w-&gt;batch);<br>            <span class="hljs-keyword">if</span> (size &gt; max_size)<br>            {<br>                <span class="hljs-comment">// Do not make batch too big</span><br>                <span class="hljs-keyword">break</span>;<br>            }<br><br>            <span class="hljs-comment">// Append to *result</span><br>            <span class="hljs-keyword">if</span> (result == first-&gt;batch)<br>            {<br>                <span class="hljs-comment">// Switch to temporary batch instead of disturbing caller's batch</span><br>                result = tmp_batch_;<br>                <span class="hljs-built_in">assert</span>(WriteBatchInternal::<span class="hljs-built_in">Count</span>(result) == <span class="hljs-number">0</span>);<br>                WriteBatchInternal::<span class="hljs-built_in">Append</span>(result, first-&gt;batch);<br>            }<br>            WriteBatchInternal::<span class="hljs-built_in">Append</span>(result, w-&gt;batch);<br>        }<br>        *last_writer = w;<br>    }<br>    <span class="hljs-keyword">return</span> result;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>先说MakeRoomForWrite，它主要是限流和触发后台线程等工作：</p>
+<ul>
+<li>首先判断Level 0的文件是否&gt;=8，是的话就sleep
+1ms，这里是限流的作用，Level
+0的文件太多，说明写入太快，Compaction跟不上写入的速度，而在读取的时候Level
+0的文件之间可能有重叠，所以太多的话，影响读取的效率，这算是比较轻微的限流，最多sleep一次</li>
+<li>接下来判断MemTable里是否有空间，有空间的话就可以返回了，写入就可以继续</li>
+<li>如果MemTable没有空间，判断Immutable
+MemTable是否存在，存在的话，说明上一次写满的MemTable还没有完成写入到SSTable中，说明写入太快了，需要等待Immutable
+MemTable写入完成</li>
+<li>再判断Level
+0的文件数是否&gt;=12，如果太大，说明写入太快了，需要等待Compaction的完成</li>
+<li>到这一步说明可以写入，但是MemTable已经写满了，需要将MemTable变成Immutable
+MemTable，生成一个新的MemTable，触发后台线程写入到SSTable中</li>
+</ul>
+<img src="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/pic4.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>然后来说一下BuildBatchGroup，这个函数的作用是将多个位于write_队列中的batch合并成一个更大的batch用于写入，它会从writers_头部开始扫描，将尽可能多的writer生成一个新的WriterBatch，将这些writer的内容批量写入。步骤如下：</p>
+<ul>
+<li>首先计算出一个max_size，表示构造的WriterBatch的最大尺寸；</li>
+<li>然后开始扫描writers_数组，直到满足WriterBatch超过max_size</li>
+<li>另外，<strong>第一个writer的sync决定了这整个write是不是sync的</strong>，如果第一个writer不是sync的，碰到一个sync的writer，表面这个writer无法加入到这个批量写入中，所以扫描就结束了</li>
+</ul>
+<h3 id="db_impl的读取">DB_Impl的读取</h3>
+<p>了解写入后，再来说读取，LSM
+Tree里面，读取往往比写入更复杂，写入往往只涉及一次磁盘IO，但是读取可能涉及多次磁盘IO。</p>
+<p>LevelDB的数据可能存在三个地方:</p>
+<ul>
+<li>最新的写入在MemTable里</li>
+<li>如果上一次MemTable写满后，转换为Immutable
+MemTable，如果还没有完成写入到SSTable里，那么就有可能存在于Immutable
+MemTable里</li>
+<li>存在于SSTable里，SSTable里的数据从Level
+0开始从新变旧，Level越低，数据越新。Level
+0里的SSTable比较特殊，因为是MemTable转换过来的，虽然每个SSTable都是有序的，但是每个SSTable的键的范围可能有重叠，也就是一个键可能存在于多个SSTable里，文件名下标越大的SSTable里的键越新。而非level
+0的SSTable，都是后台生成的，保证了SSTable之间的数据无重叠，一个键只有可能存在于一个SSTable里</li>
+</ul>
+<p>所以读取一个键时：</p>
+<ul>
+<li>先读取MemTable，存在就读到数据了；</li>
+<li>不存在的话，看看Immutable
+MemTable是否存在，存在的话，读取数据；</li>
+<li>否则，从SSTable的Level 0开始读取，如果Level 0还没有找到话，读Level
+1，以此类推，直到读到最高层。</li>
+</ul>
+<p><strong>另外，别忘了，levelDB是有缓存的，在读取的时候还要查找缓存。写入的话可以把memtable理解成缓存</strong></p>
+<h4 id="dbimplget">DBImpl::Get</h4>
+<p>先来看一下DBImpl中的Get实现</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">DBImpl::Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">const</span> Slice &amp;key,</span></span><br><span class="hljs-params"><span class="hljs-function">                   std::string *value)</span></span><br><span class="hljs-function"></span>{<br>    Status s;<br>    <span class="hljs-comment">// 加锁，读取元数据，增加引用</span><br>    <span class="hljs-function">MutexLock <span class="hljs-title">l</span><span class="hljs-params">(&amp;mutex_)</span></span>;<br><br>    <span class="hljs-comment">// 设定snapshot，其实就是一个SequenceNumber，这是实现Snapshot的关键，设置成选项中的snapshot，或者</span><br>    <span class="hljs-comment">// 当前最近的SequenceNumber</span><br>    SequenceNumber snapshot;<br>    <span class="hljs-keyword">if</span> (options.snapshot != <span class="hljs-literal">nullptr</span>)<br>    {<br>        snapshot =<br>            <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">const</span> SnapshotImpl *&gt;(options.snapshot)-&gt;<span class="hljs-built_in">sequence_number</span>();<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        snapshot = versions_-&gt;<span class="hljs-built_in">LastSequence</span>();<br>    }<br><br>    <span class="hljs-comment">// mem是MemTable，imm是Immutable MemTable，</span><br>    <span class="hljs-comment">// SSTable则由当前的version代表，一个version包含了当前版本的SSTable的集合</span><br>    MemTable *mem = mem_;<br>    MemTable *imm = imm_;<br>    Version *current = versions_-&gt;<span class="hljs-built_in">current</span>();<br>    <span class="hljs-comment">// 这里都调用了Ref，LevelDB里大量使用了这种引用计数的方式管理对象，这里表示读取需要引用这些对象，假设在读取过程</span><br>    <span class="hljs-comment">// 中其他线程发生了MemTable写满了，或者Immutable MemTable写入完成了需要删除了，或者做了一次Compaction，生</span><br>    <span class="hljs-comment">// 成了新的Version，所引用的SSTable不再有效了，这些都需要对这些对象做一些改变，比如删除等，但是当前线程还引用着</span><br>    <span class="hljs-comment">// 这些对象，所以这些对象还不能被删除。采用引用计数，其它线程删除对象时只是简单的Unref，因为当前线程还引用着这些</span><br>    <span class="hljs-comment">// 对象，所以计数&gt;=1，这些对象不会被删除，而当读取结束，调用Unref时，如果对象的计数是0，那么对象会被删除。</span><br>    mem-&gt;<span class="hljs-built_in">Ref</span>();<br>    <span class="hljs-keyword">if</span> (imm != <span class="hljs-literal">nullptr</span>)<br>        imm-&gt;<span class="hljs-built_in">Ref</span>();<br>    current-&gt;<span class="hljs-built_in">Ref</span>();<br><br>    <span class="hljs-type">bool</span> have_stat_update = <span class="hljs-literal">false</span>;<br>    Version::GetStats stats;<br><br>    <span class="hljs-comment">// 实际读取时解锁</span><br>    {<br>        mutex_.<span class="hljs-built_in">Unlock</span>();<br>        <span class="hljs-comment">// 构造一个Lookup Key搜索MemTable</span><br>        <span class="hljs-function">LookupKey <span class="hljs-title">lkey</span><span class="hljs-params">(key, snapshot)</span></span>;<br>        <span class="hljs-keyword">if</span> (mem-&gt;<span class="hljs-built_in">Get</span>(lkey, value, &amp;s))<br>        {<br>            <span class="hljs-comment">// 找到了</span><br>        }<br>        <span class="hljs-comment">// 然后查找imm中</span><br>        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (imm != <span class="hljs-literal">nullptr</span> &amp;&amp; imm-&gt;<span class="hljs-built_in">Get</span>(lkey, value, &amp;s))<br>        {<br>            <span class="hljs-comment">// 找到</span><br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 然后需要从当前的sstable集合中查找</span><br>            s = current-&gt;<span class="hljs-built_in">Get</span>(options, lkey, value, &amp;stats);<br>            have_stat_update = <span class="hljs-literal">true</span>;<br>        }<br>        mutex_.<span class="hljs-built_in">Lock</span>();<br>    }<br><br>    <span class="hljs-keyword">if</span> (have_stat_update &amp;&amp; current-&gt;<span class="hljs-built_in">UpdateStats</span>(stats))<br>    {<br>        <span class="hljs-comment">// 表示由于某个文件seek次数过多需要合并</span><br>        <span class="hljs-comment">// 合并条件是在sstable中找到了key，但是不止在一个sstable中找到(后面细锁)</span><br>        <span class="hljs-built_in">MaybeScheduleCompaction</span>();<br>    }<br>    mem-&gt;<span class="hljs-built_in">Unref</span>();<br>    <span class="hljs-keyword">if</span> (imm != <span class="hljs-literal">nullptr</span>)<br>        imm-&gt;<span class="hljs-built_in">Unref</span>();<br>    current-&gt;<span class="hljs-built_in">Unref</span>();<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>DBImpl中Get其实就是简单地从memtable、immemtable和所有sstable的集合中查找key，由于memtable、immemtable均为跳表，所以需要用lookupkey来查找。另外，由于levelDB把所有sstable看作是一个版本(这个后面重点会讲，版本管理也是非常多的代码)，所以<code>current-&gt;Get</code>这个本质上也是从sstable中查找，这时候要用到internalkey。</p>
+<p>还有一个比较值得注意的地方就是调用MaybeScheduleCompaction函数，可能会令人困惑。它的目的是对sstable进行压缩清理，此处不展开。</p>
+<p><del>由于levelDB本质上没有delete
+key的说法，所以多次对于一个key的修改啥的都会保留，只是通过序列号来判断哪个是最新的。而key在多个sstable中被查到，说明此key存在多次修改，不如将他合并成一个sstable，这样会带来性能上的提升(合并的话就删除掉一些sstable，然后生成一个大的sstable)
+<strong>此处有错误</strong></del></p>
+<p>启用压缩的条件是：存在一个sstable多次未命中数据。这样做可以把这个sstable压缩至更高层，以减少该sstable的读取次数。</p>
+<p><strong>但实际上，读写操作都会调用MaybeScheduleCompaction函数，这个函数可能会启动压缩。其中读在Get中调用，写则是在MakeRoomForWrite中调用</strong></p>
+<p>由于memtable的查找本质上就是跳表的查找，比较简单，就不赘述了。</p>
+<h4 id="versionget">Version::Get</h4>
+<p>我们来看看SSTable的读取，version保存了SSTable，是一个分层的SSTable的集合，这其实就是LevelDB名字的由来。</p>
+<p>version里SSTable的集合有以下特点：</p>
+<ul>
+<li>数据从Level
+0开始由新变旧，所以最新的数据在最低层，也就是如果一个键有多个值的话，新的肯定在低层，旧的在高层</li>
+<li>因为 Level 0里的SSTable是MemTable 写入的，Level
+0里的每个SSTable的键之间可能有重叠，所以一个键可能存在于多个SSTable里</li>
+<li>而其它Level，SSTable都是Compaction产生的，键没有重叠，一个键只有可能存在于一个SSTable里</li>
+<li>对于Level 0的SSTable，文件编号越大的，里面的键越新</li>
+</ul>
+<img src="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/pic5.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>如图，红色是需要读取的SSTable，当读取时，Level
+0可能有多个SSTable需要读取，而其它Level最多只有一个SSTable需要读取。</p>
+<p>关于Version我们后面具体讲这个重量级的东西。先简单看一下，一个SSTable在内存里使用FileMetaData来表示：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// db/version_edit.h</span><br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">FileMetaData</span> {<br>  <span class="hljs-built_in">FileMetaData</span>() : <span class="hljs-built_in">refs</span>(<span class="hljs-number">0</span>), <span class="hljs-built_in">allowed_seeks</span>(<span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">30</span>), <span class="hljs-built_in">file_size</span>(<span class="hljs-number">0</span>) {}<br><br>  <span class="hljs-type">int</span> refs;<br>  <span class="hljs-type">int</span> allowed_seeks;     <span class="hljs-comment">// 判断什么时候可以Compaction</span><br>  <span class="hljs-type">uint64_t</span> number;       <span class="hljs-comment">// 文件编号</span><br>  <span class="hljs-type">uint64_t</span> file_size;    <span class="hljs-comment">// 文件大小bytes</span><br>  InternalKey smallest;  <span class="hljs-comment">// 这个SSTable里最小的Internal Key</span><br>  InternalKey largest;   <span class="hljs-comment">// 这个SSTable里最大的Internal Key</span><br>};<br><br>std::vector&lt;FileMetaData*&gt; Version::files_[config::kNumLevels];<br><br></code></pre></td></tr></table></figure>
+<p>可以看到每个FileMetaData都有一个键的范围，所以在读取时可以快速判断键是否可能在这个SSTable里，这样就可以选出相应的键。</p>
+<p>而一个Version里的SSTable保存在一个vector数组里，每一个Level对应一个vector，每个vector保存了FileMetaData，对于非Level
+0，这些FileMetaData是有序的，也就是第n个SSTable的最大键小于第n +
+1个SSTable的最小键，所以可以通过二分搜索找到某个键位于哪个SSTable，但是level
+0层的sstable是memtable的副本，所以key上会有重叠。</p>
+<p>我们来看一下其查找的源码</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">Version::Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">const</span> LookupKey &amp;k,</span></span><br><span class="hljs-params"><span class="hljs-function">                    std::string *value, GetStats *stats)</span></span><br><span class="hljs-function"></span>{<br>    stats-&gt;seek_file = <span class="hljs-literal">nullptr</span>;<br>    stats-&gt;seek_file_level = <span class="hljs-number">-1</span>;<br><br>    <span class="hljs-comment">// 描述查询状态的结构体</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">State</span><br>    {<br>        Saver saver;<br>        GetStats *stats;<br>        <span class="hljs-type">const</span> ReadOptions *options;<br>        Slice ikey;<br>        FileMetaData *last_file_read;<br>        <span class="hljs-type">int</span> last_file_read_level;<br><br>        VersionSet *vset;<br>        Status s;<br>        <span class="hljs-type">bool</span> found;<br><br>        <span class="hljs-comment">// 这个函数的作用是在第level层的f中查找key</span><br>        <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">bool</span> <span class="hljs-title">Match</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg, <span class="hljs-type">int</span> level, FileMetaData *f)</span></span><br><span class="hljs-function">        </span>{<br>            State *state = <span class="hljs-built_in">reinterpret_cast</span>&lt;State *&gt;(arg);<br><br>            <span class="hljs-keyword">if</span> (state-&gt;stats-&gt;seek_file == <span class="hljs-literal">nullptr</span> &amp;&amp;<br>                state-&gt;last_file_read != <span class="hljs-literal">nullptr</span>)<br>            {<br>                <span class="hljs-comment">// We have had more than one seek for this read.  Charge the 1st file.</span><br>                state-&gt;stats-&gt;seek_file = state-&gt;last_file_read;<br>                state-&gt;stats-&gt;seek_file_level = state-&gt;last_file_read_level;<br>            }<br><br>            state-&gt;last_file_read = f;<br>            state-&gt;last_file_read_level = level;<br><br>            <span class="hljs-comment">// 从缓存中获取sstable</span><br>            state-&gt;s = state-&gt;vset-&gt;table_cache_-&gt;<span class="hljs-built_in">Get</span>(*state-&gt;options, f-&gt;number,<br>                                                      f-&gt;file_size, state-&gt;ikey,<br>                                                      &amp;state-&gt;saver, SaveValue);<br>            <span class="hljs-comment">// 从sstable中查找</span><br>            <span class="hljs-keyword">if</span> (!state-&gt;s.<span class="hljs-built_in">ok</span>())<br>            {<br>                state-&gt;found = <span class="hljs-literal">true</span>;<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            }<br>            <span class="hljs-keyword">switch</span> (state-&gt;saver.state)<br>            {<br>            <span class="hljs-keyword">case</span> kNotFound:<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Keep searching in other files</span><br>            <span class="hljs-keyword">case</span> kFound:<br>                state-&gt;found = <span class="hljs-literal">true</span>;<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            <span class="hljs-keyword">case</span> kDeleted:<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            <span class="hljs-keyword">case</span> kCorrupt:<br>                state-&gt;s =<br>                    Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"corrupted key for "</span>, state-&gt;saver.user_key);<br>                state-&gt;found = <span class="hljs-literal">true</span>;<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            }<br><br>            <span class="hljs-comment">// Not reached. Added to avoid false compilation warnings of</span><br>            <span class="hljs-comment">// "control reaches end of non-void function".</span><br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>        }<br>    };<br><br>    State state;<br>    state.found = <span class="hljs-literal">false</span>;<br>    state.stats = stats;<br>    state.last_file_read = <span class="hljs-literal">nullptr</span>;<br>    state.last_file_read_level = <span class="hljs-number">-1</span>;<br><br>    state.options = &amp;options;<br>    state.ikey = k.<span class="hljs-built_in">internal_key</span>();<br>    state.vset = vset_;<br><br>    state.saver.state = kNotFound;<br>    state.saver.ucmp = vset_-&gt;icmp_.<span class="hljs-built_in">user_comparator</span>();<br>    state.saver.user_key = k.<span class="hljs-built_in">user_key</span>();<br>    state.saver.value = value;<br><br>    <span class="hljs-comment">// 尝试找到对应的key</span><br>    <span class="hljs-built_in">ForEachOverlapping</span>(state.saver.user_key, state.ikey, &amp;state, &amp;State::Match);<br><br>    <span class="hljs-keyword">return</span> state.found ? state.s : Status::<span class="hljs-built_in">NotFound</span>(<span class="hljs-built_in">Slice</span>());<br>}<br><br><span class="hljs-comment">// 从所有sstable中逐层查找，直到找到</span><br><span class="hljs-comment">// 其中arg是state结构体</span><br><span class="hljs-comment">// func是在state中查找sstable的函数</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Version::ForEachOverlapping</span><span class="hljs-params">(Slice user_key, Slice internal_key, <span class="hljs-type">void</span> *arg,</span></span><br><span class="hljs-params"><span class="hljs-function">                                 <span class="hljs-type">bool</span> (*func)(<span class="hljs-type">void</span> *, <span class="hljs-type">int</span>, FileMetaData *))</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> Comparator *ucmp = vset_-&gt;icmp_.<span class="hljs-built_in">user_comparator</span>();<br><br>    <span class="hljs-comment">// 第0层的key存在重叠，所以每个都要查找</span><br>    std::vector&lt;FileMetaData *&gt; tmp;<br>    <span class="hljs-comment">// 这里是直接对数组扩容，因为我们已经知道大小了，就不要让他自动扩容了</span><br>    tmp.<span class="hljs-built_in">reserve</span>(files_[<span class="hljs-number">0</span>].<span class="hljs-built_in">size</span>());<br><br>    <span class="hljs-comment">// 遍历查找所有可能符合的key范围的sstable</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; files_[<span class="hljs-number">0</span>].<span class="hljs-built_in">size</span>(); i++)<br>    {<br>        <span class="hljs-comment">// 遍历第0层所有files</span><br>        FileMetaData *f = files_[<span class="hljs-number">0</span>][i];<br>        <span class="hljs-comment">// 如果查找的key就在某一个sstable的范围内，就把这个sstable放入tmp中</span><br>        <span class="hljs-keyword">if</span> (ucmp-&gt;<span class="hljs-built_in">Compare</span>(user_key, f-&gt;smallest.<span class="hljs-built_in">user_key</span>()) &gt;= <span class="hljs-number">0</span> &amp;&amp;<br>            ucmp-&gt;<span class="hljs-built_in">Compare</span>(user_key, f-&gt;largest.<span class="hljs-built_in">user_key</span>()) &lt;= <span class="hljs-number">0</span>)<br>        {<br>            tmp.<span class="hljs-built_in">push_back</span>(f);<br>        }<br>    }<br><br>    <span class="hljs-keyword">if</span> (!tmp.<span class="hljs-built_in">empty</span>())<br>    {<br>        <span class="hljs-comment">// 由新到旧排序，NewestFirst是一个根据序列号的比较器</span><br>        std::<span class="hljs-built_in">sort</span>(tmp.<span class="hljs-built_in">begin</span>(), tmp.<span class="hljs-built_in">end</span>(), NewestFirst);<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; tmp.<span class="hljs-built_in">size</span>(); i++)<br>        {<br>            <span class="hljs-comment">// 找到了的话就直接返回</span><br>            <span class="hljs-comment">// func返回true说明是没找到</span><br>            <span class="hljs-keyword">if</span> (!(*func)(arg, <span class="hljs-number">0</span>, tmp[i]))<br>            {<br>                <span class="hljs-keyword">return</span>;<br>            }<br>        }<br>    }<br><br>    <span class="hljs-comment">// 在第0层找不到就继续向下查找</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> level = <span class="hljs-number">1</span>; level &lt; config::kNumLevels; level++)<br>    {<br>        <span class="hljs-type">size_t</span> num_files = files_[level].<span class="hljs-built_in">size</span>();<br>        <span class="hljs-keyword">if</span> (num_files == <span class="hljs-number">0</span>)<br>            <span class="hljs-keyword">continue</span>;<br><br>        <span class="hljs-comment">// 由于除了第0层外，剩余层的key范围不重叠，所以每层至多一个sstable包含key</span><br>        <span class="hljs-comment">// 此处就是把可能含有key的那个sstable找出来</span><br>        <span class="hljs-comment">// 查找返回的结果是比要查找的key大的最小的一个sstable</span><br>        <span class="hljs-comment">// 二分法</span><br>        <span class="hljs-type">uint32_t</span> index = <span class="hljs-built_in">FindFile</span>(vset_-&gt;icmp_, files_[level], internal_key);<br>        <span class="hljs-keyword">if</span> (index &lt; num_files)<br>        {<br>            FileMetaData *f = files_[level][index];<br>            <span class="hljs-keyword">if</span> (ucmp-&gt;<span class="hljs-built_in">Compare</span>(user_key, f-&gt;smallest.<span class="hljs-built_in">user_key</span>()) &lt; <span class="hljs-number">0</span>)<br>            {<br>                <span class="hljs-comment">// 这一层内唯一个的一个可能含有key的sstable的范围也不包含key</span><br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-keyword">if</span> (!(*func)(arg, level, f))<br>                {<br>                    <span class="hljs-comment">// 找到就返回</span><br>                    <span class="hljs-keyword">return</span>;<br>                }<br>            }<br>        }<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
+<p>我们可以看到，在Version::Get中，定义了一个结构体，可以理解成这个结构体就是全部sstable的集合，主要是为了对一些数据进行封装，方便编码。这个结构体有一个Match函数，这个函数的作用是在第level层的f中查找key(<em><u>这三个都是传入的参数，其中f可以理解成sstable的索引</u></em>)。在Version::Get中，真正开始遍历查询各个层的sstable的函数其实是ForEachOverlapping，<strong>当然这里的sstable也指的是索引，只记录了key的范围和其他一些信息，下面这两段也是通过sstable索引查找</strong>。</p>
+<p>在这个函数中，它会从第0层开始，逐层查找每层中<strong>可能</strong>含有key的sstable，并使用结构体中的Match函数判断是否<strong>真的存在</strong>，这个Match函数是通过函数指针传递进去的。另外，由于第0层可能有多个sstable含有key，而其他层则只会最多一个sstable含有key，所以这部分逻辑还是稍有区别的，具体体现在：第0层是遍历；其他层是二分查找。</p>
+<p>最后来再看一下这个Match函数，这个函数就是利用sstable的索引来从sstable缓存中拿到真正的那个sstable，并从中查找key，并通过key的类型(删除还是插入还是key损坏)来返回结果。</p>
+<h4 id="tablecacheget">TableCache::Get</h4>
+<p>虽然之前在缓存中已经阐述过了TableCache::Get方法，但是为了连贯性，此处还是把这一点点代码单独拿出来。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 从缓存中获取key-value</span><br><span class="hljs-function">Status <span class="hljs-title">TableCache::Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">uint64_t</span> file_number,</span></span><br><span class="hljs-params"><span class="hljs-function">                       <span class="hljs-type">uint64_t</span> file_size, <span class="hljs-type">const</span> Slice &amp;k, <span class="hljs-type">void</span> *arg,</span></span><br><span class="hljs-params"><span class="hljs-function">                       <span class="hljs-type">void</span> (*handle_result)(<span class="hljs-type">void</span> *, <span class="hljs-type">const</span> Slice &amp;,</span></span><br><span class="hljs-params"><span class="hljs-function">                                             <span class="hljs-type">const</span> Slice &amp;))</span></span><br><span class="hljs-function"></span>{<br>    Cache::Handle *handle = <span class="hljs-literal">nullptr</span>;<br>    <span class="hljs-comment">// 先从缓存中查找对应的table的缓存项</span><br>    <span class="hljs-comment">// 如果缓存中没有这个table，就会从文件中打开并插入到缓存中</span><br>    <span class="hljs-comment">// 但是TableCache缓存的实际是sstable的索引项</span><br>    Status s = <span class="hljs-built_in">FindTable</span>(file_number, file_size, &amp;handle);<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        Table *t = <span class="hljs-built_in">reinterpret_cast</span>&lt;TableAndFile *&gt;(cache_-&gt;<span class="hljs-built_in">Value</span>(handle))-&gt;table;<br>        <span class="hljs-comment">// 然后从sstable中把这个值给拿出来，这个值会被handle_result这个回调函数处理</span><br>        s = t-&gt;<span class="hljs-built_in">InternalGet</span>(options, k, arg, handle_result);<br>        cache_-&gt;<span class="hljs-built_in">Release</span>(handle);<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br><span class="hljs-comment">// 从TableCache中查找Table缓存的函数</span><br><span class="hljs-function">Status <span class="hljs-title">TableCache::FindTable</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> file_number, <span class="hljs-type">uint64_t</span> file_size,</span></span><br><span class="hljs-params"><span class="hljs-function">                             Cache::Handle **handle)</span></span><br><span class="hljs-function"></span>{<br>    Status s;<br>    <span class="hljs-type">char</span> buf[<span class="hljs-built_in">sizeof</span>(file_number)];<br>    <span class="hljs-built_in">EncodeFixed64</span>(buf, file_number);<br>    <span class="hljs-function">Slice <span class="hljs-title">key</span><span class="hljs-params">(buf, <span class="hljs-keyword">sizeof</span>(buf))</span></span>; <span class="hljs-comment">// 查找时的key为filenumber的编码</span><br>    *handle = cache_-&gt;<span class="hljs-built_in">Lookup</span>(key);<br>    <span class="hljs-keyword">if</span> (*handle == <span class="hljs-literal">nullptr</span>)<br>    {<br>        std::string fname = <span class="hljs-built_in">TableFileName</span>(dbname_, file_number);<br>        RandomAccessFile *file = <span class="hljs-literal">nullptr</span>;<br>        Table *table = <span class="hljs-literal">nullptr</span>;<br>        s = env_-&gt;<span class="hljs-built_in">NewRandomAccessFile</span>(fname, &amp;file);<br>        <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>        {<br>            std::string old_fname = <span class="hljs-built_in">SSTTableFileName</span>(dbname_, file_number);<br>            <span class="hljs-keyword">if</span> (env_-&gt;<span class="hljs-built_in">NewRandomAccessFile</span>(old_fname, &amp;file).<span class="hljs-built_in">ok</span>())<br>            {<br>                s = Status::<span class="hljs-built_in">OK</span>();<br>            }<br>        }<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            s = Table::<span class="hljs-built_in">Open</span>(options_, file, file_size, &amp;table);<br>        }<br><br>        <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>        {<br>            <span class="hljs-built_in">assert</span>(table == <span class="hljs-literal">nullptr</span>);<br>            <span class="hljs-keyword">delete</span> file;<br>            <span class="hljs-comment">// We do not cache error results so that if the error is transient,</span><br>            <span class="hljs-comment">// or somebody repairs the file, we recover automatically.</span><br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 找不到就新打开它</span><br>            TableAndFile *tf = <span class="hljs-keyword">new</span> TableAndFile;<br>            tf-&gt;file = file;<br>            tf-&gt;table = table;<br>            *handle = cache_-&gt;<span class="hljs-built_in">Insert</span>(key, tf, <span class="hljs-number">1</span>, &amp;DeleteEntry);<br>        }<br>    }<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>我们之前也提到过，TableCache中存储的是sstable的索引项，所以我们能通过这些索引来快速一个key是否<strong>真正</strong>位于此sstable中(布隆过滤器)，以及它会在哪里出现(block的索引)。TableCache::Get就是先调用FindTable来查找一下这个sstable的<strong>索引</strong>，然后调用InternalGet来通过索引获取这个值。其中FindTable作用也很简单，就是先在已有的table索引缓存项中查找，如果找到了就返回这个索引；找不到，就从文件中打开这个sstable，并把缓存插入到索引中。</p>
+<p>至于InternalGet这个函数，它就是正经从sstable的block中获取值了。</p>
+<h4 id="tableinternalget">Table::InternalGet</h4>
+<p>我们来看一下这个函数的实现</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 从sstable的block中获取值</span><br><span class="hljs-function">Status <span class="hljs-title">Table::InternalGet</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">const</span> Slice &amp;k, <span class="hljs-type">void</span> *arg,</span></span><br><span class="hljs-params"><span class="hljs-function">                          <span class="hljs-type">void</span> (*handle_result)(<span class="hljs-type">void</span> *, <span class="hljs-type">const</span> Slice &amp;,</span></span><br><span class="hljs-params"><span class="hljs-function">                                                <span class="hljs-type">const</span> Slice &amp;))</span></span><br><span class="hljs-function"></span>{<br>    Status s;<br>    <span class="hljs-comment">// 搜索索引</span><br>    Iterator *iiter = rep_-&gt;index_block-&gt;<span class="hljs-built_in">NewIterator</span>(rep_-&gt;options.comparator);<br>    iiter-&gt;<span class="hljs-built_in">Seek</span>(k);<br>    <span class="hljs-keyword">if</span> (iiter-&gt;<span class="hljs-built_in">Valid</span>())<br>    {<br>        Slice handle_value = iiter-&gt;<span class="hljs-built_in">value</span>();<br>        <span class="hljs-comment">// 如果使用了布隆过滤器，则先查找布隆过滤器，如果没有发现，就直接返回了</span><br>        FilterBlockReader *filter = rep_-&gt;filter;<br>        BlockHandle handle;<br>        <span class="hljs-keyword">if</span> (filter != <span class="hljs-literal">nullptr</span> &amp;&amp; handle.<span class="hljs-built_in">DecodeFrom</span>(&amp;handle_value).<span class="hljs-built_in">ok</span>() &amp;&amp;<br>            !filter-&gt;<span class="hljs-built_in">KeyMayMatch</span>(handle.<span class="hljs-built_in">offset</span>(), k))<br>        {<br>            <span class="hljs-comment">// Not found</span><br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            <span class="hljs-comment">// 读取一个Data Block</span><br>            Iterator *block_iter = <span class="hljs-built_in">BlockReader</span>(<span class="hljs-keyword">this</span>, options, iiter-&gt;<span class="hljs-built_in">value</span>());<br>            block_iter-&gt;<span class="hljs-built_in">Seek</span>(k);<br>            <span class="hljs-keyword">if</span> (block_iter-&gt;<span class="hljs-built_in">Valid</span>())<br>            {<br>                <span class="hljs-comment">// 找到对应的键，调用回调函数</span><br>                (*handle_result)(arg, block_iter-&gt;<span class="hljs-built_in">key</span>(), block_iter-&gt;<span class="hljs-built_in">value</span>());<br>            }<br>            s = block_iter-&gt;<span class="hljs-built_in">status</span>();<br>            <span class="hljs-keyword">delete</span> block_iter;<br>        }<br>    }<br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        s = iiter-&gt;<span class="hljs-built_in">status</span>();<br>    }<br>    <span class="hljs-keyword">delete</span> iiter;<br>    <span class="hljs-keyword">return</span> s;<br>}<br><br><span class="hljs-comment">// 读取一个Block，BlockCache就在这里哦</span><br><span class="hljs-function">Iterator *<span class="hljs-title">Table::BlockReader</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg, <span class="hljs-type">const</span> ReadOptions &amp;options,</span></span><br><span class="hljs-params"><span class="hljs-function">                             <span class="hljs-type">const</span> Slice &amp;index_value)</span></span><br><span class="hljs-function"></span>{<br>    Table *table = <span class="hljs-built_in">reinterpret_cast</span>&lt;Table *&gt;(arg);<br>    Cache *block_cache = table-&gt;rep_-&gt;options.block_cache;<br>    Block *block = <span class="hljs-literal">nullptr</span>;<br>    Cache::Handle *cache_handle = <span class="hljs-literal">nullptr</span>;<br><br>    BlockHandle handle;<br>    Slice input = index_value;<br>    Status s = handle.<span class="hljs-built_in">DecodeFrom</span>(&amp;input);<br>    <span class="hljs-comment">// We intentionally allow extra stuff in index_value so that we</span><br>    <span class="hljs-comment">// can add more features in the future.</span><br><br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        BlockContents contents;<br>        <span class="hljs-comment">// BlockCache在这里</span><br>        <span class="hljs-comment">// 根据block handle，首先尝试从blockcache中直接取出block，不在blockcache中则</span><br>        <span class="hljs-comment">// 调用ReadBlock从文件读取，读取成功后，根据option尝试将block加入到blockcache中。</span><br>        <span class="hljs-comment">// 并在Insert的时候注册了释放函数DeleteCachedBlock。</span><br>        <span class="hljs-keyword">if</span> (block_cache != <span class="hljs-literal">nullptr</span>)<br>        {<br>            <span class="hljs-type">char</span> cache_key_buffer[<span class="hljs-number">16</span>];<br>            <span class="hljs-built_in">EncodeFixed64</span>(cache_key_buffer, table-&gt;rep_-&gt;cache_id);<br>            <span class="hljs-built_in">EncodeFixed64</span>(cache_key_buffer + <span class="hljs-number">8</span>, handle.<span class="hljs-built_in">offset</span>());<br>            <span class="hljs-function">Slice <span class="hljs-title">key</span><span class="hljs-params">(cache_key_buffer, <span class="hljs-keyword">sizeof</span>(cache_key_buffer))</span></span>;<br>            <span class="hljs-comment">// 先查一下缓存，key是由cache_id和handler的偏移值共同组成</span><br>            cache_handle = block_cache-&gt;<span class="hljs-built_in">Lookup</span>(key);<br>            <span class="hljs-keyword">if</span> (cache_handle != <span class="hljs-literal">nullptr</span>)<br>            {<br>                <span class="hljs-comment">// 查找到就优先从缓存中返回</span><br>                block = <span class="hljs-built_in">reinterpret_cast</span>&lt;Block *&gt;(block_cache-&gt;<span class="hljs-built_in">Value</span>(cache_handle));<br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-comment">// 否则就添加到缓存</span><br>                s = <span class="hljs-built_in">ReadBlock</span>(table-&gt;rep_-&gt;file, options, handle, &amp;contents);<br>                <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>                {<br>                    block = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Block</span>(contents);<br>                    <span class="hljs-keyword">if</span> (contents.cachable &amp;&amp; options.fill_cache)<br>                    {<br>                        cache_handle = block_cache-&gt;<span class="hljs-built_in">Insert</span>(key, block, block-&gt;<span class="hljs-built_in">size</span>(),<br>                                                           &amp;DeleteCachedBlock);<br>                    }<br>                }<br>            }<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            s = <span class="hljs-built_in">ReadBlock</span>(table-&gt;rep_-&gt;file, options, handle, &amp;contents);<br>            <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>            {<br>                block = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Block</span>(contents);<br>            }<br>        }<br>    }<br><br>    <span class="hljs-comment">// 返回block的迭代器</span><br>    Iterator *iter;<br>    <span class="hljs-keyword">if</span> (block != <span class="hljs-literal">nullptr</span>)<br>    {<br>        iter = block-&gt;<span class="hljs-built_in">NewIterator</span>(table-&gt;rep_-&gt;options.comparator);<br>        <span class="hljs-keyword">if</span> (cache_handle == <span class="hljs-literal">nullptr</span>)<br>        {<br>            iter-&gt;<span class="hljs-built_in">RegisterCleanup</span>(&amp;DeleteBlock, block, <span class="hljs-literal">nullptr</span>);<br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            iter-&gt;<span class="hljs-built_in">RegisterCleanup</span>(&amp;ReleaseBlock, block_cache, cache_handle);<br>        }<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        iter = <span class="hljs-built_in">NewErrorIterator</span>(s);<br>    }<br>    <span class="hljs-keyword">return</span> iter;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>而对于Table::InternalGet，基于前面介绍的SSTable的内存结构是比较好理解的：</p>
+<ul>
+<li>先搜索索引块，找到对应的索引，根据索引找到对应的Data Block</li>
+<li>查找Data Block。</li>
+</ul>
+<p>其中还需要注意在读一个DataBlock的时候是使用到BlockCache的，只不过缓存这个东西有点感觉不到。</p>
+<p>因为SSTable里保存的是Internal Key，但是搜索的是User Key，而Iterator
+Seek的是第一个大于等于待搜索的键的数据项，如果某个User
+Key不存在，是会定位到下一个User Key上面的，所以找到Internal
+Key后，还需要比较里的User Key是否相同，这就是回调函数的作用了。</p>
+<h3 id="读写的总结">读写的总结</h3>
+<h4 id="读取">读取</h4>
+<p>对于读取，如果键刚好在MemTable里，那么就是内存访问会非常快。否则就和需要读取的SSTable数量有关。前面说过SSTable里索引等数据是读入内存的，所以每次读取SSTable时，最多只需要一次磁盘IO，读取一个Data
+Block。一般Level
+0的文件最多为4个，而Level最高为7层，这样就需要10次IO。对于一个不存在的键或者一个很早就写入的键，但是键在多个SSTable的范围内，往往需要花费最大的磁盘IO。然而这是最坏的情景，实际上有优化来减少了磁盘IO：</p>
+<ul>
+<li>Data Block的缓存，如果在缓存里发现了要读取的Data
+Block，那么不需要磁盘IO；</li>
+<li>布隆过滤器，对于不存在的键有很好的优化，默认情况下99%的正确率，可以宣告一个键不在这个SSTable里，那么也无需缓存，典型的空间换时间。</li>
+</ul>
+<p>所以很多读只需要一次磁盘IO，或者不需要磁盘IO。</p>
+<ul>
+<li>需要从DB中读取一个key的时候，首先调用DBImpl::Get函数，这个函数首先查找memtable、immemtable这些位于内存中的跳表，调用跳表的get方法来查找，这中间能够查找到的一定是最新的数据，可以直接返回</li>
+<li>如果上述查找不到，则会调用Version::Get从所有sstable的集合中查找。并且如果一个sstable多次查不到数据，还会尝试将冷数据堆到更高层上去。</li>
+<li>在Version::Get中，会调用Version::ForEachOverlapping来对每一层的sstable记录进行查找，找到范围包括key的sstable。其中要区别第0层和其他层的sstable的不同之处(即第0层key会有重叠，其他层不会)</li>
+<li>Version::ForEachOverlapping就是简单的遍历一下各个sstable的范围，调用Version::State::Match来对每个可能含有key的sstable进行具体查找。</li>
+<li>Version::State::Match则首先调用TableCache::Get来从TableCache中获取key对应的值，然后根据值的类型(插入、删除)来调用回调函数处理。</li>
+<li>TableCache::Get会调用TableCache::FindTable找出sstable的索引，如果索引在缓存不命中，就会打开这个sstable的索引并插入到缓存中。</li>
+<li>TableCache::Get在拿到sstable的索引后会调用Table::InternalGet来根据索引和BlockCache来正式获取值。</li>
+<li>由于user_key和internal_key不同，还需要回调函数来比较一下查找到的key是不是我们要的key，如果是的话，就返回。</li>
+</ul>
+<h4 id="写入">写入</h4>
+<p>对于写入，如果不用sync的方式写入，其实基本就是写内存，而对于sync的方式，每次write都需要做一次磁盘IO，但是磁盘IO是写文件，是顺序IO，所以也是相当快的。而且在写入时，后面来的写请求，都会堆积起来，在后一个写入中批量写入，这样的一次磁盘IO其实是被平摊了。这就是为什么LSM
+Tree写入快的原因了。</p>
+<ul>
+<li>调用DBImpl::Put或DBImpl::Delete进行写入，会生成一个WriteBatch，然后调用DBImpl::Write去处理这个WriteBatch。</li>
+<li>Write函数的过程为：先获取锁，同时把batch插入到write_中，检测头结点是不是自己以及队列中的batch是否插入完成了，如果都没有则进入等待中并释放锁。反之，则先将若干个batch打包成一个大的batch，然后按照先写入wal再写入memtable的顺序完成写入。在写入期间锁会被解开，其他线程可以往write_中插入batch。写入完成后重新上锁，更新序列号并从write_中删除写入的部分。</li>
+<li>当然，在真正写入之前，会调用DBImpl::MakeRoomForWrite，这个函数会做一些限流策略。</li>
+</ul>
+<h2 id="总结">总结</h2>
+<ul>
+<li>使用队列来将线程异步写转化成单线程同步写</li>
+<li>设计的时候需要多多分层，按照层级来设置缓存和接口，接口要尽可能简单，但是背后的逻辑可能会有点复杂</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/10/21/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-13/" title="levelDB源码剖析(13)--缓存Cache">
+                        <span class="hidden-mobile">levelDB源码剖析(13)--缓存Cache</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
