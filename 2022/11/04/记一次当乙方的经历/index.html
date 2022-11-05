@@ -16,26 +16,24 @@
   <meta name="author" content="PPXXXG22">
   <meta name="keywords" content="">
   
-    <meta name="description" content="使用一个装饰器来将python中的同步函数转化成多线程函数">
+    <meta name="description" content="给阳光电源提供噪声过滤的接口及实现的经历">
 <meta property="og:type" content="article">
-<meta property="og:title" content="将python中同步函数转换成多线程非阻塞函数">
-<meta property="og:url" content="http://example.com/2022/10/14/%E5%B0%86python%E4%B8%AD%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E6%88%90%E5%A4%9A%E7%BA%BF%E7%A8%8B%E9%9D%9E%E9%98%BB%E5%A1%9E%E5%87%BD%E6%95%B0/index.html">
+<meta property="og:title" content="记一次当乙方的经历">
+<meta property="og:url" content="http://example.com/2022/11/04/%E8%AE%B0%E4%B8%80%E6%AC%A1%E5%BD%93%E4%B9%99%E6%96%B9%E7%9A%84%E7%BB%8F%E5%8E%86/index.html">
 <meta property="og:site_name" content="PPXXXG22">
-<meta property="og:description" content="使用一个装饰器来将python中的同步函数转化成多线程函数">
+<meta property="og:description" content="给阳光电源提供噪声过滤的接口及实现的经历">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/imgs/post_index_img/async.jpg">
-<meta property="article:published_time" content="2022-10-14T12:36:34.000Z">
-<meta property="article:modified_time" content="2022-11-04T06:03:42.414Z">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/sunshine.jpg">
+<meta property="article:published_time" content="2022-11-04T06:01:38.000Z">
+<meta property="article:modified_time" content="2022-11-05T02:33:49.642Z">
 <meta property="article:author" content="PPXXXG22">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="异步">
-<meta property="article:tag" content="爬虫">
+<meta property="article:tag" content="记事杂谈">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/imgs/post_index_img/async.jpg">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/sunshine.jpg">
   
   
   
-  <title>将python中同步函数转换成多线程非阻塞函数 - PPXXXG22</title>
+  <title>记一次当乙方的经历 - PPXXXG22</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -335,13 +333,13 @@ mjx-container[display="true"] + br {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('/imgs/post_index_img/async.jpg') no-repeat center center; background-size: cover;">
+     style="background: url('/imgs/post_index_img/sunshine.jpg') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="使用一个装饰器来将python中的同步函数转化成多线程函数"></span>
+            <span id="subtitle" data-typed-text="给阳光电源提供噪声过滤的接口及实现"></span>
           
         </div>
 
@@ -352,8 +350,8 @@ mjx-container[display="true"] + br {
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-10-14 20:36" pubdate>
-          October 14, 2022 pm
+        <time datetime="2022-11-04 14:01" pubdate>
+          November 4, 2022 pm
         </time>
       </span>
     
@@ -364,7 +362,7 @@ mjx-container[display="true"] + br {
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.1k words
+          2.6k words
         
       </span>
     
@@ -375,7 +373,7 @@ mjx-container[display="true"] + br {
         
         
         
-          9 mins
+          11 mins
         
       </span>
     
@@ -421,35 +419,62 @@ mjx-container[display="true"] + br {
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">使用一个装饰器来将python中的同步函数转化成多线程函数</h1>
+            <h1 style="display: none">给阳光电源提供噪声过滤的接口及实现</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="使用一个装饰器来将python中的同步函数转化成多线程函数">使用一个装饰器来将python中的同步函数转化成多线程函数</h2>
+                <h2 id="给阳光电源提供噪声过滤的接口及实现的经历">给阳光电源提供噪声过滤的接口及实现的经历</h2>
 <span id="more"></span>
-<div class="note note-info">
-            <p>python由于GIL锁的原因，不支持真正的多线程，但是可以利用多线程来利用由于IO引起的阻塞问题，也算是曲线多线程了。</p>
-          </div>
-<h3 id="缘由">缘由</h3>
-<p>目前我正在写一个基于<code>Requests</code>的多线程图像下载库框架，<a target="_blank" rel="noopener" href="https://github.com/ppxxxg22/anime_crawler">可以查看这里，目前已经基本写完</a>。爬虫可以异步来实现高并发以充分利用网络IO的等待，但是众所周知，<code>Requests</code>库是不支持异步的，但是可以通过多线程的方式来为其实现异步，不过使用线程的开销会稍微大一些。</p>
-<h3 id="实现方式">实现方式</h3>
-<p>实现方式很简单，只需要一个装饰器即可。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> requests<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_async</span>(<span class="hljs-params">callback</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params">func</span>):<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">wrapper</span>(<span class="hljs-params">*args, **kwargs</span>):<br>            <span class="hljs-keyword">def</span> <span class="hljs-title function_">__exec</span>():<br>                out = func(*args, **kwargs)<br>                callback(out)<br>                <span class="hljs-keyword">return</span> out<br>            <span class="hljs-keyword">return</span> asyncio.get_event_loop().run_in_executor(<span class="hljs-literal">None</span>, __<span class="hljs-built_in">exec</span>)<br>        <span class="hljs-keyword">return</span> wrapper<br>    <span class="hljs-keyword">return</span> inner<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">_callback</span>(<span class="hljs-params">*args</span>):<br>    <span class="hljs-built_in">print</span>(args)<br><br><span class="hljs-meta">@run_async(<span class="hljs-params">_callback</span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get</span>(<span class="hljs-params">url</span>):<br>    <span class="hljs-keyword">return</span> requests.get(url)<br><br><br>get(<span class="hljs-string">"https://baidu.com"</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">"done!"</span>) <span class="hljs-comment"># 注意这里是无阻塞的</span><br><br></code></pre></td></tr></table></figure>
-<p>只需要这样实现一个装饰器就能实现<code>requests.get()</code>函数的并发。</p>
-<h3 id="使用线程池来进行改进">使用线程池来进行改进</h3>
-<p>但是在时间过程中，上述代码不能长时间运行，否则内存占用会不断飙升。</p>
-<p>原因是每次都创建出一个开销比较高的线程，但是没有进行回收，所以不断驻留在内存中导致占用过高。</p>
-<p>不过我们可以使用线程池来修改它，将其资源限制在一定范围内。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> concurrent.futures <span class="hljs-keyword">import</span> ThreadPoolExecutor<br><br>pool = ThreadPoolExecutor(<span class="hljs-number">16</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_async</span>(<span class="hljs-params">callback</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params">func</span>):<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">wrapper</span>(<span class="hljs-params">*args, **kwargs</span>):<br>            <span class="hljs-keyword">def</span> <span class="hljs-title function_">__exec</span>():<br>                out = func(*args, **kwargs)<br>                callback(out) <br>                <span class="hljs-keyword">return</span> out<br>            <span class="hljs-keyword">return</span> pool.submit(__<span class="hljs-built_in">exec</span>)<br>        <span class="hljs-keyword">return</span> wrapper<br>    <span class="hljs-keyword">return</span> inner<br><br></code></pre></td></tr></table></figure>
-<p>这样每次都会从线程池拿一个线程出来进行处理。</p>
-<h3 id="使其能用于类方法">使其能用于类方法</h3>
-<p>上述代码虽然解决了内存占用问题，但是还有一个问题没有解决。</p>
-<p>比如我定义了一个<code>Downloader</code>类，里面有<code>callback(self, *args)</code>和<code>download(self, *args)</code>函数。其中<code>download(self, *args)</code>函数负责下载任务，然后返回下载结果并交给<code>callback(self, *args)</code>处理，由于下载是并发的，所以装饰器会在<code>download(self, *args)</code>头上，如下所示。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Donwloader</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self,**kwargs</span>):<br>        ...<br><br><span class="hljs-meta">    @run_async(<span class="hljs-params">callback</span>)</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">download</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 下载一些东西</span><br>        ...<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">callback</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 回调函数</span><br>        ...<br><br></code></pre></td></tr></table></figure>
-<p>但这样是不能正常工作的，因为self没有被正常传递</p>
-<p>改成下面这样就可以了</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> concurrent.futures <span class="hljs-keyword">import</span> ThreadPoolExecutor<br><span class="hljs-keyword">from</span> anime_crawler.settings <span class="hljs-keyword">import</span> MAX_CONCURRENT_REQUESTS<br><br>pool = ThreadPoolExecutor(MAX_CONCURRENT_REQUESTS)<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">run_async_c</span>(<span class="hljs-params">callback</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">inner</span>(<span class="hljs-params">func</span>):<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">wrapper</span>(<span class="hljs-params">*args, **kwargs</span>):<br>            <span class="hljs-keyword">def</span> <span class="hljs-title function_">__exec</span>():<br>                out = func(*args, **kwargs)<br>                callback(args[<span class="hljs-number">0</span>], out)  <span class="hljs-comment"># args[0]是self</span><br>                <span class="hljs-keyword">return</span> out<br>            <span class="hljs-keyword">return</span> pool.submit(__<span class="hljs-built_in">exec</span>)<br>        <span class="hljs-keyword">return</span> wrapper<br>    <span class="hljs-keyword">return</span> inner<br><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Donwloader</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self,**kwargs</span>):<br>        ...<br><br><span class="hljs-meta">    @run_async_c(<span class="hljs-params">callback</span>)</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">download</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 下载一些东西</span><br>        ...<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">callback</span>(<span class="hljs-params">self, *args</span>):<br>        <span class="hljs-comment"># 回调函数</span><br>        ...<br><br></code></pre></td></tr></table></figure>
+<p>我导接到了一个来自阳光电源的企业横向项目。我正好负责其中的关于传统图像处理的部分，涉及到图像分割分类和对掩模噪声过滤这两部分。几次会议交流下来，掩模噪声过滤这部分已经基本实现，达到了企业的要求，于是企业方要我提供对应的接口与实现以便后续部署在他们的服务器上。然后，这段奇妙的经历正式开始...</p>
+<h3 id="x0-前言----一念之差埋下的祸根">0x0
+前言----一念之差埋下的祸根</h3>
+<p>整个任务的流程大致是SIFT+聚类+匹配(实际上复杂得多得多，这里只列出每个子流程中最重要的一个环节)。</p>
+<p>在某一阶段的任务完成后，我发现代码如果全用python实现的话，里面有不少for循环，而python的for循环又是出了名的慢。所以想着闲着也是闲着<strong>，不如把这些完全基于OpenCV的python代码拿C++重构了</strong>(看来是真的闲)。殊不知，一个大坑就在这次重构中被埋下了...</p>
+<p>重构后的代码果然快了很多(提升3倍左右，opencv-python本身也是调的C++库代码，主要优化的部分是函数调用开销和庞大的for循环)。<strong>但是，代价是：项目使用了python和C++两种语言，且两者之间是强耦合</strong>。</p>
+<h3 id="x1-伊始----逐步离谱的开发过程">0x1
+伊始----逐步离谱的开发过程</h3>
+<p>当我真正领到要把之前的所有代码整理成可用的库并提供简单的接口这项任务的时候，其实我还是比较懵逼的。</p>
+<p>因为他们的意思感觉就是打算直接把我写的库改叭改叭就直接部署在服务器上了(起码我当时是这么认为的)。这着实让我有点惊慌：</p>
+<ul>
+<li>一是我担心我的代码出问题，而且一般公司应该都有一些代码规范啥的，我写的肯定不符合他们的规范(废话，我甚至连他们公司的代码规范都没读过)，他们肯定也不太会做code
+review之类的</li>
+<li>二是，我之前开发的代码都是一些原型代码，不涉及日志记录、强大的异常处理还有错误恢复等等鲁棒性措施(如果他们打算加进去又得code
+review，而code review又会遇到我的代码不合规范的问题)。</li>
+</ul>
+<p>还有一点，他们给的deadline还是相对比较紧的。我写的代码在本地环境能跑，但是想要打包成一个对于不同架构下开箱即用的库，难度还是比较大的。(更何况是代码涉及到python和C++两种语言)。</p>
+<p>但无论如何，都得继续进行下去。为了增强代码的可读性，我<strong>还得对python那部分代码进行重构</strong>(主要是任务是随着每次会议进行逐步增加，就慢慢变成衣驼使了...)</p>
+<h3 id="x2-挣扎----在坑里陷得越来越深">0x2
+挣扎----在坑里陷得越来越深</h3>
+<p>当我从重构深渊中爬出来的时候，我需要真正开始思考<strong>如何提供一个能够在不同系统上开箱即用的库了</strong>。</p>
+<p>其实关于python代码那部分不太考虑太多，python跨平台性能还是很强的。<strong>按照道理来说确实是这样</strong>，但是，他们公司有的图片实在是太大了，超过了OpnCV的像素限制大小，所以需要在OpenCV的源码中把限制像素大小的那几个断言注释掉，不然是没法用的。<strong>所以，如果想要不出问题地运行python代码，就必须需要从源码编译OpenCV的python库...</strong></p>
+<p>然后是C++那部分代码，其实C++的跨平台也不错，<strong>只需要有对应平台的动态链接库</strong>，然后我们到时候一链接就OK啦。但是，还是一样的问题，直接下载下来的OpenCV链接库会出现超出像素限制的错误，<strong>所以还是得从头编译OpenCV库</strong>。</p>
+<p>另外，因为服务器是linux系统，所以如果想要编译出该系统下的库，只需要找一台对应系统的服务器，或者...<strong>交叉编译</strong>。</p>
+<p>幸好实验室里有一台linux服务器，只需要...等等，<strong>前两天这台服务器跑深度学习给烧了</strong>。没事，维修师傅应该很快就能修...等等，<strong>现在因为疫情封校，外来人员根本进不来</strong>！</p>
+<p>寄！看来只能老老实实去交叉编译了</p>
+<h3 id="x3-转机----要从坑里出去啦">0x3 转机----要从坑里出去啦？</h3>
+<p>这时候我突然想到，之前从Github Student
+Package里领过DigitalOcean的200美元金额，正好可以开一个服务器，然后当作编译服务器来用。</p>
+<p>然后理所当然的就开了一个2C2G的服务器，而且由于服务器本身在墙外，拉github代码、下载依赖啥的都很快。当我配置好CMAKE选项，敲下令人很有安全感的<code>make -j2</code>后，一阵心情愉悦。</p>
+<p>但是没过多久，我发现如果服务器的内存不够，opencv没法编译出python的库。但是又懒得换一台再走一套这个流程了，所以就干脆先不编译python的库，
+只编译出c++的库。</p>
+<p>就这样，总算是勉强弄出了C++的依赖库。然后就是要把这些库链接进我写的C++代码编译成的库中。</p>
+<p>至于python，我是这样想的，因为他们既然能生成那种超大张的图像，所以他们的opencv-python肯定是魔改过的，我只要保证我的c++代码这里链接的库不出问题就可以了。</p>
+<h3 id="x4-折磨----重复编译的地狱与初见曙光">0x4
+折磨----重复编译的地狱与初见曙光</h3>
+<p>由于涉及到在python中调用C++的库函数，关于这个问题，其实我之前没有搞过。我之前只是接触过Cython和一些C扩展的写法，但是C扩展也太难写了，所以后面没有深入。</p>
+<p>后面经过一番搜索才知道可以使用ctypes这个包，但是具体怎么用还是不很清楚。考虑到那部分C++代码是以类的方式呈现的，所以我又为它搞了个包装函数(因为我只搜到了ctypes调用函数的方式，不清楚能不能调用类)。</p>
+<p>但是调用的时候老是出错，我一度怀疑是搜出来的资料有问题还是我本身代码写的有问题，反复编译了好几次。</p>
+<p>最终好不容易才摸清楚正确的调用方式。<strong>为了能调用c++库函数，我为这部分又写了一个适配器；为了让接口更加优雅，我又为适配器写了一个包装函数</strong>...</p>
+<p>但不管怎么说，这一堆代码总算是能正确的跑起来了。</p>
+<h3 id="x5-结束----但是似乎并不令人满意">0x5
+结束----但是似乎并不令人满意</h3>
+<p>总算是能够给出一套能用的库了，在服务器上测试了一下，运行的还不错。于是写了个文档和example程序，加上一点注释，把所有默认配置项全部引出组织成文件。接下来，就可以给公司人员测试了。</p>
+<p>但是，我忘了我所有编译的都是动态链接库(<strong>这确实是我的失误，应该把OpenCV编译成静态库，把我的代码编译成动态库</strong>)，所以公司他们还需要重头编译...相当于我之前的一些工作都白干了...</p>
+<p>而且他们之前还要我测试一下部分结构的改进效果，我还给忘了...</p>
+<h3 id="x6-后记">0x6 后记</h3>
+<p>这次经历还是很有意思的(虽然写出来之后可能没有读出来，这种事还是要经历才能有感知)，所以打算记录下来。</p>
+<p>顺带一提，阳光电源和我交接工作的还是我们学校的学长，人非常好，之前还打电话问我要不要去他们公司实习，但是考虑到目前刚刚大三，而且这里疫情很重，所以就没去。</p>
 
                 
               </div>
@@ -468,7 +493,7 @@ mjx-container[display="true"] + br {
     
       <span class="category-chain">
         
-  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
+  <a href="/categories/%E5%A5%87%E8%B6%A3%E8%AE%B0%E4%BA%8B/" class="category-chain-item">奇趣记事</a>
   
   
 
@@ -483,11 +508,7 @@ mjx-container[display="true"] + br {
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Python/">#Python</a>
-      
-        <a href="/tags/%E5%BC%82%E6%AD%A5/">#异步</a>
-      
-        <a href="/tags/%E7%88%AC%E8%99%AB/">#爬虫</a>
+        <a href="/tags/%E8%AE%B0%E4%BA%8B%E6%9D%82%E8%B0%88/">#记事杂谈</a>
       
     </div>
   
@@ -501,18 +522,12 @@ mjx-container[display="true"] + br {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/10/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-12/" title="levelDB源码剖析(12)--迭代器的实现">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">levelDB源码剖析(12)--迭代器的实现</span>
-                        <span class="visible-mobile">Previous</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/10/01/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-11/" title="levelDB源码剖析(11)--内部的key结构">
-                        <span class="hidden-mobile">levelDB源码剖析(11)--内部的key结构</span>
+                      <a href="/2022/10/24/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-14/" title="levelDB源码剖析(14)--数据库功能部分">
+                        <span class="hidden-mobile">levelDB源码剖析(14)--数据库功能部分</span>
                         <span class="visible-mobile">Next</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
