@@ -1,0 +1,783 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="使用yield将一个递归保持形式不变下转换成非递归">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python中使用yield将一个递归保持形式不变下转换成非递归">
+<meta property="og:url" content="http://example.com/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="使用yield将一个递归保持形式不变下转换成非递归">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/yield1.jpg">
+<meta property="article:published_time" content="2022-11-28T11:36:20.000Z">
+<meta property="article:modified_time" content="2022-11-28T13:56:13.916Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/yield1.jpg">
+  
+  
+  
+  <title>python中使用yield将一个递归保持形式不变下转换成非递归 - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                Links
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/yield1.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="没用的知识又增加啦"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-11-28 19:36" pubdate>
+          November 28, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.1k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">没用的知识又增加啦</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="使用yield将一个递归保持形式不变下转换成非递归">使用yield将一个递归保持形式不变下转换成非递归</h2>
+<span id="more"></span>
+<p>递归函数的可读性高，但是效率不高；非递归函数的效率高，但是可读性会略逊一筹。不过在python中借助yield这个工具我们可以做到鱼和熊掌得兼。</p>
+<h3 id="yield的一些技巧">yield的一些技巧</h3>
+<p>函数内有yield的函数将被作为生成器，当函数执行到yield这里时会将生成器挂起，直到下一次调用。</p>
+<p>yield当然还有其他的很多用处和技巧，可以说是python中最重要的概念之一。我们此处用到的技巧主要还是<code>send()</code>方法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">a</span>():<br>    <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span><br>    x = <span class="hljs-keyword">yield</span> <br>    <span class="hljs-keyword">yield</span> x<br><br>b = a()<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(b)) <span class="hljs-comment"># 1</span><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(b)) <span class="hljs-comment"># 空</span><br><span class="hljs-built_in">print</span>(b.send(<span class="hljs-number">2</span>)) <span class="hljs-comment"># 2</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">c</span>():<br>    <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span><br>    x = <span class="hljs-keyword">yield</span> <span class="hljs-number">2</span><br>    <span class="hljs-keyword">yield</span> x<br><br>d = c()<br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(d)) <span class="hljs-comment"># 1</span><br><span class="hljs-built_in">print</span>(<span class="hljs-built_in">next</span>(d)) <span class="hljs-comment"># 2</span><br><span class="hljs-built_in">print</span>(d.send(<span class="hljs-number">3</span>)) <span class="hljs-comment"># 空</span><br><span class="hljs-built_in">print</span>(d.send(<span class="hljs-number">4</span>)) <span class="hljs-comment"># 4</span><br><br></code></pre></td></tr></table></figure>
+<p><code>send()</code>函数可以向生成器中发送数据，但是在调用send前需要保证生成器处于yield的位置上(<strong>即保证在send前调用next，当然send本身也是会有一次next调用的，因此send也会返回值</strong>)</p>
+<p>关于send的细节此处就不展开了。</p>
+<p>在上面代码中的</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>x = <span class="hljs-keyword">yield</span> <span class="hljs-number">2</span><br><br></code></pre></td></tr></table></figure>
+<p>等效于</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">yield</span> <span class="hljs-number">2</span><br>x = <span class="hljs-keyword">yield</span><br><br></code></pre></td></tr></table></figure>
+<p>其中<code>x = yield</code>为send的接受点，即send进生成器中的数据会被发送给x。</p>
+<h3 id="一个递归函数">一个递归函数</h3>
+<p>此处我们就以一个树的访问者模式遍历为例</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Node</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, data, left = <span class="hljs-literal">None</span>, right = <span class="hljs-literal">None</span></span>):<br>        self.left = left<br>        self.right = right<br>        self.data = data<br>    <br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Visitor</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        ...<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">visit</span>(<span class="hljs-params">self, node</span>):<br>        <span class="hljs-comment"># 前序遍历</span><br>        <span class="hljs-keyword">if</span> node.left <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.visit(node.left)<br>        <span class="hljs-keyword">if</span> node.right <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.visit(node.right)<br>        <span class="hljs-built_in">print</span>(node.data)<br><br>t5 = Node(<span class="hljs-number">5</span>)<br>t4 = Node(<span class="hljs-number">4</span>)<br>t3 = Node(<span class="hljs-number">3</span>, t4, t5)<br>t2 = Node(<span class="hljs-number">2</span>, t3)<br>t1 = Node(<span class="hljs-number">1</span>)<br>t0 = Node(<span class="hljs-number">0</span>, t1, t2) <span class="hljs-comment"># 前序遍历结果为 1 4 5 3 2 0</span><br><br>v = Visitor<br>v.visit(t0) <span class="hljs-comment"># 1 4 5 3 2 0</span><br><br></code></pre></td></tr></table></figure>
+<p>此时的前序遍历是一个递归的操作，但是递归效率不高且会爆栈。递归爆栈的原因也很简单，即它会不断保留当前的状态，直到进入到递归的最内层，并逐层向外解开求值。</p>
+<img src="/2022/11/28/python%E4%B8%AD%E4%BD%BF%E7%94%A8yield%E5%B0%86%E4%B8%80%E4%B8%AA%E9%80%92%E5%BD%92%E4%BF%9D%E6%8C%81%E5%BD%A2%E5%BC%8F%E4%B8%8D%E5%8F%98%E4%B8%8B%E8%BD%AC%E6%8D%A2%E6%88%90%E9%9D%9E%E9%80%92%E5%BD%92/pic1.png" srcset="/img/loading.gif" lazyload class="">
+<p>每次压入栈中时会把函数涉及到的变量一起压入，这就导致了内存占用过高而爆栈。加入存在一个栈，把结果(数据、起始结点甚至是生成器)全部压进去，然后每次从中pop一个出来根据类型处理。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> types <span class="hljs-keyword">import</span> GeneratorType<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Visitor</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        ...<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">visit</span>(<span class="hljs-params">self, node</span>):<br>        stack = [node]<br>        <span class="hljs-keyword">while</span> stack:<br>            <span class="hljs-keyword">try</span>:<br>                last = stack[-<span class="hljs-number">1</span>]<br>                <span class="hljs-comment"># 根据类型来进行处理</span><br>                <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(last, GeneratorType):<br>                    <span class="hljs-comment"># 生成器的话就生成一个值出来</span><br>                    stack.append(<span class="hljs-built_in">next</span>(last))<br>                <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(last, Node):<br>                    <span class="hljs-comment"># 结点的话就转换成生成器压入栈</span><br>                    stack.append(self._visit(stack.pop()))<br>                <span class="hljs-keyword">else</span>:<br>                    <span class="hljs-comment"># 其他（数据类型）就打印出来</span><br>                    <span class="hljs-built_in">print</span>(stack.pop())<br>            <span class="hljs-keyword">except</span>:<br>                stack.pop()<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_visit</span>(<span class="hljs-params">self, node</span>):<br>        <span class="hljs-keyword">if</span> node.left <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            <span class="hljs-comment"># 注意此处，还保留了递归的形式（调用自身）</span><br>            <span class="hljs-keyword">yield</span> self._visit(node.left) <br>        <span class="hljs-keyword">if</span> node.right <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            <span class="hljs-keyword">yield</span> self._visit(node.right)<br>        <span class="hljs-keyword">yield</span> node.data<br><br></code></pre></td></tr></table></figure>
+<p>可以看到，关键的部分还是保持了递归的形式，但是本质上已经不是递归来处理了。</p>
+<h3 id="一个更高级的例子">一个更高级的例子</h3>
+<p>当然，上面的例子比较简单，简单的原因是：<strong>每个生成器之间不涉及到数据交换，是独立的</strong>。我们接下来看一下需要交换数据的例子，此处我们改写一下斐波那契。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> types <span class="hljs-keyword">import</span> GeneratorType<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Number</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, n</span>):<br>        self.n = n<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">dec</span>(<span class="hljs-params">self, x=<span class="hljs-number">1</span></span>):<br>        <span class="hljs-keyword">return</span> Number(self.n-x)<br><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Fib</span>:<br>    <span class="hljs-comment"># 这个函数是yield改写递归的接口</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">fib</span>(<span class="hljs-params">self, number</span>):<br>        stack = [number]<br>        last_result = <span class="hljs-literal">None</span><br>        <span class="hljs-keyword">while</span> stack:<br>            <span class="hljs-keyword">try</span>:<br>                last = stack[-<span class="hljs-number">1</span>]<br>                <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(last, GeneratorType):<br>                    <span class="hljs-comment"># 是生成器的话就send，要把last_result设置为none</span><br>                    <span class="hljs-comment"># 如果生成出来的还是生成器的话，表示递归继续，</span><br>                    <span class="hljs-comment"># 此时就send(None)让新生成的迭代器进入send位置</span><br>                    <span class="hljs-comment"># 如果生成出来的是值，那么下次循环会把这个值设置成last_result</span><br>                    t = last.send(last_result)<br>                    stack.append(t)<br>                    last_result = <span class="hljs-literal">None</span><br>                <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(last, Number):<br>                    <span class="hljs-comment"># 是数字的话就把生成器加入</span><br>                    stack.append(self._fib(stack.pop()))<br>                <span class="hljs-keyword">else</span>:<br>                    last_result = stack.pop()<br>            <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>                stack.pop()<br>        <span class="hljs-built_in">print</span>(last_result)<br><br>    <span class="hljs-comment"># 这个是使用yield改写的</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_fib</span>(<span class="hljs-params">self, n</span>):<br>        <span class="hljs-keyword">if</span> n.n == <span class="hljs-number">1</span> <span class="hljs-keyword">or</span> n.n == <span class="hljs-number">2</span>:<br>            <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span><br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-keyword">yield</span> (<span class="hljs-keyword">yield</span> n.dec()) + (<span class="hljs-keyword">yield</span> n.dec(<span class="hljs-number">2</span>))<br><br>    <span class="hljs-comment"># 这个是原始的递归</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">fib_raw</span>(<span class="hljs-params">self, n</span>):<br>        <span class="hljs-keyword">if</span> n.n == <span class="hljs-number">1</span> <span class="hljs-keyword">or</span> n.n == <span class="hljs-number">2</span>:<br>            <span class="hljs-keyword">return</span> <span class="hljs-number">1</span><br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-keyword">return</span> self.fib_raw(n.dec()) + self.fib_raw(n.dec(<span class="hljs-number">2</span>))<br><br>f = Fib()<br>f.fib(Number(<span class="hljs-number">6</span>))<br><br></code></pre></td></tr></table></figure>
+<p>每次遇到生成器后都要把last_result设置为None，需要注意<code>last_result</code>的作用有两个：</p>
+<ul>
+<li>如果生成出来的还是生成器的话，表示递归继续，此时就send(None)让新生成的迭代器进入send位置</li>
+<li>如果生成出来的是值，那么下次循环会把这个值设置成last_result，这个值会被send进最近的一个生成器中，这就完成了递归产生数据的注入</li>
+</ul>
+<p>其中</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">yield</span> (<span class="hljs-keyword">yield</span> n.dec()) + (<span class="hljs-keyword">yield</span> n.dec(<span class="hljs-number">2</span>))<br><br></code></pre></td></tr></table></figure>
+<p>等效于</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><br>x = <span class="hljs-keyword">yield</span> n.dec()<br>y = <span class="hljs-keyword">yield</span> n.dec(<span class="hljs-number">2</span>)<br><span class="hljs-keyword">yield</span> x + y<br><br></code></pre></td></tr></table></figure>
+<p><strong>注意，这种方式本质上只改善了递归的爆栈问题，它的实际运行过程跟递归是一摸一样的。（即，不能当作递归--&gt;非递归的优化方法）</strong></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/python%E6%8A%80%E5%B7%A7/" class="category-chain-item">python技巧</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Python/">#Python</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/11/06/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-7/" title="Python奇技淫巧(7)--类的技巧(其一)">
+                        <span class="hidden-mobile">Python奇技淫巧(7)--类的技巧(其一)</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
