@@ -1,0 +1,864 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/imgs/theme_pic/ppxxxg22.png">
+  <link rel="icon" href="/imgs/theme_pic/ppxxxg22.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="PPXXXG22">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="数据库版本管理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="levelDB源码剖析(15)--数据库的版本管理">
+<meta property="og:url" content="http://example.com/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/index.html">
+<meta property="og:site_name" content="PPXXXG22">
+<meta property="og:description" content="数据库版本管理">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/post_index_img/leveldb15.jpg">
+<meta property="article:published_time" content="2022-12-19T07:31:33.000Z">
+<meta property="article:modified_time" content="2022-12-21T03:27:48.561Z">
+<meta property="article:author" content="PPXXXG22">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="levelDB">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/imgs/post_index_img/leveldb15.jpg">
+  
+  
+  
+  <title>levelDB源码剖析(15)--数据库的版本管理 - PPXXXG22</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"xH8NDrh9u4SQrUpQOd0lICnX-MdYXbMMI","app_key":"jl3JjPS4jsosZG29Zv24Y7LE","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 6.2.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>ppxxxg22</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                Home
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                Archives
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                Categories
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                Tags
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                About
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                Links
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/imgs/post_index_img/leveldb15.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="levelDB源码剖析，剖析源码，掌握技术"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-12-19 15:31" pubdate>
+          December 19, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          28k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          119 mins
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> views
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">levelDB源码剖析，剖析源码，掌握技术</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="数据库版本管理">数据库版本管理</h2>
+<span id="more"></span>
+<div class="note note-primary">
+            <p>源码位置与说明</p><p>version_edit.h version_edit.cc: 实现VersionEdit<br>version_set.h version_set.cc：实现Version、VersionSet和Builder</p>
+          </div>
+<p>版本其实就是LevelDB数据库的元数据，之前提到过，在MemTable读取不到键时，需要去SSTable读取。SSTable的文件有哪些，每一个文件分别在哪一个Level上面，每个文件里面包含的键的最小值最大值是什么。需要知道这些信息，才可以快速的从SSTable里读取出相应的键的值。而版本就保存了这些信息，让我们通过版本读取SSTable。</p>
+<p>那么为什么要版本管理呢？在数据不断写入后，MemTable写满了，这时候就会转换为Level
+0的一个SSTable，或者Level n的一个文件和Level n +
+1的多个文件进行Compaction，会转换成Level n +
+1的多个文件。这会使SSTable文件数量改变，文件内容改变，也就是版本信息改变了，所以需要管理版本。</p>
+<p>那么有一个版本就够了吗？在文件数量和内容改变时，修改当前的版本就行了。但是并不是，假设使用了整个数据库的迭代器，LevelDB在迭代数据库时，是提供了一个一致性的视图，也就是只能看到迭代前的写入，而迭代后的写入是看不到，在实现的时候，迭代器会引用这个版本，以及里面的SSTable，直到迭代结束。如果在迭代过程中，有文件删除了，那么就无法引用到这个文件了，就会出错。所以需要多个版本，有一个版本是当前版本，当新生成版本后，旧的版本如果有被其它线程引用，也需要保留，直到不被引用后，才会被删除，所以一个时刻可能有多个版本存在。</p>
+<img src="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/1.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>先看看LevelDB的版本管理架构图，可以看到主要用到了4个类:</p>
+<ul>
+<li>Version标识了一个版本，主要信息是这个版本包含的SSTable信息</li>
+<li>VersionSet是一个版本集，里面保存了Version的一个双链表，其中有一个Version是当前版本，因为只有一个实例，还保存了其它的一些全局的元数据，Dummy
+Version是链表头</li>
+<li>VersionEdit保存了要对Version做的修改，在一个Version上应用一个VersionEdit，可以生成一个新的Version</li>
+<li>Builder是一个帮助类，帮助Version上应用VersionEdit，生成新版本</li>
+</ul>
+<p>版本管理的基本工作流程如下：</p>
+<ul>
+<li>VersionSet里保存着当前版本，以及被引用的历史版本</li>
+<li>当有Compaction发生时，会将更改的内容写入到一个VersionEdit中</li>
+<li>利用Builder将VersionEdit应用到当前版本上面生成一个新的版本</li>
+<li>将新版本链接到VersionSet的双链表上面</li>
+<li>将新的版本设置为当前版本</li>
+<li>将旧的当前版本Unref，就是引用计数减1</li>
+</ul>
+<p>版本控制中使用了引用计数来管理历史版本：</p>
+<ul>
+<li>假设一个没有被访问的数据库，这时候只有一个版本，也就是当前版本v1，它的引用计数是1</li>
+<li>假设有一个迭代器开始访问数据库，这时候它会对当前版本v1
+Ref，引用计数变成了2</li>
+<li>其它线程不断写入，导致了Compaction的生成，这时候生成了一个新的版本v2成为了当前版本，引用计数为1，然后对v1
+Unref，这时候v1的引用计数为1</li>
+<li>因为v1的引用计数为1，所以不会被删除，迭代器线程还可以继续访问v1</li>
+<li>迭代器结束后，对v1进行Unref，这时候v1的引用计数变为0，就会从链表上删除了，这时候又只剩下v2版本了</li>
+<li>版本里面的SSTable也是采用引用计数来管理的，每个版本引用一个SSTable会Ref，删除版本时会Unref，如果一个SSTable的计数为0，那么这个SSTable就可以被删除了</li>
+</ul>
+<img src="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/pic2.jpg" srcset="/img/loading.gif" lazyload class="">
+<h3 id="version">Version</h3>
+<p>我们首先来看一下Version这个类。Version这个类标识了一个版本，读取数据库时都需要使用Version里面的版本信息，主要保存的是SSTable的文件信息。</p>
+<p>先来看一下头文件部分。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Version</span><br>{<br><br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Compaction</span>; <span class="hljs-comment">// 压缩线程友元类</span><br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">VersionSet</span>; <span class="hljs-comment">// 版本集合友元类</span><br><br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">LevelFileNumIterator</span>; <span class="hljs-comment">// 用于迭代某一层的迭代器</span><br><br>    <span class="hljs-comment">// 构造函数，不允许直接创建此类，只能被友元创建</span><br>    <span class="hljs-function"><span class="hljs-keyword">explicit</span> <span class="hljs-title">Version</span><span class="hljs-params">(VersionSet *vset)</span></span><br><span class="hljs-function">        : vset_(vset),</span><br><span class="hljs-function">          next_(this),</span><br><span class="hljs-function">          prev_(this),</span><br><span class="hljs-function">          refs_(<span class="hljs-number">0</span>),</span><br><span class="hljs-function">          file_to_compact_(nullptr),</span><br><span class="hljs-function">          file_to_compact_level_(<span class="hljs-number">-1</span>),</span><br><span class="hljs-function">          compaction_score_(<span class="hljs-number">-1</span>),</span><br><span class="hljs-function">          compaction_level_(<span class="hljs-number">-1</span>)</span><br><span class="hljs-function">    {</span><br>    }<br>    <span class="hljs-built_in">Version</span>(<span class="hljs-type">const</span> Version &amp;) = <span class="hljs-keyword">delete</span>;<br>    Version &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> Version &amp;) = <span class="hljs-keyword">delete</span>;<br>    ~<span class="hljs-built_in">Version</span>();<br><br>    <span class="hljs-comment">// 返回一个双层迭代器，第一层用来遍历对应level的所有文件</span><br>    <span class="hljs-comment">// 第二层用来遍历某个文件的cache中的k-v，使用此双层迭代器</span><br>    <span class="hljs-comment">// 可以方便的遍历一个level中所有的k-v</span><br>    <span class="hljs-function">Iterator *<span class="hljs-title">NewConcatenatingIterator</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;, <span class="hljs-type">int</span> level)</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// Call func(arg, level, f) for every file that overlaps user_key in</span><br>    <span class="hljs-comment">// order from newest to oldest.  If an invocation of func returns</span><br>    <span class="hljs-comment">// false, makes no more calls.</span><br>    <span class="hljs-comment">//</span><br>    <span class="hljs-comment">// REQUIRES: user portion of internal_key == user_key.</span><br>    <span class="hljs-comment">// 对于所有包含user-key的file，按照从新到旧的顺序，应用func函数</span><br>    <span class="hljs-comment">// 直到func返回为false</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">ForEachOverlapping</span><span class="hljs-params">(Slice user_key, Slice internal_key, <span class="hljs-type">void</span> *arg,</span></span><br><span class="hljs-params"><span class="hljs-function">                            <span class="hljs-type">bool</span> (*func)(<span class="hljs-type">void</span> *, <span class="hljs-type">int</span>, FileMetaData *))</span></span>;<br><br>    VersionSet *vset_; <span class="hljs-comment">// 当前版本所在的版本集合</span><br>    Version *next_;    <span class="hljs-comment">// 下一个版本实例的指针</span><br>    Version *prev_;    <span class="hljs-comment">// 前一个版本实例的指针</span><br>    <span class="hljs-type">int</span> refs_;         <span class="hljs-comment">// 引用计数</span><br><br>    <span class="hljs-comment">// SSTable的信息，每一项代表相应Level的SSTable信息</span><br>    <span class="hljs-comment">// 除了Level 0外，每个Level里的文件都是按照最小键的顺序排列的，并且没有重叠</span><br>    <span class="hljs-comment">// 通过这个数据项，搜索SSTable时，就可以从Level 0开始搜索</span><br>    std::vector&lt;FileMetaData *&gt; files_[config::kNumLevels];<br><br>    <span class="hljs-comment">// 下一个需要压缩的文件</span><br>    FileMetaData *file_to_compact_;<br>    <span class="hljs-type">int</span> file_to_compact_level_;<br><br>    <span class="hljs-comment">// Level that should be compacted next and its compaction score.</span><br>    <span class="hljs-comment">// Score &lt; 1 means compaction is not strictly needed.  These fields</span><br>    <span class="hljs-comment">// are initialized by Finalize().</span><br>    <span class="hljs-type">double</span> compaction_score_;<br>    <span class="hljs-type">int</span> compaction_level_;<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 获取sstable文件信息的结构体</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">GetStats</span><br>    {<br>        FileMetaData *seek_file;<br>        <span class="hljs-type">int</span> seek_file_level;<br>    };<br><br>    <span class="hljs-comment">// Append to *iters a sequence of iterators that will</span><br>    <span class="hljs-comment">// yield the contents of this Version when merged together.</span><br>    <span class="hljs-comment">// REQUIRES: This version has been saved (see VersionSet::SaveTo)</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">AddIterators</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;, std::vector&lt;Iterator *&gt; *iters)</span></span>;<br><br>    <span class="hljs-comment">// Lookup the value for key.  If found, store it in *val and</span><br>    <span class="hljs-comment">// return OK.  Else return a non-OK status.  Fills *stats.</span><br>    <span class="hljs-comment">// REQUIRES: lock is not held</span><br>    <span class="hljs-comment">// 获取值</span><br>    <span class="hljs-function">Status <span class="hljs-title">Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;, <span class="hljs-type">const</span> LookupKey &amp;key, std::string *val,</span></span><br><span class="hljs-params"><span class="hljs-function">               GetStats *stats)</span></span>;<br><br>    <span class="hljs-comment">// Adds "stats" into the current state.  Returns true if a new</span><br>    <span class="hljs-comment">// compaction may need to be triggered, false otherwise.</span><br>    <span class="hljs-comment">// REQUIRES: lock is held</span><br>    <span class="hljs-comment">// 将stats 更新到version，stats记录了seek的结果，包括sts文件信息和seek的level</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">UpdateStats</span><span class="hljs-params">(<span class="hljs-type">const</span> GetStats &amp;stats)</span></span>;<br><br>    <span class="hljs-comment">// Record a sample of bytes read at the specified internal key.</span><br>    <span class="hljs-comment">// Samples are taken approximately once every config::kReadBytesPeriod</span><br>    <span class="hljs-comment">// bytes.  Returns true if a new compaction may need to be triggered.</span><br>    <span class="hljs-comment">// REQUIRES: lock is held</span><br>    <span class="hljs-comment">// 取样式get一个key，通过get，来判断当前是否需要触发compact</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">RecordReadSample</span><span class="hljs-params">(Slice key)</span></span>;<br><br>    <span class="hljs-comment">// 引用计数相关</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Ref</span><span class="hljs-params">()</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Unref</span><span class="hljs-params">()</span></span>;<br><br>    <span class="hljs-comment">// 将所有某层中超过范围的文件保存在input中</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">GetOverlappingInputs</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-type">int</span> level,</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-type">const</span> InternalKey *begin, <span class="hljs-comment">// nullptr means before all keys</span></span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-type">const</span> InternalKey *end,   <span class="hljs-comment">// nullptr means after all keys</span></span></span><br><span class="hljs-params"><span class="hljs-function">        std::vector&lt;FileMetaData *&gt; *inputs)</span></span>;<br><br>    <span class="hljs-comment">// 当某层中存在文件的键的范围超过限制，就返回1</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">OverlapInLevel</span><span class="hljs-params">(<span class="hljs-type">int</span> level, <span class="hljs-type">const</span> Slice *smallest_user_key,</span></span><br><span class="hljs-params"><span class="hljs-function">                        <span class="hljs-type">const</span> Slice *largest_user_key)</span></span>;<br><br>    <span class="hljs-comment">// 计算当memtable中的key范围是[smallest_user_key,largest_user_key]时，</span><br>    <span class="hljs-comment">// 应该将其压缩到那一层中（一般是在第0层，最高会堆到第2层）</span><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">PickLevelForMemTableOutput</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;smallest_user_key,</span></span><br><span class="hljs-params"><span class="hljs-function">                                   <span class="hljs-type">const</span> Slice &amp;largest_user_key)</span></span>;<br><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">NumFiles</span><span class="hljs-params">(<span class="hljs-type">int</span> level)</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> files_[level].<span class="hljs-built_in">size</span>(); }<br><br>    <span class="hljs-comment">// 返回一条人类可读的字符串来描述当前版本的信息</span><br>    <span class="hljs-function">std::string <span class="hljs-title">DebugString</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>其中，我们仔细观察一下其私有成员部分，就能发现，它含有类似于双向量表中结点的前驱后继。<strong>实际上，VersuionSet可以看成是一个双向链表，而Version则是其中的结点。</strong></p>
+<p>每个Version中，还会将所有的此版本中的SSTable存放在一个vector数组中，每一层对应一个下标。</p>
+<p>可以看到Version是比较简单的，最重要的信息就是这个版本包含的SSTable的信息。通过这些信息，版本提供了接口Status
+Version::Get(const ReadOptions&amp;, const LookupKey&amp; key,
+std::string* val, GetStats*
+stats)，可以在这些SSTable里读取出相应的键的值。</p>
+<p>我们这里来看一下Version::Get接口。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">Status <span class="hljs-title">Version::Get</span><span class="hljs-params">(<span class="hljs-type">const</span> ReadOptions &amp;options, <span class="hljs-type">const</span> LookupKey &amp;k,</span></span><br><span class="hljs-params"><span class="hljs-function">                    std::string *value, GetStats *stats)</span></span><br><span class="hljs-function"></span>{<br>    stats-&gt;seek_file = <span class="hljs-literal">nullptr</span>;<br>    stats-&gt;seek_file_level = <span class="hljs-number">-1</span>;<br><br>    <span class="hljs-comment">// 定义状态结构体</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">State</span><br>    {<br>        Saver saver;<br>        GetStats *stats;<br>        <span class="hljs-type">const</span> ReadOptions *options;<br>        Slice ikey;<br>        FileMetaData *last_file_read;<br>        <span class="hljs-type">int</span> last_file_read_level;<br><br>        VersionSet *vset;<br>        Status s;<br>        <span class="hljs-type">bool</span> found;<br><br>        <span class="hljs-function"><span class="hljs-type">static</span> <span class="hljs-type">bool</span> <span class="hljs-title">Match</span><span class="hljs-params">(<span class="hljs-type">void</span> *arg, <span class="hljs-type">int</span> level, FileMetaData *f)</span></span><br><span class="hljs-function">        </span>{<br>            State *state = <span class="hljs-built_in">reinterpret_cast</span>&lt;State *&gt;(arg);<br><br>            <span class="hljs-keyword">if</span> (state-&gt;stats-&gt;seek_file == <span class="hljs-literal">nullptr</span> &amp;&amp;<br>                state-&gt;last_file_read != <span class="hljs-literal">nullptr</span>)<br>            {<br>                <span class="hljs-comment">// We have had more than one seek for this read.  Charge the 1st file.</span><br>                state-&gt;stats-&gt;seek_file = state-&gt;last_file_read;<br>                state-&gt;stats-&gt;seek_file_level = state-&gt;last_file_read_level;<br>            }<br><br>            state-&gt;last_file_read = f;<br>            state-&gt;last_file_read_level = level;<br><br>            state-&gt;s = state-&gt;vset-&gt;table_cache_-&gt;<span class="hljs-built_in">Get</span>(*state-&gt;options, f-&gt;number,<br>                                                      f-&gt;file_size, state-&gt;ikey,<br>                                                      &amp;state-&gt;saver, SaveValue);<br>            <span class="hljs-keyword">if</span> (!state-&gt;s.<span class="hljs-built_in">ok</span>())<br>            {<br>                state-&gt;found = <span class="hljs-literal">true</span>;<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            }<br>            <span class="hljs-keyword">switch</span> (state-&gt;saver.state)<br>            {<br>            <span class="hljs-keyword">case</span> kNotFound:<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// Keep searching in other files</span><br>            <span class="hljs-keyword">case</span> kFound:<br>                state-&gt;found = <span class="hljs-literal">true</span>;<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            <span class="hljs-keyword">case</span> kDeleted:<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            <span class="hljs-keyword">case</span> kCorrupt:<br>                state-&gt;s =<br>                    Status::<span class="hljs-built_in">Corruption</span>(<span class="hljs-string">"corrupted key for "</span>, state-&gt;saver.user_key);<br>                state-&gt;found = <span class="hljs-literal">true</span>;<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>            }<br><br>            <span class="hljs-comment">// Not reached. Added to avoid false compilation warnings of</span><br>            <span class="hljs-comment">// "control reaches end of non-void function".</span><br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>        }<br>    };<br><br>    State state;<br>    state.found = <span class="hljs-literal">false</span>;<br>    state.stats = stats;<br>    state.last_file_read = <span class="hljs-literal">nullptr</span>;<br>    state.last_file_read_level = <span class="hljs-number">-1</span>;<br><br>    state.options = &amp;options;<br>    state.ikey = k.<span class="hljs-built_in">internal_key</span>();<br>    state.vset = vset_;<br><br>    state.saver.state = kNotFound;<br>    state.saver.ucmp = vset_-&gt;icmp_.<span class="hljs-built_in">user_comparator</span>();<br>    state.saver.user_key = k.<span class="hljs-built_in">user_key</span>();<br>    state.saver.value = value;<br><br>    <span class="hljs-comment">// 在每层内将每个受当前版本管理的sstable中进行查找</span><br>    <span class="hljs-comment">// 就相当于sstable的查找</span><br>    <span class="hljs-built_in">ForEachOverlapping</span>(state.saver.user_key, state.ikey, &amp;state, &amp;State::Match);<br><br>    <span class="hljs-keyword">return</span> state.found ? state.s : Status::<span class="hljs-built_in">NotFound</span>(<span class="hljs-built_in">Slice</span>());<br>}<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Version::ForEachOverlapping</span><span class="hljs-params">(Slice user_key, Slice internal_key, <span class="hljs-type">void</span> *arg,</span></span><br><span class="hljs-params"><span class="hljs-function">                                 <span class="hljs-type">bool</span> (*func)(<span class="hljs-type">void</span> *, <span class="hljs-type">int</span>, FileMetaData *))</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-type">const</span> Comparator *ucmp = vset_-&gt;icmp_.<span class="hljs-built_in">user_comparator</span>();<br><br>    <span class="hljs-comment">// 第0层的查找，每个都查找</span><br>    std::vector&lt;FileMetaData *&gt; tmp;<br>    tmp.<span class="hljs-built_in">reserve</span>(files_[<span class="hljs-number">0</span>].<span class="hljs-built_in">size</span>());<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; files_[<span class="hljs-number">0</span>].<span class="hljs-built_in">size</span>(); i++)<br>    {<br>        FileMetaData *f = files_[<span class="hljs-number">0</span>][i];<br>        <span class="hljs-keyword">if</span> (ucmp-&gt;<span class="hljs-built_in">Compare</span>(user_key, f-&gt;smallest.<span class="hljs-built_in">user_key</span>()) &gt;= <span class="hljs-number">0</span> &amp;&amp;<br>            ucmp-&gt;<span class="hljs-built_in">Compare</span>(user_key, f-&gt;largest.<span class="hljs-built_in">user_key</span>()) &lt;= <span class="hljs-number">0</span>)<br>        {<br>            tmp.<span class="hljs-built_in">push_back</span>(f);<br>        }<br>    }<br>    <span class="hljs-keyword">if</span> (!tmp.<span class="hljs-built_in">empty</span>())<br>    {<br>        <span class="hljs-comment">// 由新到旧排序，并比对返回数据</span><br>        std::<span class="hljs-built_in">sort</span>(tmp.<span class="hljs-built_in">begin</span>(), tmp.<span class="hljs-built_in">end</span>(), NewestFirst);<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; tmp.<span class="hljs-built_in">size</span>(); i++)<br>        {<br>            <span class="hljs-keyword">if</span> (!(*func)(arg, <span class="hljs-number">0</span>, tmp[i]))<br>            {<br>                <span class="hljs-keyword">return</span>;<br>            }<br>        }<br>    }<br><br>    <span class="hljs-comment">// 查找其他层</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> level = <span class="hljs-number">1</span>; level &lt; config::kNumLevels; level++)<br>    {<br>        <span class="hljs-type">size_t</span> num_files = files_[level].<span class="hljs-built_in">size</span>();<br>        <span class="hljs-keyword">if</span> (num_files == <span class="hljs-number">0</span>)<br>            <span class="hljs-keyword">continue</span>;<br><br>        <span class="hljs-comment">// 二分查找</span><br>        <span class="hljs-type">uint32_t</span> index = <span class="hljs-built_in">FindFile</span>(vset_-&gt;icmp_, files_[level], internal_key);<br>        <span class="hljs-keyword">if</span> (index &lt; num_files)<br>        {<br>            FileMetaData *f = files_[level][index];<br>            <span class="hljs-keyword">if</span> (ucmp-&gt;<span class="hljs-built_in">Compare</span>(user_key, f-&gt;smallest.<span class="hljs-built_in">user_key</span>()) &lt; <span class="hljs-number">0</span>)<br>            {<br>                <span class="hljs-comment">// All of "f" is past any data for user_key</span><br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-keyword">if</span> (!(*func)(arg, level, f))<br>                {<br>                    <span class="hljs-keyword">return</span>;<br>                }<br>            }<br>        }<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
+<p>由于每个版本负责管理一系列的SSTable，所以对于这一系列的SSTable的查找也是通过Version来实现的。其中还是要考虑到第0层和其他层查找的差异性。</p>
+<h3 id="versionset">VersionSet</h3>
+<p>VersionSet就是一个Version的集合，里面包含了一个当前存活的Version的双链表。不过除了Version以外，VersionSet还保存了一些全局的只有一份的元数据。VersionSet只有一个实例。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">VersionSet</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">class</span> <span class="hljs-title class_">Builder</span>; <span class="hljs-comment">// 辅助构建类。主要用于保存中间变量相关等</span><br><br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Compaction</span>; <span class="hljs-comment">// 友元类，压缩线程</span><br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Version</span>;    <span class="hljs-comment">// 友元类，版本</span><br><br>    <span class="hljs-comment">// 恢复Manifest文件</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">ReuseManifest</span><span class="hljs-params">(<span class="hljs-type">const</span> std::string &amp;dscname, <span class="hljs-type">const</span> std::string &amp;dscbase)</span></span>;<br><br>    <span class="hljs-comment">// 计算得到Size Compaction的最佳level和比率score</span><br>    <span class="hljs-comment">// 用于压缩</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Finalize</span><span class="hljs-params">(Version *v)</span></span>;<br><br>    <span class="hljs-comment">// 获取所有input中的key最小最大</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">GetRange</span><span class="hljs-params">(<span class="hljs-type">const</span> std::vector&lt;FileMetaData *&gt; &amp;inputs, InternalKey *smallest,</span></span><br><span class="hljs-params"><span class="hljs-function">                  InternalKey *largest)</span></span>;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">GetRange2</span><span class="hljs-params">(<span class="hljs-type">const</span> std::vector&lt;FileMetaData *&gt; &amp;inputs1,</span></span><br><span class="hljs-params"><span class="hljs-function">                   <span class="hljs-type">const</span> std::vector&lt;FileMetaData *&gt; &amp;inputs2,</span></span><br><span class="hljs-params"><span class="hljs-function">                   InternalKey *smallest, InternalKey *largest)</span></span>;<br><br>    <span class="hljs-comment">// 在指定的level+1中选择那些key range与input _[0]中所有文件key range重合的文件填入input_[1]</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetupOtherInputs</span><span class="hljs-params">(Compaction *c)</span></span>;<br><br>    <span class="hljs-comment">// 保存快照</span><br>    <span class="hljs-function">Status <span class="hljs-title">WriteSnapshot</span><span class="hljs-params">(log::Writer *log)</span></span>;<br><br>    <span class="hljs-comment">// 让版本v成为当前版本</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">AppendVersion</span><span class="hljs-params">(Version *v)</span></span>;<br><br>    <span class="hljs-comment">/**一些变量**/</span><br>    Env *<span class="hljs-type">const</span> env_;                   <span class="hljs-comment">// 环境</span><br>    <span class="hljs-type">const</span> std::string dbname_;         <span class="hljs-comment">// 数据库名字</span><br>    <span class="hljs-type">const</span> Options *<span class="hljs-type">const</span> options_;     <span class="hljs-comment">// 选项</span><br>    TableCache *<span class="hljs-type">const</span> table_cache_;    <span class="hljs-comment">// 缓存</span><br>    <span class="hljs-type">const</span> InternalKeyComparator icmp_; <span class="hljs-comment">// 比较器</span><br>    <span class="hljs-type">uint64_t</span> next_file_number_;        <span class="hljs-comment">// 下一个序列号</span><br>    <span class="hljs-type">uint64_t</span> manifest_file_number_;    <span class="hljs-comment">// manifest的序列号</span><br>    <span class="hljs-type">uint64_t</span> last_sequence_;           <span class="hljs-comment">// 上一个序列号</span><br>    <span class="hljs-type">uint64_t</span> log_number_;              <span class="hljs-comment">// 日志号</span><br>    <span class="hljs-type">uint64_t</span> prev_log_number_;         <span class="hljs-comment">// 0 or backing store for memtable being compacted</span><br><br>    <span class="hljs-comment">// Opened lazily</span><br>    WritableFile *descriptor_file_; <span class="hljs-comment">// 文件写入</span><br>    log::Writer *descriptor_log_;   <span class="hljs-comment">// 日志写入</span><br>    Version dummy_versions_;        <span class="hljs-comment">// 双向链表头结点</span><br>    Version *current_;              <span class="hljs-comment">// == dummy_versions_.prev_</span><br><br>    <span class="hljs-comment">// 这是用来记录Compact的进度，Compact总是从某一Level的最小的键开始到某个键结束，</span><br>    <span class="hljs-comment">// 下次再从下一个键开始，所以这个就是下一次这个Level从哪个键开始Compact</span><br>    std::string compact_pointer_[config::kNumLevels];<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// 构造析构函数</span><br>    <span class="hljs-built_in">VersionSet</span>(<span class="hljs-type">const</span> std::string &amp;dbname, <span class="hljs-type">const</span> Options *options,<br>               TableCache *table_cache, <span class="hljs-type">const</span> InternalKeyComparator *);<br>    <span class="hljs-built_in">VersionSet</span>(<span class="hljs-type">const</span> VersionSet &amp;) = <span class="hljs-keyword">delete</span>;<br>    VersionSet &amp;<span class="hljs-keyword">operator</span>=(<span class="hljs-type">const</span> VersionSet &amp;) = <span class="hljs-keyword">delete</span>;<br>    ~<span class="hljs-built_in">VersionSet</span>();<br><br>    <span class="hljs-comment">// Apply *edit to the current version to form a new descriptor that</span><br>    <span class="hljs-comment">// is both saved to persistent state and installed as the new</span><br>    <span class="hljs-comment">// current version.  Will release *mu while actually writing to the file.</span><br>    <span class="hljs-comment">// REQUIRES: *mu is held on entry.</span><br>    <span class="hljs-comment">// REQUIRES: no other thread concurrently calls LogAndApply()</span><br>    <span class="hljs-comment">// 将根据前面记录的版本修改信息更新当前版本，得到一个新的版本信息</span><br>    <span class="hljs-comment">// 同时把这个新的版本信息设置成当前VersionSet的current_，并连入版本集合的链表中</span><br>    <span class="hljs-function">Status <span class="hljs-title">LogAndApply</span><span class="hljs-params">(VersionEdit *edit, port::Mutex *mu)</span></span><br><span class="hljs-function">        <span class="hljs-title">EXCLUSIVE_LOCKS_REQUIRED</span><span class="hljs-params">(mu)</span></span>;<br><br>    <span class="hljs-comment">// 恢复用</span><br>    <span class="hljs-function">Status <span class="hljs-title">Recover</span><span class="hljs-params">(<span class="hljs-type">bool</span> *save_manifest)</span></span>;<br><br>    <span class="hljs-comment">// 返回当前版本</span><br>    <span class="hljs-function">Version *<span class="hljs-title">current</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> current_; }<br><br>    <span class="hljs-comment">// 返回当前文件号</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">ManifestFileNumber</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> manifest_file_number_; }<br><br>    <span class="hljs-comment">// 分配并返回新的文件号</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">NewFileNumber</span><span class="hljs-params">()</span> </span>{ <span class="hljs-keyword">return</span> next_file_number_++; }<br><br>    <span class="hljs-comment">// Arrange to reuse "file_number" unless a newer file number has</span><br>    <span class="hljs-comment">// already been allocated.</span><br>    <span class="hljs-comment">// REQUIRES: "file_number" was returned by a call to NewFileNumber().</span><br>    <span class="hljs-comment">// 复用文件号，仅当新的文件号被占用时才会调用此函数</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">ReuseFileNumber</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> file_number)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">if</span> (next_file_number_ == file_number + <span class="hljs-number">1</span>)<br>        {<br>            next_file_number_ = file_number;<br>        }<br>    }<br><br>    <span class="hljs-comment">// 返回某一层的文件数目</span><br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">NumLevelFiles</span><span class="hljs-params">(<span class="hljs-type">int</span> level)</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// 返回某一层的文件字节数目</span><br>    <span class="hljs-function"><span class="hljs-type">int64_t</span> <span class="hljs-title">NumLevelBytes</span><span class="hljs-params">(<span class="hljs-type">int</span> level)</span> <span class="hljs-type">const</span></span>;<br><br>    <span class="hljs-comment">// 返回最后序列号</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">LastSequence</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> last_sequence_; }<br><br>    <span class="hljs-comment">// 设置最后序列号为s</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetLastSequence</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> s)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-built_in">assert</span>(s &gt;= last_sequence_);<br>        last_sequence_ = s;<br>    }<br><br>    <span class="hljs-comment">// 标记一个序列号为已使用</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">MarkFileNumberUsed</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> number)</span></span>;<br><br>    <span class="hljs-comment">// 返回当前log编号</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">LogNumber</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> log_number_; }<br><br>    <span class="hljs-comment">// Return the log file number for the log file that is currently</span><br>    <span class="hljs-comment">// being compacted, or zero if there is no such log file.</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">PrevLogNumber</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>{ <span class="hljs-keyword">return</span> prev_log_number_; }<br><br>    <span class="hljs-comment">// Pick level and inputs for a new compaction.</span><br>    <span class="hljs-comment">// Returns nullptr if there is no compaction to be done.</span><br>    <span class="hljs-comment">// Otherwise returns a pointer to a heap-allocated object that</span><br>    <span class="hljs-comment">// describes the compaction.  Caller should delete the result.</span><br>    <span class="hljs-comment">// 选择一层来执行新的压缩，若没有需要进行的压缩，则返回空</span><br>    <span class="hljs-comment">// 否则返回一个堆分配内存来描述压缩结果，需要调用者来释放</span><br>    <span class="hljs-comment">// 这个选择是选择实现计算出来下次需要压缩的文件</span><br>    <span class="hljs-function">Compaction *<span class="hljs-title">PickCompaction</span><span class="hljs-params">()</span></span>;<br><br>    <span class="hljs-comment">// Return a compaction object for compacting the range [begin,end] in</span><br>    <span class="hljs-comment">// the specified level.  Returns nullptr if there is nothing in that</span><br>    <span class="hljs-comment">// level that overlaps the specified range.  Caller should delete</span><br>    <span class="hljs-comment">// the result.</span><br>    <span class="hljs-comment">// 压缩指定层中的指定范围，不重叠的话就没有压缩</span><br>    <span class="hljs-function">Compaction *<span class="hljs-title">CompactRange</span><span class="hljs-params">(<span class="hljs-type">int</span> level, <span class="hljs-type">const</span> InternalKey *begin,</span></span><br><span class="hljs-params"><span class="hljs-function">                             <span class="hljs-type">const</span> InternalKey *end)</span></span>;<br><br>    <span class="hljs-comment">// Return the maximum overlapping data (in bytes) at next level for any</span><br>    <span class="hljs-comment">// file at a level &gt;= 1.</span><br>    <span class="hljs-comment">// 返回最大重叠数据</span><br>    <span class="hljs-function"><span class="hljs-type">int64_t</span> <span class="hljs-title">MaxNextLevelOverlappingBytes</span><span class="hljs-params">()</span></span>;<br><br>    <span class="hljs-comment">// Create an iterator that reads over the compaction inputs for "*c".</span><br>    <span class="hljs-comment">// The caller should delete the iterator when no longer needed.</span><br>    <span class="hljs-comment">// 返回一个可以从N个SSTable中提取出来不重复key的迭代器。</span><br>    <span class="hljs-function">Iterator *<span class="hljs-title">MakeInputIterator</span><span class="hljs-params">(Compaction *c)</span></span>;<br><br>    <span class="hljs-comment">// Returns true iff some level needs a compaction.</span><br>    <span class="hljs-comment">// 是否存在某些层需要压缩</span><br>    <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">NeedsCompaction</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span><br><span class="hljs-function">    </span>{<br>        Version *v = current_;<br>        <span class="hljs-keyword">return</span> (v-&gt;compaction_score_ &gt;= <span class="hljs-number">1</span>) || (v-&gt;file_to_compact_ != <span class="hljs-literal">nullptr</span>);<br>    }<br><br>    <span class="hljs-comment">// Add all files listed in any live version to *live.</span><br>    <span class="hljs-comment">// May also mutate some internal state.</span><br>    <span class="hljs-comment">// 把所有存活版本中的文件记录到集合中(即记录所有存活文件)</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">AddLiveFiles</span><span class="hljs-params">(std::set&lt;<span class="hljs-type">uint64_t</span>&gt; *live)</span></span>;<br><br>    <span class="hljs-comment">// Return the approximate offset in the database of the data for</span><br>    <span class="hljs-comment">// "key" as of version "v".</span><br>    <span class="hljs-comment">// 返回在版本v中，key的大致偏移</span><br>    <span class="hljs-function"><span class="hljs-type">uint64_t</span> <span class="hljs-title">ApproximateOffsetOf</span><span class="hljs-params">(Version *v, <span class="hljs-type">const</span> InternalKey &amp;key)</span></span>;<br><br>    <span class="hljs-comment">// Return a human-readable short (single-line) summary of the number</span><br>    <span class="hljs-comment">// of files per level.  Uses *scratch as backing store.</span><br>    <span class="hljs-comment">// 返回人类可读的总结</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">LevelSummaryStorage</span><br>    {<br>        <span class="hljs-type">char</span> buffer[<span class="hljs-number">100</span>];<br>    };<br>    <span class="hljs-function"><span class="hljs-type">const</span> <span class="hljs-type">char</span> *<span class="hljs-title">LevelSummary</span><span class="hljs-params">(LevelSummaryStorage *scratch)</span> <span class="hljs-type">const</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>可以看到，VersionSet除了保存了Version的双链表以外，还保存了其它的一些元数据。有些元数据，比如当前的版本，当数据库关闭后，再次打开的时候还是需要的，这些信息就持久化到MANIFEST文件中。</p>
+<p>当然，还涉及到一些压缩相关的内容，这个在后面深入学习。</p>
+<h3 id="versionedit">VersionEdit</h3>
+<p>VersionEdit记录了一次版本变更有哪些改变。即有<strong>Version(旧) +
+VersionEdit(修改部分) =
+Version(新)</strong>，其中对于加号是Builder的体现，后面再说。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">VersionEdit</span><br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-keyword">friend</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">VersionSet</span>; <span class="hljs-comment">// 因为需要从VersionSet中来修改Version</span><br><br>    <span class="hljs-keyword">typedef</span> std::set&lt;std::pair&lt;<span class="hljs-type">int</span>, <span class="hljs-type">uint64_t</span>&gt;&gt; DeletedFileSet; <span class="hljs-comment">// 删除掉的文件集合别名</span><br><br>    std::string comparator_;       <span class="hljs-comment">// 比较器名字</span><br>    <span class="hljs-type">uint64_t</span> log_number_;          <span class="hljs-comment">// 日志号</span><br>    <span class="hljs-type">uint64_t</span> prev_log_number_;     <span class="hljs-comment">// 上一个ldb、log和manifset文件编号</span><br>    <span class="hljs-type">uint64_t</span> next_file_number_;    <span class="hljs-comment">// 下一个编号</span><br>    SequenceNumber last_sequence_; <span class="hljs-comment">// 上一个序列号</span><br><br>    <span class="hljs-type">bool</span> has_comparator_; <span class="hljs-comment">// 记录上面对应内容是否存在，存在才会持久化的MANIFEST中的一些字段</span><br>    <span class="hljs-type">bool</span> has_log_number_;<br>    <span class="hljs-type">bool</span> has_prev_log_number_;<br>    <span class="hljs-type">bool</span> has_next_file_number_;<br>    <span class="hljs-type">bool</span> has_last_sequence_;<br><br>    <span class="hljs-comment">// 和VersionSet里面的compact_pointers_相同</span><br>    <span class="hljs-comment">// 用来记录Compact的进度，Compact总是从某一Level的最小的键开始到某个键结束</span><br>    std::vector&lt;std::pair&lt;<span class="hljs-type">int</span>, InternalKey&gt;&gt; compact_pointers_;<br>    <span class="hljs-comment">// 有哪些文件被删除，就是Version里哪些SSTable被删除</span><br>    DeletedFileSet deleted_files_;<br>    <span class="hljs-comment">// 有哪些文件被增加，pair的第一个参数是Level，第二个参数是文件的元信息</span><br>    std::vector&lt;std::pair&lt;<span class="hljs-type">int</span>, FileMetaData&gt;&gt; new_files_;<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-built_in">VersionEdit</span>() { <span class="hljs-built_in">Clear</span>(); }<br>    ~<span class="hljs-built_in">VersionEdit</span>() = <span class="hljs-keyword">default</span>;<br><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Clear</span><span class="hljs-params">()</span></span>;<br><br>    <span class="hljs-comment">// 下列函数就是在设置私有成员中的值的接口</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetComparatorName</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;name)</span></span><br><span class="hljs-function">    </span>{<br>        has_comparator_ = <span class="hljs-literal">true</span>;<br>        comparator_ = name.<span class="hljs-built_in">ToString</span>();<br>    }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetLogNumber</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> num)</span></span><br><span class="hljs-function">    </span>{<br>        has_log_number_ = <span class="hljs-literal">true</span>;<br>        log_number_ = num;<br>    }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetPrevLogNumber</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> num)</span></span><br><span class="hljs-function">    </span>{<br>        has_prev_log_number_ = <span class="hljs-literal">true</span>;<br>        prev_log_number_ = num;<br>    }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetNextFile</span><span class="hljs-params">(<span class="hljs-type">uint64_t</span> num)</span></span><br><span class="hljs-function">    </span>{<br>        has_next_file_number_ = <span class="hljs-literal">true</span>;<br>        next_file_number_ = num;<br>    }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetLastSequence</span><span class="hljs-params">(SequenceNumber seq)</span></span><br><span class="hljs-function">    </span>{<br>        has_last_sequence_ = <span class="hljs-literal">true</span>;<br>        last_sequence_ = seq;<br>    }<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SetCompactPointer</span><span class="hljs-params">(<span class="hljs-type">int</span> level, <span class="hljs-type">const</span> InternalKey &amp;key)</span></span><br><span class="hljs-function">    </span>{<br>        compact_pointers_.<span class="hljs-built_in">push_back</span>(std::<span class="hljs-built_in">make_pair</span>(level, key));<br>    }<br><br>    <span class="hljs-comment">// Add the specified file at the specified number.</span><br>    <span class="hljs-comment">// REQUIRES: This version has not been saved (see VersionSet::SaveTo)</span><br>    <span class="hljs-comment">// REQUIRES: "smallest" and "largest" are smallest and largest keys in file</span><br>    <span class="hljs-comment">// 在某一层中新增文件</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">AddFile</span><span class="hljs-params">(<span class="hljs-type">int</span> level, <span class="hljs-type">uint64_t</span> file, <span class="hljs-type">uint64_t</span> file_size,</span></span><br><span class="hljs-params"><span class="hljs-function">                 <span class="hljs-type">const</span> InternalKey &amp;smallest, <span class="hljs-type">const</span> InternalKey &amp;largest)</span></span><br><span class="hljs-function">    </span>{<br>        FileMetaData f;<br>        f.number = file;<br>        f.file_size = file_size;<br>        f.smallest = smallest;<br>        f.largest = largest;<br>        new_files_.<span class="hljs-built_in">push_back</span>(std::<span class="hljs-built_in">make_pair</span>(level, f));<br>    }<br><br>    <span class="hljs-comment">// Delete the specified "file" from the specified "level".</span><br>    <span class="hljs-comment">// 删除某一层的文件</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">RemoveFile</span><span class="hljs-params">(<span class="hljs-type">int</span> level, <span class="hljs-type">uint64_t</span> file)</span></span><br><span class="hljs-function">    </span>{<br>        deleted_files_.<span class="hljs-built_in">insert</span>(std::<span class="hljs-built_in">make_pair</span>(level, file));<br>    }<br><br>    <span class="hljs-comment">// 编码解码</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">EncodeTo</span><span class="hljs-params">(std::string *dst)</span> <span class="hljs-type">const</span></span>;<br>    <span class="hljs-function">Status <span class="hljs-title">DecodeFrom</span><span class="hljs-params">(<span class="hljs-type">const</span> Slice &amp;src)</span></span>;<br><br>    <span class="hljs-comment">// 返回人类可读字串</span><br>    <span class="hljs-function">std::string <span class="hljs-title">DebugString</span><span class="hljs-params">()</span> <span class="hljs-type">const</span></span>;<br>};<br><br></code></pre></td></tr></table></figure>
+<p>可以看到VersionEdit类中基本上就是一些私有成员，这些信息主要是为了持久化到MANIFEST，其中对SSTable文件的修改则通过对应的增加删除函数来完成。</p>
+<p>VersionEdit主要有两个作用一个就是应用到版本上作版本变迁，这个就是Builder做的事情，这主要发生在内存的数据结构中。另外一个作用就是持久化到MANIFEST记录版本变迁的内容，这里会记录更多的内容，包括last_sequence_、next_file_number等，由VersionEdit::EncodeTo完成。</p>
+<p>主要有两个地方需要持久化：</p>
+<ul>
+<li>初始写入，需要写入当前数据状态的信息</li>
+<li>版本变迁写入，写入的是每一次版本变化的写入</li>
+</ul>
+<p>初始写入，是由VersionSet::WriteSnapshot完成，当打开一个已存在的数据库，读取完现有的MANIFEST后，如果要新建一个MANIFEST替换现有的MANIFEST，就要先调用这个函数，将现有的数据库状态写入，主要包括三部分内容：</p>
+<ul>
+<li>比较器的名称</li>
+<li>compact_pointer_数组，可能有多条记录，有Level和对应的Internal
+Key，表示Size Compaction的进程</li>
+<li>当前存在的SSTable文件，包含元数据，包括在哪一Level，文件编号，文件大小，里面的最小键和最大键</li>
+</ul>
+<img src="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/pic3.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>版本变迁写入，就是当需要生成一个新版本时，都会向MANIFEST写入一条新纪录，记录了新版本相对旧版本有哪些变化，和旧版本合并后可以得出当前的状态，主要包括以下几部分：</p>
+<ul>
+<li>写入时刻的日志编号</li>
+<li>写入时刻下个可用文件的编号</li>
+<li>写入时刻上一个用掉的SequenceNumber</li>
+<li>compact_pointer_数组，可能有多条记录，有Level和对应的Internal
+Key</li>
+<li>记录删除了哪些文件，只记录了Level和对应的file number</li>
+<li>当前存在的SSTable文件，包含元数据，包括在哪一Level，文件编号，文件大小，里面的最小键和最大键</li>
+</ul>
+<img src="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/pic4.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>这部分是其持久化时的源码，很简单。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Tag</span><br>{<br>    kComparator = <span class="hljs-number">1</span>,     <span class="hljs-comment">// 记录Comparator的名字</span><br>    kLogNumber = <span class="hljs-number">2</span>,      <span class="hljs-comment">// 记录当前时刻的log_number</span><br>    kNextFileNumber = <span class="hljs-number">3</span>, <span class="hljs-comment">// 记录当前时刻的next_file_number_</span><br>    kLastSequence = <span class="hljs-number">4</span>,   <span class="hljs-comment">// 记录当前时刻的last_sequence</span><br>    kCompactPointer = <span class="hljs-number">5</span>, <span class="hljs-comment">// 记录compact_pointer</span><br>    kDeletedFile = <span class="hljs-number">6</span>,    <span class="hljs-comment">// 记录删除的文件信息</span><br>    kNewFile = <span class="hljs-number">7</span>         <span class="hljs-comment">// 记录新增的文件信息</span><br>};<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">VersionEdit::EncodeTo</span><span class="hljs-params">(std::string *dst)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-keyword">if</span> (has_comparator_)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kComparator);<br>        <span class="hljs-built_in">PutLengthPrefixedSlice</span>(dst, comparator_);<br>    }<br>    <span class="hljs-keyword">if</span> (has_log_number_)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kLogNumber);<br>        <span class="hljs-built_in">PutVarint64</span>(dst, log_number_);<br>    }<br>    <span class="hljs-keyword">if</span> (has_prev_log_number_)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kPrevLogNumber);<br>        <span class="hljs-built_in">PutVarint64</span>(dst, prev_log_number_);<br>    }<br>    <span class="hljs-keyword">if</span> (has_next_file_number_)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kNextFileNumber);<br>        <span class="hljs-built_in">PutVarint64</span>(dst, next_file_number_);<br>    }<br>    <span class="hljs-keyword">if</span> (has_last_sequence_)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kLastSequence);<br>        <span class="hljs-built_in">PutVarint64</span>(dst, last_sequence_);<br>    }<br><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; compact_pointers_.<span class="hljs-built_in">size</span>(); i++)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kCompactPointer);<br>        <span class="hljs-built_in">PutVarint32</span>(dst, compact_pointers_[i].first); <span class="hljs-comment">// level</span><br>        <span class="hljs-built_in">PutLengthPrefixedSlice</span>(dst, compact_pointers_[i].second.<span class="hljs-built_in">Encode</span>());<br>    }<br><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">const</span> <span class="hljs-keyword">auto</span> &amp;deleted_file_kvp : deleted_files_)<br>    {<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kDeletedFile);<br>        <span class="hljs-built_in">PutVarint32</span>(dst, deleted_file_kvp.first);  <span class="hljs-comment">// level</span><br>        <span class="hljs-built_in">PutVarint64</span>(dst, deleted_file_kvp.second); <span class="hljs-comment">// file number</span><br>    }<br><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; new_files_.<span class="hljs-built_in">size</span>(); i++)<br>    {<br>        <span class="hljs-type">const</span> FileMetaData &amp;f = new_files_[i].second;<br>        <span class="hljs-built_in">PutVarint32</span>(dst, kNewFile);<br>        <span class="hljs-built_in">PutVarint32</span>(dst, new_files_[i].first); <span class="hljs-comment">// level</span><br>        <span class="hljs-built_in">PutVarint64</span>(dst, f.number);<br>        <span class="hljs-built_in">PutVarint64</span>(dst, f.file_size);<br>        <span class="hljs-built_in">PutLengthPrefixedSlice</span>(dst, f.smallest.<span class="hljs-built_in">Encode</span>());<br>        <span class="hljs-built_in">PutLengthPrefixedSlice</span>(dst, f.largest.<span class="hljs-built_in">Encode</span>());<br>    }<br>}<br><br></code></pre></td></tr></table></figure>
+<h3 id="builder">Builder</h3>
+<p>前面也提到过，Version(旧) + VersionEdit(修改部分) =
+Version(新)，而其中的加号就是Builder。</p>
+<p>我们可能会问为什么还需要Builder，当有VersionEdit改变版本时，直接引用到当前的Version生成一个新的Version即可。这其实是为了效率，才引入了Builder。正常情况下，一次Compaction或者MemTable写入后，会产生一个VersionEdit，将这个VersionEdit应用到当前Version上生成一个新的Version，这没有什么问题。不过在版本变更时，也会将VersionEdit的内容写入MANIFEST中。当重新打开一个数据库时，需要读取MANIFEST重新构造版本信息，这个版本信息由初始的Version和多个VersionEdit生成，如果直接用VersionEdit应用会生成多个版本，降低了效率。所以使用了Builder，将多个VersionEdit的内容累积到Builder上，然后一次性应用到当前Version即可生成新的Version。</p>
+<img src="/2022/12/19/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90-15/pic5.jpg" srcset="/img/loading.gif" lazyload class="">
+<p>过程大致如下:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-function">VersionSet::Builder <span class="hljs-title">builder</span><span class="hljs-params">(&amp;vset, curr_version)</span></span>;  <span class="hljs-comment">// 创建一个builder</span><br>builder.<span class="hljs-built_in">Apply</span>(version_edit1);                      <span class="hljs-comment">// 应用VersionEdit，可应用多个</span><br>builder.<span class="hljs-built_in">Apply</span>(version_edit2);<br>Version new_version;               <br>builder.<span class="hljs-built_in">SaveTo</span>(&amp;new_version);                      <span class="hljs-comment">// 将之前的Version和VersionEdit生成一个新的Version</span><br>vset.<span class="hljs-built_in">AppendVersion</span>(new_version);                   <span class="hljs-comment">// 将新Version添加到VersionSet</span><br><br></code></pre></td></tr></table></figure>
+<p>我们来看一下Builder类</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">VersionSet</span>::Builder<br>{<br><span class="hljs-keyword">private</span>:<br>    <span class="hljs-comment">// Helper to sort by v-&gt;files_[file_number].smallest</span><br>    <span class="hljs-comment">// 用来辅助将v-&gt;files_[file_number].smallest进行排序</span><br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BySmallestKey</span><br>    {<br>        <span class="hljs-type">const</span> InternalKeyComparator *internal_comparator;<br><br>        <span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">operator</span><span class="hljs-params">()</span><span class="hljs-params">(FileMetaData *f1, FileMetaData *f2)</span> <span class="hljs-type">const</span></span><br><span class="hljs-function">        </span>{<br>            <span class="hljs-type">int</span> r = internal_comparator-&gt;<span class="hljs-built_in">Compare</span>(f1-&gt;smallest, f2-&gt;smallest);<br>            <span class="hljs-keyword">if</span> (r != <span class="hljs-number">0</span>)<br>            {<br>                <span class="hljs-keyword">return</span> (r &lt; <span class="hljs-number">0</span>);<br>            }<br>            <span class="hljs-keyword">else</span><br>            {<br>                <span class="hljs-comment">// Break ties by file number</span><br>                <span class="hljs-built_in">return</span> (f1-&gt;number &lt; f2-&gt;number);<br>            }<br>        }<br>    };<br><br>    <span class="hljs-keyword">typedef</span> std::set&lt;FileMetaData *, BySmallestKey&gt; FileSet;<br>    <span class="hljs-keyword">struct</span> <span class="hljs-title class_">LevelState</span><br>    {<br>        std::set&lt;<span class="hljs-type">uint64_t</span>&gt; deleted_files;<br>        FileSet *added_files;<br>    };<br><br>    VersionSet *vset_; <span class="hljs-comment">// 所属的集合</span><br>    Version *base_;    <span class="hljs-comment">// 旧Version</span><br>    LevelState levels_[config::kNumLevels];<br><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-comment">// Initialize a builder with the files from *base and other info from *vset</span><br>    <span class="hljs-built_in">Builder</span>(VersionSet *vset, Version *base) : <span class="hljs-built_in">vset_</span>(vset), <span class="hljs-built_in">base_</span>(base)<br>    {<br>        base_-&gt;<span class="hljs-built_in">Ref</span>();<br>        BySmallestKey cmp;<br>        cmp.internal_comparator = &amp;vset_-&gt;icmp_;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> level = <span class="hljs-number">0</span>; level &lt; config::kNumLevels; level++)<br>        {<br>            levels_[level].added_files = <span class="hljs-keyword">new</span> <span class="hljs-built_in">FileSet</span>(cmp);<br>        }<br>    }<br><br>    <span class="hljs-comment">// 析构函数，需要对文件解除引用，也需要对版本解除引用</span><br>    ~<span class="hljs-built_in">Builder</span>()<br>    {<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> level = <span class="hljs-number">0</span>; level &lt; config::kNumLevels; level++)<br>        {<br>            <span class="hljs-type">const</span> FileSet *added = levels_[level].added_files;<br>            std::vector&lt;FileMetaData *&gt; to_unref;<br>            to_unref.<span class="hljs-built_in">reserve</span>(added-&gt;<span class="hljs-built_in">size</span>());<br>            <span class="hljs-keyword">for</span> (FileSet::const_iterator it = added-&gt;<span class="hljs-built_in">begin</span>(); it != added-&gt;<span class="hljs-built_in">end</span>();<br>                 ++it)<br>            {<br>                to_unref.<span class="hljs-built_in">push_back</span>(*it);<br>            }<br>            <span class="hljs-keyword">delete</span> added;<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; to_unref.<span class="hljs-built_in">size</span>(); i++)<br>            {<br>                FileMetaData *f = to_unref[i];<br>                f-&gt;refs--;<br>                <span class="hljs-keyword">if</span> (f-&gt;refs &lt;= <span class="hljs-number">0</span>)<br>                {<br>                    <span class="hljs-keyword">delete</span> f;<br>                }<br>            }<br>        }<br>        base_-&gt;<span class="hljs-built_in">Unref</span>();<br>    }<br><br>    <span class="hljs-comment">// 应用VersionEdit到当前版本上</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Apply</span><span class="hljs-params">(<span class="hljs-type">const</span> VersionEdit *edit)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-comment">// 首先更新comact_pointer_，这个直接在VersionSet里更新，因为这个的信息只有一份</span><br>        <span class="hljs-comment">// 新版本肯定是覆盖旧版本的，所以直接更新即可</span><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; edit-&gt;compact_pointers_.<span class="hljs-built_in">size</span>(); i++)<br>        {<br>            <span class="hljs-type">const</span> <span class="hljs-type">int</span> level = edit-&gt;compact_pointers_[i].first;<br>            vset_-&gt;compact_pointer_[level] =<br>                edit-&gt;compact_pointers_[i].second.<span class="hljs-built_in">Encode</span>().<span class="hljs-built_in">ToString</span>();<br>        }<br><br>        <span class="hljs-comment">// 把VersionEdit里删除的文件插入到levels_相应Level里面去</span><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">const</span> <span class="hljs-keyword">auto</span> &amp;deleted_file_set_kvp : edit-&gt;deleted_files_)<br>        {<br>            <span class="hljs-type">const</span> <span class="hljs-type">int</span> level = deleted_file_set_kvp.first;<br>            <span class="hljs-type">const</span> <span class="hljs-type">uint64_t</span> number = deleted_file_set_kvp.second;<br>            levels_[level].deleted_files.<span class="hljs-built_in">insert</span>(number);<br>        }<br><br>        <span class="hljs-comment">// 把VersionEdit里添加的文件插入到levels_相应的Level里去</span><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; edit-&gt;new_files_.<span class="hljs-built_in">size</span>(); i++)<br>        {<br>            <span class="hljs-type">const</span> <span class="hljs-type">int</span> level = edit-&gt;new_files_[i].first;<br>            <span class="hljs-comment">// 因为是新文件，构造一个FileMetaData</span><br>            FileMetaData *f = <span class="hljs-keyword">new</span> <span class="hljs-built_in">FileMetaData</span>(edit-&gt;new_files_[i].second);<br>            f-&gt;refs = <span class="hljs-number">1</span>;<br><br>            <span class="hljs-comment">// We arrange to automatically compact this file after</span><br>            <span class="hljs-comment">// a certain number of seeks.  Let's assume:</span><br>            <span class="hljs-comment">//   (1) One seek costs 10ms</span><br>            <span class="hljs-comment">//   (2) Writing or reading 1MB costs 10ms (100MB/s)</span><br>            <span class="hljs-comment">//   (3) A compaction of 1MB does 25MB of IO:</span><br>            <span class="hljs-comment">//         1MB read from this level</span><br>            <span class="hljs-comment">//         10-12MB read from next level (boundaries may be misaligned)</span><br>            <span class="hljs-comment">//         10-12MB written to next level</span><br>            <span class="hljs-comment">// This implies that 25 seeks cost the same as the compaction</span><br>            <span class="hljs-comment">// of 1MB of data.  I.e., one seek costs approximately the</span><br>            <span class="hljs-comment">// same as the compaction of 40KB of data.  We are a little</span><br>            <span class="hljs-comment">// conservative and allow approximately one seek for every 16KB</span><br>            <span class="hljs-comment">// of data before triggering a compaction.</span><br>            f-&gt;allowed_seeks = <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;((f-&gt;file_size / <span class="hljs-number">16384U</span>));<br>            <span class="hljs-keyword">if</span> (f-&gt;allowed_seeks &lt; <span class="hljs-number">100</span>)<br>                f-&gt;allowed_seeks = <span class="hljs-number">100</span>;<br><br>            levels_[level].deleted_files.<span class="hljs-built_in">erase</span>(f-&gt;number);<br>            levels_[level].added_files-&gt;<span class="hljs-built_in">insert</span>(f);<br>        }<br>    }<br><br>    <span class="hljs-comment">// 把新版本存储到版本v中</span><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">SaveTo</span><span class="hljs-params">(Version *v)</span></span><br><span class="hljs-function">    </span>{<br>        BySmallestKey cmp;<br>        cmp.internal_comparator = &amp;vset_-&gt;icmp_;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> level = <span class="hljs-number">0</span>; level &lt; config::kNumLevels; level++)<br>        {<br>            <span class="hljs-comment">// Merge the set of added files with the set of pre-existing files.</span><br>            <span class="hljs-comment">// Drop any deleted files.  Store the result in *v.</span><br>            <span class="hljs-comment">// 拿出原本Version里的文件，以及Builder里累积的，添加的文件</span><br>            <span class="hljs-type">const</span> std::vector&lt;FileMetaData *&gt; &amp;base_files = base_-&gt;files_[level];<br>            std::vector&lt;FileMetaData *&gt;::const_iterator base_iter = base_files.<span class="hljs-built_in">begin</span>();<br>            std::vector&lt;FileMetaData *&gt;::const_iterator base_end = base_files.<span class="hljs-built_in">end</span>();<br>            <span class="hljs-type">const</span> FileSet *added_files = levels_[level].added_files;<br>            v-&gt;files_[level].<span class="hljs-built_in">reserve</span>(base_files.<span class="hljs-built_in">size</span>() + added_files-&gt;<span class="hljs-built_in">size</span>());<br>            <span class="hljs-comment">// 按顺序进行合并</span><br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">const</span> <span class="hljs-keyword">auto</span> &amp;added_file : *added_files)<br>            {<br>                <span class="hljs-comment">// Add all smaller files listed in base_</span><br>                <span class="hljs-comment">// 找到base里面比added_file小的文件，添加到新的Version里</span><br>                <span class="hljs-comment">// 采用MaybeAddFile，让被删除的文件无法添加</span><br>                <span class="hljs-keyword">for</span> (std::vector&lt;FileMetaData *&gt;::const_iterator bpos =<br>                         std::<span class="hljs-built_in">upper_bound</span>(base_iter, base_end, added_file, cmp);<br>                     base_iter != bpos; ++base_iter)<br>                {<br>                    <span class="hljs-built_in">MaybeAddFile</span>(v, level, *base_iter);<br>                }<br><br>                <span class="hljs-built_in">MaybeAddFile</span>(v, level, added_file);<br>            }<br><br>            <span class="hljs-comment">// Add remaining base files</span><br>            <span class="hljs-keyword">for</span> (; base_iter != base_end; ++base_iter)<br>            {<br>                <span class="hljs-built_in">MaybeAddFile</span>(v, level, *base_iter);<br>            }<br><br><span class="hljs-meta">#<span class="hljs-keyword">ifndef</span> NDEBUG</span><br>            <span class="hljs-comment">// Make sure there is no overlap in levels &gt; 0</span><br>            <span class="hljs-keyword">if</span> (level &gt; <span class="hljs-number">0</span>)<br>            {<br>                <span class="hljs-keyword">for</span> (<span class="hljs-type">uint32_t</span> i = <span class="hljs-number">1</span>; i &lt; v-&gt;files_[level].<span class="hljs-built_in">size</span>(); i++)<br>                {<br>                    <span class="hljs-type">const</span> InternalKey &amp;prev_end = v-&gt;files_[level][i - <span class="hljs-number">1</span>]-&gt;largest;<br>                    <span class="hljs-type">const</span> InternalKey &amp;this_begin = v-&gt;files_[level][i]-&gt;smallest;<br>                    <span class="hljs-keyword">if</span> (vset_-&gt;icmp_.<span class="hljs-built_in">Compare</span>(prev_end, this_begin) &gt;= <span class="hljs-number">0</span>)<br>                    {<br>                        std::<span class="hljs-built_in">fprintf</span>(stderr, <span class="hljs-string">"overlapping ranges in same level %s vs. %s\n"</span>,<br>                                     prev_end.<span class="hljs-built_in">DebugString</span>().<span class="hljs-built_in">c_str</span>(),<br>                                     this_begin.<span class="hljs-built_in">DebugString</span>().<span class="hljs-built_in">c_str</span>());<br>                        std::<span class="hljs-built_in">abort</span>();<br>                    }<br>                }<br>            }<br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>        }<br>    }<br><br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">MaybeAddFile</span><span class="hljs-params">(Version *v, <span class="hljs-type">int</span> level, FileMetaData *f)</span></span><br><span class="hljs-function">    </span>{<br>        <span class="hljs-keyword">if</span> (levels_[level].deleted_files.<span class="hljs-built_in">count</span>(f-&gt;number) &gt; <span class="hljs-number">0</span>)<br>        {<br>            <span class="hljs-comment">// File is deleted: do nothing</span><br>        }<br>        <span class="hljs-keyword">else</span><br>        {<br>            std::vector&lt;FileMetaData *&gt; *files = &amp;v-&gt;files_[level];<br>            <span class="hljs-keyword">if</span> (level &gt; <span class="hljs-number">0</span> &amp;&amp; !files-&gt;<span class="hljs-built_in">empty</span>())<br>            {<br>                <span class="hljs-comment">// Must not overlap</span><br>                <span class="hljs-built_in">assert</span>(vset_-&gt;icmp_.<span class="hljs-built_in">Compare</span>((*files)[files-&gt;<span class="hljs-built_in">size</span>() - <span class="hljs-number">1</span>]-&gt;largest,<br>                                            f-&gt;smallest) &lt; <span class="hljs-number">0</span>);<br>            }<br>            f-&gt;refs++;<br>            files-&gt;<span class="hljs-built_in">push_back</span>(f);<br>        }<br>    }<br>};<br><br></code></pre></td></tr></table></figure>
+<p>其中apply函数是负责将修改记录VersionEdit应用，saveto是将应用过若干版本修改的最终版本保存到一个新版本上。</p>
+<h3 id="版本变迁">版本变迁</h3>
+<p>版本变迁是通过VersionSet中的LogAndApply来完成的。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><br><span class="hljs-comment">// 输入参数edit表示的是改变的内容，比如一次Compaction可以得到edit</span><br><span class="hljs-function">Status <span class="hljs-title">VersionSet::LogAndApply</span><span class="hljs-params">(VersionEdit *edit, port::Mutex *mu)</span></span><br><span class="hljs-function"></span>{<br>    <span class="hljs-comment">// 前面是对edit进行赋值</span><br>    <span class="hljs-keyword">if</span> (edit-&gt;has_log_number_)<br>    {<br>        <span class="hljs-built_in">assert</span>(edit-&gt;log_number_ &gt;= log_number_);<br>        <span class="hljs-built_in">assert</span>(edit-&gt;log_number_ &lt; next_file_number_);<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        edit-&gt;<span class="hljs-built_in">SetLogNumber</span>(log_number_);<br>    }<br><br>    <span class="hljs-keyword">if</span> (!edit-&gt;has_prev_log_number_)<br>    {<br>        edit-&gt;<span class="hljs-built_in">SetPrevLogNumber</span>(prev_log_number_);<br>    }<br><br>    edit-&gt;<span class="hljs-built_in">SetNextFile</span>(next_file_number_);<br>    edit-&gt;<span class="hljs-built_in">SetLastSequence</span>(last_sequence_);<br><br>    <span class="hljs-comment">// 创建一个新版本，新版本是current_和edit的结合</span><br>    Version *v = <span class="hljs-keyword">new</span> <span class="hljs-built_in">Version</span>(<span class="hljs-keyword">this</span>);<br>    {<br>        <span class="hljs-function">Builder <span class="hljs-title">builder</span><span class="hljs-params">(<span class="hljs-keyword">this</span>, current_)</span></span>;<br>        builder.<span class="hljs-built_in">Apply</span>(edit);<br>        builder.<span class="hljs-built_in">SaveTo</span>(v);<br>    }<br>    <span class="hljs-built_in">Finalize</span>(v); <span class="hljs-comment">// 对v进行可能的压缩</span><br><br>    <span class="hljs-comment">// Initialize new descriptor log file if necessary by creating</span><br>    <span class="hljs-comment">// a temporary file that contains a snapshot of the current version.</span><br>    std::string new_manifest_file;<br>    Status s;<br>    <span class="hljs-comment">// 这里只有Open数据库的时候才会走到，如果需要保存新的MANIFEST，此时这个变量为null</span><br>    <span class="hljs-comment">// 会创建一个新的MANIFEST，然后将当前的状态写入</span><br>    <span class="hljs-keyword">if</span> (descriptor_log_ == <span class="hljs-literal">nullptr</span>)<br>    {<br>        <span class="hljs-comment">// No reason to unlock *mu here since we only hit this path in the</span><br>        <span class="hljs-comment">// first call to LogAndApply (when opening the database).</span><br>        <span class="hljs-built_in">assert</span>(descriptor_file_ == <span class="hljs-literal">nullptr</span>);<br>        new_manifest_file = <span class="hljs-built_in">DescriptorFileName</span>(dbname_, manifest_file_number_);<br>        s = env_-&gt;<span class="hljs-built_in">NewWritableFile</span>(new_manifest_file, &amp;descriptor_file_);<br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            descriptor_log_ = <span class="hljs-keyword">new</span> log::<span class="hljs-built_in">Writer</span>(descriptor_file_);<br>            s = <span class="hljs-built_in">WriteSnapshot</span>(descriptor_log_);<br>        }<br>    }<br><br>    <span class="hljs-comment">// Unlock during expensive MANIFEST log write</span><br>    {<br>        mu-&gt;<span class="hljs-built_in">Unlock</span>();<br><br>        <span class="hljs-comment">// Write new record to MANIFEST log</span><br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>        {<br>            std::string record;<br>            edit-&gt;<span class="hljs-built_in">EncodeTo</span>(&amp;record);<br>            s = descriptor_log_-&gt;<span class="hljs-built_in">AddRecord</span>(record);<br>            <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>            {<br>                s = descriptor_file_-&gt;<span class="hljs-built_in">Sync</span>();<br>            }<br>            <span class="hljs-keyword">if</span> (!s.<span class="hljs-built_in">ok</span>())<br>            {<br>                <span class="hljs-built_in">Log</span>(options_-&gt;info_log, <span class="hljs-string">"MANIFEST write: %s\n"</span>, s.<span class="hljs-built_in">ToString</span>().<span class="hljs-built_in">c_str</span>());<br>            }<br>        }<br><br>        <span class="hljs-comment">// If we just created a new descriptor file, install it by writing a</span><br>        <span class="hljs-comment">// new CURRENT file that points to it.</span><br>        <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>() &amp;&amp; !new_manifest_file.<span class="hljs-built_in">empty</span>())<br>        {<br>            s = <span class="hljs-built_in">SetCurrentFile</span>(env_, dbname_, manifest_file_number_);<br>        }<br><br>        mu-&gt;<span class="hljs-built_in">Lock</span>();<br>    }<br><br>    <span class="hljs-comment">// 安装新版本，会把v放到VersionSet的链表中，然后将当前Version指向v</span><br>    <span class="hljs-keyword">if</span> (s.<span class="hljs-built_in">ok</span>())<br>    {<br>        <span class="hljs-built_in">AppendVersion</span>(v);<br>        log_number_ = edit-&gt;log_number_;<br>        prev_log_number_ = edit-&gt;prev_log_number_;<br>    }<br>    <span class="hljs-keyword">else</span><br>    {<br>        <span class="hljs-keyword">delete</span> v;<br>        <span class="hljs-keyword">if</span> (!new_manifest_file.<span class="hljs-built_in">empty</span>())<br>        {<br>            <span class="hljs-keyword">delete</span> descriptor_log_;<br>            <span class="hljs-keyword">delete</span> descriptor_file_;<br>            descriptor_log_ = <span class="hljs-literal">nullptr</span>;<br>            descriptor_file_ = <span class="hljs-literal">nullptr</span>;<br>            env_-&gt;<span class="hljs-built_in">RemoveFile</span>(new_manifest_file);<br>        }<br>    }<br><br>    <span class="hljs-keyword">return</span> s;<br>}<br><br></code></pre></td></tr></table></figure>
+<p>版本变迁基本的流程如下：</p>
+<ul>
+<li>首先有了一个准备好的VersionEdit实例，包含了版本变迁的内容，然后设置其它的一些字段</li>
+<li>然后生成一个新的Version，使用Builder将当前的版本和VersionEdit应用生成一个新的Version</li>
+<li>如果当前MANIFEST的描述符不存在，新生成一个MANIFEST文件，将当前状态写入</li>
+<li>将VersionEdit的内容写入到MANIFEST文件</li>
+<li>将新生成的Version加入到VersionSet，替换当前的Version</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/levelDB%E6%BA%90%E7%A0%81%E5%89%96%E6%9E%90/" class="category-chain-item">levelDB源码剖析</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/C/">#C++</a>
+      
+        <a href="/tags/levelDB/">#levelDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/12/13/Python%E5%A5%87%E6%8A%80%E6%B7%AB%E5%B7%A7-8/" title="Python奇技淫巧(8)--类的技巧(其二)">
+                        <span class="hidden-mobile">Python奇技淫巧(8)--类的技巧(其二)</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-tau.vercel.app/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://emoji.shojo.cn/bili/src/大航海嘉然","https://emoji.shojo.cn/bili/src/永雏塔菲","https://emoji.shojo.cn/bili/src/東雪蓮","https://unpkg.com/@waline/emojis@1.1.0/tieba","https://emoji.shojo.cn/bili/src/嘉然今天吃什么","https://emoji.shojo.cn/bili/src/小黄脸"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;Table of Contents</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://github.com/ppxxxg22" target="_blank" rel="nofollow noopener"><span>ppxxxg22</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
